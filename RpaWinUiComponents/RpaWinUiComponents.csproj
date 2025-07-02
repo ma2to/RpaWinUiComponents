@@ -1,0 +1,152 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>RpaWinUiComponents</PackageId>
+    <PackageVersion>1.0.6</PackageVersion>
+    <Authors>RPA Solutions</Authors>
+    <Company>RPA Solutions</Company>
+    <Product>RpaWinUiComponents</Product>
+    <Description>Advanced WinUI 3 DataGrid component with real-time validation</Description>
+
+    <!-- ✅ KRITICKÉ NASTAVENIA pre WinUI 3 Class Library -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
+    <EnableMsixTooling>false</EnableMsixTooling>
+
+    <!-- ✅ XAML kompilácia nastavenia -->
+    <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
+    <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
+    <DisableXbfGeneration>false</DisableXbfGeneration>
+    <GenerateAppInstallerFile>false</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+
+    <!-- ✅ KRITICKÉ: Package configuration pre DLL -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <BuildOutputTargetFolder>lib</BuildOutputTargetFolder>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+
+    <!-- ✅ Content configuration -->
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <ContentTargetFolders>content</ContentTargetFolders>
+
+    <!-- ✅ Forcovanie XAML kompilácie -->
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <XamlSaveStateOnDisk>true</XamlSaveStateOnDisk>
+
+    <!-- ✅ Suppress warnings -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0103</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+    <PackageReference Include="System.Text.Json" Version="9.0.6" />
+  </ItemGroup>
+
+  <!-- ✅ XAML súbory s správnou Generator hodnotou -->
+  <ItemGroup>
+    <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <!-- ✅ Code-behind súbory -->
+  <ItemGroup>
+    <Compile Update="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
+      <DependentUpon>AdvancedDataGridControl.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <!-- ✅ Build targets pre package consumers -->
+  <ItemGroup>
+    <None Include="build\RpaWinUiComponents.targets" Pack="true" PackagePath="build\" />
+    <None Include="build\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\" />
+  </ItemGroup>
+
+  <!-- ✅ KRITICKÉ: Target pre správne zahrnutie DLL do package -->
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+    <ItemGroup>
+      <!-- Hlavná DLL -->
+      <BuildOutputInPackage Include="$(TargetPath)" TargetPath="lib\$(TargetFramework)\$(TargetFileName)" />
+      <!-- PDB súbor ak existuje -->
+      <BuildOutputInPackage Include="$(TargetDir)$(TargetName).pdb" TargetPath="lib\$(TargetFramework)\$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+    </ItemGroup>
+
+    <Message Text="✅ Adding DLL to package: $(TargetPath) -> lib\$(TargetFramework)\$(TargetFileName)" Importance="high" />
+  </Target>
+
+  <!-- ✅ Po-build target pre kopírovanie XBF súborov -->
+  <Target Name="PrepareXbfForPackaging" AfterTargets="XamlPreCompile" BeforeTargets="Pack" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <XbfOutputPath>$(OutputPath)$(PackageId)\</XbfOutputPath>
+    </PropertyGroup>
+
+    <!-- Vytvorenie cieľového priečinka -->
+    <MakeDir Directories="$(XbfOutputPath)AdvancedWinUiDataGrid\Views\" />
+    <MakeDir Directories="$(XbfOutputPath)AdvancedWinUiDataGrid\Themes\" />
+
+    <!-- Kopírovanie XBF súborov -->
+    <ItemGroup>
+      <XbfFiles Include="$(IntermediateOutputPath)**\*.xbf" />
+      <PriFiles Include="$(IntermediateOutputPath)**\*.pri" />
+      <XrXmlFiles Include="$(IntermediateOutputPath)**\*.xr.xml" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(XbfFiles)" DestinationFolder="$(XbfOutputPath)%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PriFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(XrXmlFiles)" DestinationFolder="$(XbfOutputPath)" SkipUnchangedFiles="true" />
+
+    <Message Text="✅ XBF files prepared for packaging in: $(XbfOutputPath)" Importance="high" />
+  </Target>
+
+  <!-- ✅ Explicitné zahrnutie XBF súborov do package -->
+  <Target Name="IncludeXbfInPackage" BeforeTargets="Pack" DependsOnTargets="PrepareXbfForPackaging" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <!-- XBF súbory -->
+      <None Include="$(OutputPath)$(PackageId)\**\*.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\$(PackageId)\%(RecursiveDir)%(Filename)%(Extension)" />
+      <!-- PRI súbory -->
+      <None Include="$(OutputPath)*.pri" Pack="true" PackagePath="lib\$(TargetFramework)\" />
+      <!-- XR.XML súbory -->
+      <None Include="$(OutputPath)$(PackageId)\**\*.xr.xml" Pack="true" PackagePath="lib\$(TargetFramework)\$(PackageId)\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <Message Text="✅ Including XBF files in package from: $(OutputPath)$(PackageId)\" Importance="high" />
+  </Target>
+
+  <!-- ✅ Force XAML compilation target -->
+  <Target Name="ForceXamlCompilation" BeforeTargets="XamlPreCompile">
+    <PropertyGroup>
+      <XamlBuildTaskTypeAliases>$(XamlBuildTaskTypeAliases);XamlBuild=Microsoft.Windows.UI.Xaml.Build.Tasks.XamlBuild</XamlBuildTaskTypeAliases>
+    </PropertyGroup>
+
+    <Message Text="🔨 Forcing XAML compilation for: @(Page)" Importance="high" />
+
+    <ItemGroup>
+      <XamlApplications Include="@(Page)" Condition="'%(Page.Generator)' == 'MSBuild:Compile'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- ✅ Diagnostika - výpis stavu súborov -->
+  <Target Name="DiagnosePackaging" AfterTargets="XamlPreCompile" BeforeTargets="Pack" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <GeneratedXbfFiles Include="$(IntermediateOutputPath)**\*.xbf" />
+      <OutputFiles Include="$(OutputPath)*.*" />
+    </ItemGroup>
+
+    <Message Text="🔍 Packaging Diagnostics:" Importance="high" />
+    <Message Text="   Target DLL: $(TargetPath)" Importance="high" />
+    <Message Text="   Generated XBF files: @(GeneratedXbfFiles->Count())" Importance="high" />
+    <Message Text="   Output files: @(OutputFiles->Count())" Importance="high" />
+    <Message Text="   Package ID: $(PackageId)" Importance="high" />
+    <Message Text="   Target Framework: $(TargetFramework)" Importance="high" />
+  </Target>
+
+</Project>

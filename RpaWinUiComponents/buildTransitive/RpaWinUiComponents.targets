@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- build/RpaWinUiComponents.targets - OPRAVENÝ pre flexibilné DLL vyhľadávanie -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.6</RpaWinUiComponentsVersion>
+    <UseWinUI Condition="'$(UseWinUI)' == ''">true</UseWinUI>
+  </PropertyGroup>
+
+  <!-- ✅ Ensure WinUI 3 is properly configured -->
+  <ItemGroup Condition="'$(UseWinUI)' == 'true'">
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.WindowsAppSDK'))' == ''" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.DependencyInjection'))' == ''" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.Hosting'))' == ''" />
+  </ItemGroup>
+
+  <!-- ✅ KRITICKÉ: Flexibilné DLL reference -->
+  <Target Name="EnsureRpaWinUiComponentsReferences" BeforeTargets="ResolveAssemblyReferences">
+    <PropertyGroup>
+      <!-- Skúšame rôzne možné lokácie DLL -->
+      <_RpaWinUiComponentsPath Condition="Exists('$(MSBuildThisFileDirectory)../lib/$(TargetFramework)/RpaWinUiComponents.dll')">$(MSBuildThisFileDirectory)../lib/$(TargetFramework)/RpaWinUiComponents.dll</_RpaWinUiComponentsPath>
+      <_RpaWinUiComponentsPath Condition="'$(_RpaWinUiComponentsPath)' == '' AND Exists('$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll')">$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll</_RpaWinUiComponentsPath>
+      <_RpaWinUiComponentsPath Condition="'$(_RpaWinUiComponentsPath)' == '' AND Exists('$(MSBuildThisFileDirectory)../lib/net8.0-windows/RpaWinUiComponents.dll')">$(MSBuildThisFileDirectory)../lib/net8.0-windows/RpaWinUiComponents.dll</_RpaWinUiComponentsPath>
+      <_RpaWinUiComponentsPath Condition="'$(_RpaWinUiComponentsPath)' == '' AND Exists('$(MSBuildThisFileDirectory)../lib/RpaWinUiComponents.dll')">$(MSBuildThisFileDirectory)../lib/RpaWinUiComponents.dll</_RpaWinUiComponentsPath>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(_RpaWinUiComponentsPath)' != ''">
+      <Reference Include="$(_RpaWinUiComponentsPath)" />
+    </ItemGroup>
+
+    <!-- Diagnostické správy -->
+    <Message Text="✅ RpaWinUiComponents DLL found at: $(_RpaWinUiComponentsPath)" Importance="normal" Condition="'$(_RpaWinUiComponentsPath)' != ''" />
+
+    <!-- Ak DLL nie je nájdená, vypíšeme diagnostiku -->
+    <ItemGroup Condition="'$(_RpaWinUiComponentsPath)' == ''">
+      <_CheckedPaths Include="$(MSBuildThisFileDirectory)../lib/$(TargetFramework)/RpaWinUiComponents.dll" />
+      <_CheckedPaths Include="$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll" />
+      <_CheckedPaths Include="$(MSBuildThisFileDirectory)../lib/net8.0-windows/RpaWinUiComponents.dll" />
+      <_CheckedPaths Include="$(MSBuildThisFileDirectory)../lib/RpaWinUiComponents.dll" />
+    </ItemGroup>
+
+    <Message Text="⚠️ RpaWinUiComponents DLL not found. Checked locations:" Importance="high" Condition="'$(_RpaWinUiComponentsPath)' == ''" />
+    <Message Text="   - %(_CheckedPaths.Identity)" Importance="high" Condition="'$(_RpaWinUiComponentsPath)' == ''" />
+  </Target>
+
+  <!-- ✅ Diagnostika package štruktúry -->
+  <Target Name="DiagnosePackageStructure" BeforeTargets="EnsureRpaWinUiComponentsReferences" Condition="'$(_RpaWinUiComponentsPath)' == ''">
+    <Message Text="🔍 RPA Package Structure Diagnostics:" Importance="high" />
+    <Message Text="   Package path: $(MSBuildThisFileDirectory)../" Importance="high" />
+    <Message Text="   Target framework: $(TargetFramework)" Importance="high" />
+
+    <!-- Vypíšeme všetky súbory v package -->
+    <ItemGroup>
+      <AllPackageFiles Include="$(MSBuildThisFileDirectory)../**/*.*" />
+    </ItemGroup>
+
+    <Message Text="📁 All package files:" Importance="high" />
+    <Message Text="   %(AllPackageFiles.Identity)" Importance="normal" />
+
+    <!-- Hľadáme DLL súbory -->
+    <ItemGroup>
+      <AllDllFiles Include="$(MSBuildThisFileDirectory)../**/*.dll" />
+    </ItemGroup>
+
+    <Message Text="🔍 DLL files found in package:" Importance="high" />
+    <Message Text="   %(AllDllFiles.Identity)" Importance="high" />
+  </Target>
+
+  <!-- ✅ Kopírovanie XBF súborov (ak existujú) -->
+  <Target Name="CopyRpaWinUiComponentsXbfFiles" BeforeTargets="Build" AfterTargets="ResolvePackageAssets">
+    <PropertyGroup>
+      <RpaPackagePath>$(MSBuildThisFileDirectory)../lib/$(TargetFramework)/</RpaPackagePath>
+      <RpaContentPath>$(RpaPackagePath)RpaWinUiComponents/</RpaContentPath>
+      <RpaTargetPath>$(OutputPath)RpaWinUiComponents/</RpaTargetPath>
+    </PropertyGroup>
+
+    <!-- Skontrolovanie či existujú XBF súbory -->
+    <ItemGroup Condition="Exists('$(RpaContentPath)')">
+      <RpaXbfFiles Include="$(RpaContentPath)**/*.xbf" />
+      <RpaXamlFiles Include="$(RpaContentPath)**/*.xaml" />
+      <RpaPriFiles Include="$(RpaPackagePath)*.pri" />
+      <RpaXrXmlFiles Include="$(RpaContentPath)**/*.xr.xml" />
+    </ItemGroup>
+
+    <!-- Kopírovanie súborov ak existujú -->
+    <MakeDir Directories="$(RpaTargetPath)AdvancedWinUiDataGrid\Views\" Condition="'@(RpaXbfFiles)' != ''" />
+    <MakeDir Directories="$(RpaTargetPath)AdvancedWinUiDataGrid\Themes\" Condition="'@(RpaXbfFiles)' != ''" />
+
+    <Copy SourceFiles="@(RpaXbfFiles)"
+          DestinationFolder="$(RpaTargetPath)%(RecursiveDir)"
+          SkipUnchangedFiles="true"
+          Condition="'@(RpaXbfFiles)' != ''" />
+
+    <Copy SourceFiles="@(RpaXamlFiles)"
+          DestinationFolder="$(RpaTargetPath)%(RecursiveDir)"
+          SkipUnchangedFiles="true"
+          Condition="'@(RpaXamlFiles)' != ''" />
+
+    <Copy SourceFiles="@(RpaPriFiles)"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="true"
+          Condition="'@(RpaPriFiles)' != ''" />
+
+    <Copy SourceFiles="@(RpaXrXmlFiles)"
+          DestinationFolder="$(RpaTargetPath)"
+          SkipUnchangedFiles="true"
+          Condition="'@(RpaXrXmlFiles)' != ''" />
+
+    <!-- Status správy -->
+    <Message Text="✅ Copied @(RpaXbfFiles->Count()) XBF files" Importance="normal" Condition="'@(RpaXbfFiles)' != ''" />
+    <Message Text="✅ Copied @(RpaPriFiles->Count()) PRI files" Importance="normal" Condition="'@(RpaPriFiles)' != ''" />
+    <Message Text="ℹ️ No XBF files found in package" Importance="low" Condition="'@(RpaXbfFiles)' == ''" />
+  </Target>
+
+</Project>

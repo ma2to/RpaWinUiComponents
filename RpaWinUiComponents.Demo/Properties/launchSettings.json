@@ -1,0 +1,10 @@
+﻿{
+  "profiles": {
+    "RpaWinUiComponents.Demo": {
+      "commandName": "Project"
+    },
+    "RpaWinUiComponents.Demo (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

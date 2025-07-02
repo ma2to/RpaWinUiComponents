@@ -1,0 +1,38 @@
+<Project>
+
+  <!-- Globálne nastavenia pre celé solution -->
+  <PropertyGroup>
+    <LangVersion>11.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors />
+    <!-- OPRAVA: Povoliť unsafe code globálne pre WinUI 3 -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!-- WinUI 3 specific settings -->
+  <PropertyGroup Condition="'$(UseWinUI)' == 'true'">
+    <UseRidGraph>true</UseRidGraph>
+    <WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <!-- Suppress specific warnings -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1701;NU1602;NU1604;CS0227</NoWarn>
+  </PropertyGroup>
+
+  <!-- Assembly info -->
+  <PropertyGroup>
+    <Product>RpaWinUiComponents</Product>
+    <Company>RPA Solutions</Company>
+    <Copyright>Copyright © RPA Solutions 2024</Copyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+</Project>

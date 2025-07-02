@@ -1,0 +1,99 @@
+﻿<Window x:Class="RpaWinUiComponents.Demo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:RpaWinUiComponents.AdvancedWinUiDataGrid"
+        Title="RpaWinUiComponents Demo - Simple Version">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="16,12">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🎯 RpaWinUiComponents Demo" 
+                           FontSize="20" 
+                           FontWeight="Bold" 
+                           Foreground="White"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="InitStatusText"
+                           Text=" - Inicializuje sa..."
+                           FontSize="14"
+                           Foreground="#E74C3C"
+                           VerticalAlignment="Center"
+                           Margin="16,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Simple Controls Panel -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Padding="16" Background="#ECF0F1" Spacing="12">
+            <Button x:Name="LoadSampleDataButton" 
+                    Content="📊 Načítať dáta" 
+                    Click="OnLoadSampleDataClick"
+                    Background="#3498DB" 
+                    Foreground="White"
+                    Padding="16,8"/>
+
+            <Button x:Name="ValidateAllButton" 
+                    Content="✅ Validovať" 
+                    Click="OnValidateAllClick"
+                    Background="#F39C12" 
+                    Foreground="White"
+                    Padding="16,8"/>
+
+            <Button x:Name="ClearDataButton" 
+                    Content="🗑️ Vymazať" 
+                    Click="OnClearDataClick"
+                    Background="#E74C3C" 
+                    Foreground="White"
+                    Padding="16,8"/>
+
+            <Button x:Name="ExportDataButton" 
+                    Content="📤 Export" 
+                    Click="OnExportDataClick"
+                    Background="#9B59B6" 
+                    Foreground="White"
+                    Padding="16,8"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Border Grid.Row="2" Background="White" Margin="8" CornerRadius="8" BorderBrush="#D5DBDB" BorderThickness="1">
+            <Grid>
+                <!-- Loading Message -->
+                <StackPanel x:Name="LoadingPanel" 
+                            HorizontalAlignment="Center" 
+                            VerticalAlignment="Center"
+                            Spacing="16"
+                            Visibility="Visible">
+                    <ProgressRing Width="48" Height="48" IsActive="True"/>
+                    <TextBlock Text="Inicializuje sa AdvancedDataGrid..." 
+                               FontSize="16" 
+                               Foreground="#7F8C8D"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="LoadingDetailText"
+                               Text="Nastavujú sa stĺpce a validačné pravidlá..."
+                               FontSize="12" 
+                               Foreground="#95A5A6"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- DataGrid Placeholder -->
+                <Border x:Name="DataGridPlaceholder" 
+                        Background="Transparent"
+                        Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+
+        <!-- Simple Status Bar -->
+        <Border Grid.Row="3" Background="#34495E" Padding="16,8">
+            <TextBlock x:Name="StatusTextBlock" 
+                       Text="Inicializuje sa..."
+                       Foreground="White" 
+                       FontWeight="SemiBold"/>
+        </Border>
+    </Grid>
+</Window>

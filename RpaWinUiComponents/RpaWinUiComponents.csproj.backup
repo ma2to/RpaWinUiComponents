@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>RpaWinUiComponents</PackageId>
+    <PackageVersion>1.0.3</PackageVersion>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <RestorePackagesWithLockFile>false</RestorePackagesWithLockFile>
+
+    <!-- ✅ FIX pre .NET 9 SDK -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
+    <EnableMsixTooling>false</EnableMsixTooling>
+    <GenerateAppInstallerFile>false</GenerateAppInstallerFile>
+    <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
+
+    <!-- ✅ Suppress warnings -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+    <PackageReference Include="System.Text.Json" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
+      <DependentUpon>AdvancedDataGridControl.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>
