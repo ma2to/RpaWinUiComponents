@@ -54,18 +54,11 @@ namespace RpaWinUiComponents.Demo
                 UpdateStatusText("Inicializuje sa komponent...");
                 await Task.Delay(500);
 
-                _dataGridControl = new RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl();
+                // OPRAVA: Použiť DataGridControl namiesto DataGridPlaceholder
+                _dataGridControl = DataGridControl;
 
                 UpdateStatusText("Nastavujú sa stĺpce...");
                 await Task.Delay(300);
-
-                // Nahradenie placeholder s DataGrid
-                if (DataGridPlaceholder.Parent is Grid parentGrid)
-                {
-                    var index = parentGrid.Children.IndexOf(DataGridPlaceholder);
-                    parentGrid.Children.RemoveAt(index);
-                    parentGrid.Children.Insert(index, _dataGridControl);
-                }
 
                 UpdateStatusText("Vytvárajú sa validačné pravidlá...");
                 await Task.Delay(300);
@@ -79,11 +72,11 @@ namespace RpaWinUiComponents.Demo
 
                 _dataGridControl.ErrorOccurred += OnDataGridError;
 
-                // Skrytie loading panela
+                // Skrytie loading panela a zobrazenie DataGrid
                 if (LoadingPanel != null)
                     LoadingPanel.Visibility = Visibility.Collapsed;
-                if (DataGridPlaceholder != null)
-                    DataGridPlaceholder.Visibility = Visibility.Visible;
+                if (DataGridControl != null)
+                    DataGridControl.Visibility = Visibility.Visible;
 
                 _isInitialized = true;
 

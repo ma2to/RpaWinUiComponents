@@ -1,29 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.14</PackageVersion>
+    <PackageVersion>1.0.5</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- ✅ WinUI 3 library nastavenia -->
+    <!-- KRITICKÉ: Disable default XAML items -->
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
+
+    <!-- Disable problematic features -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
-    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-
-    <!-- ✅ Vypnúť XBF ale zachovať XAML kompiláciu -->
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
     <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
-    <AlwaysGenerateXbf>false</AlwaysGenerateXbf>
-    <EnableDefaultPageItems>false</EnableDefaultPageItems>
 
-    <!-- ✅ Suppress warnings -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;NETSDK1206;MSB3270;MSB3271;MSB3026;MSB3277</NoWarn>
+    <!-- Suppress všetky warnings -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;WMC1013;NETSDK1022</NoWarn>
   </PropertyGroup>
 
-  <!-- ✅ Package references -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
@@ -32,7 +30,7 @@
     <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 
-  <!-- ✅ XAML súbory ako Page pre InitializeComponent generáciu -->
+  <!-- Explicitne definované XAML súbory - len tie ktoré skutočne existujú -->
   <ItemGroup>
     <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -44,26 +42,23 @@
     </Page>
   </ItemGroup>
 
-  <!-- ✅ Code-behind súbory -->
+  <!-- Code-behind súbory -->
   <ItemGroup>
     <Compile Update="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
       <DependentUpon>AdvancedDataGridControl.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
 
-  <!-- ✅ NuGet packaging -->
-  <ItemGroup>
-    <!-- Main DLL -->
-    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="lib\$(TargetFramework)\" Condition="Exists('$(OutputPath)$(AssemblyName).dll')" />
-    <None Include="$(OutputPath)$(AssemblyName).pdb" Pack="true" PackagePath="lib\$(TargetFramework)\" Condition="Exists('$(OutputPath)$(AssemblyName).pdb')" />
-
-    <!-- XAML súbory ako content files pre consuming projekt -->
-    <None Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml" Pack="true" PackagePath="contentFiles\any\$(TargetFramework)\AdvancedWinUiDataGrid\Views\" />
-    <None Include="AdvancedWinUiDataGrid\Themes\Generic.xaml" Pack="true" PackagePath="contentFiles\any\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\" />
-
-    <!-- Build targets -->
-    <None Include="build\**\*" Pack="true" PackagePath="build\" />
-    <None Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\" />
-  </ItemGroup>
-
+  <!-- Package metadata -->
+  <PropertyGroup>
+    <Title>RpaWinUiComponents - Advanced DataGrid</Title>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture.</Description>
+    <Authors>RPA Solutions</Authors>
+    <Company>RPA Solutions</Company>
+    <Product>RpaWinUiComponents</Product>
+    <Copyright>Copyright © RPA Solutions 2024</Copyright>
+    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+  </PropertyGroup>
 </Project>

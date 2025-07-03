@@ -1,34 +1,34 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
 
-    <!-- ✅ Unpackaged deployment settings -->
+    <!-- Unpackaged deployment settings -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>true</SelfContained>
 
-    <!-- ✅ KRITICKÉ: Kompatibilné s library settings -->
+    <!-- Disable problematic features -->
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
     <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
     <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
-    <AlwaysGenerateXbf>false</AlwaysGenerateXbf>
+
+    <!-- Suppress všetky warnings -->
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;WMC1013</NoWarn>
+
+    <!-- Default XAML handling -->
+    <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- ✅ POUŽIŤ NuGet package namiesto ProjectReference -->
-    <!--<ProjectReference Include="..\RpaWinUiComponents\RpaWinUiComponents.csproj" />-->
-
+    <PackageReference Include="RpaWinUiComponents" Version="1.0.4" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
-    <PackageReference Include="RpaWinUiComponents" Version="1.0.14" />
   </ItemGroup>
-
 </Project>

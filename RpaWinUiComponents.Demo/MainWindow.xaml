@@ -81,10 +81,9 @@
                                HorizontalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- DataGrid Placeholder -->
-                <Border x:Name="DataGridPlaceholder" 
-                        Background="Transparent"
-                        Visibility="Collapsed"/>
+                <!-- DataGrid Control -->
+                <controls:AdvancedWinUiDataGridControl x:Name="DataGridControl"
+                                                       Visibility="Collapsed"/>
             </Grid>
         </Border>
 
