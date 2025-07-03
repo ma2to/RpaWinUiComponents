@@ -14,6 +14,9 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 
+/*using System.IO;
+using System.Reflection;
+using Microsoft.UI.Xaml.Markup;*/
 // Alias pre riešenie konfliktu ColumnDefinition
 //using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
@@ -33,7 +36,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         public AdvancedDataGridControl()
         {
-            this.InitializeComponent();
+            // ✅ RIEŠENIE: Načítať XAML z Embedded Resource
+            //LoadXamlFromEmbeddedResource();
+
+            // Ostatný kód zostáva rovnaký...
+            this.InitializeComponent(); // Tento riadok už nie je potrebný
 
             var loggerProvider = GetLoggerProvider();
             _logger = loggerProvider.CreateLogger<AdvancedDataGridControl>();
@@ -43,6 +50,62 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             _logger.LogDebug("AdvancedDataGridControl created");
         }
+
+        /*private void LoadXamlFromEmbeddedResource()
+        {
+            try
+            {
+                // Načítaj XAML zo embedded resource
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceName = "AdvancedWinUiDataGrid.Views.AdvancedDataGridControl.xaml";
+
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream != null)
+                {
+                    using var reader = new StreamReader(stream);
+                    var xamlContent = reader.ReadToEnd();
+
+                    // Parse XAML content
+                    var xamlObject = XamlReader.Load(xamlContent);
+                    if (xamlObject is UserControl control)
+                    {
+                        // Copy content from parsed control
+                        this.Content = control.Content;
+
+                        // Copy important properties
+                        if (control.Resources.Count > 0)
+                        {
+                            foreach (var resource in control.Resources)
+                            {
+                                this.Resources.Add(resource.Key, resource.Value);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Fallback: Create simple content
+                    var textBlock = new TextBlock
+                    {
+                        Text = "RpaWinUiComponents loaded (Embedded Resources mode)",
+                        HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center,
+                        VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center
+                    };
+                    this.Content = textBlock;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Error fallback
+                var errorBlock = new TextBlock
+                {
+                    Text = $"Error loading XAML: {ex.Message}",
+                    HorizontalAlignment = Microsoft.UI.Xaml.HorizontalAlignment.Center,
+                    VerticalAlignment = Microsoft.UI.Xaml.VerticalAlignment.Center
+                };
+                this.Content = errorBlock;
+            }
+        }*/
 
         #region Properties and Events
 
