@@ -1,4 +1,4 @@
-﻿// GlobalUsings.cs - KOMPLETNÁ OPRAVA pre CS1537 chyby - FINÁLNA VERZIA
+﻿// GlobalUsings.cs - FINÁLNA OPRAVA CS0104 konfliktov
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
@@ -6,7 +6,7 @@ global using System.Threading.Tasks;
 global using System.ComponentModel;
 global using System.Runtime.CompilerServices;
 
-// WinUI 3 basic namespaces
+// WinUI 3 basic namespaces s aliasmi pre zamedzenie konfliktov
 global using Microsoft.UI.Xaml;
 global using Microsoft.UI.Xaml.Controls;
 global using Microsoft.UI.Xaml.Data;
@@ -17,8 +17,7 @@ global using Microsoft.UI.Xaml.Input;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 
-// KRITICKÁ OPRAVA: Explicit aliasy pre predchádzanie konfliktov
-// Tieto aliasy riešia CS1537 chyby s ColumnDefinition navždy
+// KRITICKÁ OPRAVA: Explicitné aliasy pre WinUI komponenty
 global using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;
 global using WinUIRowDefinition = Microsoft.UI.Xaml.Controls.RowDefinition;
 global using WinUIColumnDefinition = Microsoft.UI.Xaml.Controls.ColumnDefinition;
@@ -32,11 +31,8 @@ global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
 global using WinUIItemsRepeater = Microsoft.UI.Xaml.Controls.ItemsRepeater;
 global using WinUIProgressBar = Microsoft.UI.Xaml.Controls.ProgressBar;
 
-// HLAVNÝ ALIAS - tento rieši všetky CS1537 chyby v celom projekte
-// Všade kde sa používa "ColumnDefinition" sa bude používať náš model
+// HLAVNÉ ALIASY pre naše modely - používať VŽDY tieto
 global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-
-// DOPLNKOVÉ ALIASY pre konzistenciu
 global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
 global using DataGridValidationResult = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationResult;

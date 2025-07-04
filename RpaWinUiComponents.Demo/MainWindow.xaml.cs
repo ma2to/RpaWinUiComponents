@@ -1,15 +1,19 @@
-﻿// MainWindow.xaml.cs - OPRAVA PRE DEMO APLIKÁCIU
+﻿// MainWindow.xaml.cs - OPRAVA CS0104 a CS1061 chýb - FINÁLNA VERZIA
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-// OPRAVA CS1537: Používame global aliasy z GlobalUsings.cs library
+// OPRAVA: Správne using direktívy pre NuGet balík s explicitnými aliasmi
+using RpaWinUiComponents.AdvancedWinUiDataGrid;
+using ColumnDef = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using ThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 
 namespace RpaWinUiComponents.Demo
 {
@@ -18,7 +22,7 @@ namespace RpaWinUiComponents.Demo
         private readonly ILogger<MainWindow> _logger;
         private readonly IServiceProvider _serviceProvider;
         private bool _isInitialized = false;
-        private RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl? _dataGridControl;
+        private AdvancedWinUiDataGridControl? _dataGridControl;
 
         public MainWindow()
         {
@@ -54,7 +58,6 @@ namespace RpaWinUiComponents.Demo
                 UpdateStatusText("Inicializuje sa komponent...");
                 await Task.Delay(500);
 
-                // OPRAVA: Použiť DataGridControl namiesto DataGridPlaceholder
                 _dataGridControl = DataGridControl;
 
                 UpdateStatusText("Nastavujú sa stĺpce...");
@@ -111,9 +114,9 @@ namespace RpaWinUiComponents.Demo
             }
         }
 
-        private List<DataGridColumnDefinition> CreateSampleColumns()
+        private List<ColumnDef> CreateSampleColumns()
         {
-            return new List<DataGridColumnDefinition>
+            return new List<ColumnDef>
             {
                 new("Meno", typeof(string)) { MinWidth = 120, MaxWidth = 200, Header = "👤 Meno" },
                 new("Priezvisko", typeof(string)) { MinWidth = 120, MaxWidth = 200, Header = "👥 Priezvisko" },
@@ -378,6 +381,7 @@ namespace RpaWinUiComponents.Demo
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
 
+            // OPRAVA CS1061: Použiť správnu extension metódu
             services.AddAdvancedWinUiDataGrid();
             return services.BuildServiceProvider();
         }

@@ -5,11 +5,11 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
 
-    <!-- Unpackaged deployment settings -->
+    <!-- OPRAVA: Zmenené na false pre správne fungovanie s NuGet balíkom -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <SelfContained>true</SelfContained>
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <SelfContained>false</SelfContained>
 
     <!-- Disable problematic features -->
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
@@ -34,13 +34,13 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
-    <PackageReference Include="RpaWinUiComponents" Version="1.0.5" />
+    <PackageReference Include="RpaWinUiComponents" Version="1.0.6" />
 
     <!-- HLAVNÁ REFERENCIA NA NUGET BALÍK -->
   </ItemGroup>
 
   <!-- Application manifest -->
-  <ItemGroup Condition="!Exists('app.manifest')">
+  <ItemGroup>
     <None Update="app.manifest" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

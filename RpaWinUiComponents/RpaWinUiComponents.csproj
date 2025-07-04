@@ -4,7 +4,7 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.5</PackageVersion>
+    <PackageVersion>1.0.6</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- KRITICKÉ: Disable default XAML items pre NuGet library -->
@@ -80,6 +80,6 @@
     <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.5: Oprava všetkých CS1061 a CS1537 chýb, oprava zacyklenia validácie buniek, optimalizácia pre NuGet distribúciu.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.6: Oprava všetkých CS1061 a CS1537 chýb, kompletná oprava zacyklenia validácie buniek, optimalizácia pre NuGet distribúciu a cross-platform support.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

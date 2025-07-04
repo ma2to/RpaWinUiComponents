@@ -1,4 +1,4 @@
-﻿//Configuration/DependencyInjectionConfig.cs
+﻿//Configuration/DependencyInjectionConfig.cs - PRIDANIE EXTENSION METÓD
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -89,7 +89,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
     }
 
     /// <summary>
-    /// Extension metódy pre IServiceCollection
+    /// Extension metódy pre IServiceCollection - KĽÚČOVÉ PRE DEMO
     /// </summary>
     public static class ServiceCollectionExtensions
     {
