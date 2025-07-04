@@ -522,6 +522,81 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
+        /// OPRAVA: Zmenené z private na public - Vymaže všetky dáta
+        /// </summary>
+        public async Task ClearAllDataAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized) return;
+
+                _logger.LogDebug("Clearing all data");
+
+                await Task.Run(() =>
+                {
+                    foreach (var row in Rows)
+                    {
+                        foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
+                        {
+                            cell.Value = null;
+                            cell.ClearValidationErrors();
+                        }
+                    }
+                });
+
+                _logger.LogInformation("All data cleared");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing all data");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ClearAllDataAsync"));
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA: Zmenené z private na public - Odstráni prázdne riadky
+        /// </summary>
+        public async Task RemoveEmptyRowsAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                _logger.LogDebug("Removing empty rows");
+
+                var result = await Task.Run(() =>
+                {
+                    var dataRows = Rows.Where(r => !r.IsEmpty).ToList();
+
+                    var minEmptyRows = Math.Min(10, _initialRowCount / 5);
+                    var emptyRowsNeeded = Math.Max(minEmptyRows, _initialRowCount - dataRows.Count);
+
+                    var newEmptyRows = new List<DataGridRow>();
+                    for (int i = 0; i < emptyRowsNeeded; i++)
+                    {
+                        newEmptyRows.Add(CreateEmptyRowWithRealTimeValidation(dataRows.Count + i));
+                    }
+
+                    return new { DataRows = dataRows, EmptyRows = newEmptyRows };
+                });
+
+                Rows.Clear();
+                Rows.AddRange(result.DataRows);
+                Rows.AddRange(result.EmptyRows);
+
+                _logger.LogInformation("Empty rows removed, {DataRowCount} data rows kept, {EmptyRowCount} empty rows added",
+                    result.DataRows.Count, result.EmptyRows.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing empty rows");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
+            }
+        }
+
+        /// <summary>
         /// Reset ViewModelu do pôvodného stavu
         /// </summary>
         public void Reset()
@@ -557,11 +632,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #region Private Methods
 
+        /// <summary>
+        /// OPRAVA: Commands teraz volajú public metódy
+        /// </summary>
         private void InitializeCommands()
         {
             ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync);
-            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataInternalAsync);
-            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsInternalAsync);
+            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync); // Opravené na public metódu
+            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync); // Opravené na public metódu
             CopyCommand = new AsyncRelayCommand(CopySelectedCellsInternalAsync);
             PasteCommand = new AsyncRelayCommand(PasteFromClipboardInternalAsync);
             DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRowInternal);
@@ -612,7 +690,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     IsReadOnly = column.IsReadOnly
                 };
 
-                //Subscribe to real - time validation
+                // Subscribe to real-time validation
                 cell.PropertyChanged += async (s, e) =>
                 {
                     if (e.PropertyName == nameof(DataGridCell.Value))
@@ -620,7 +698,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                         await OnCellValueChangedRealTime(row, cell);
                     }
                 };
-
 
                 row.AddCell(column.Name, cell);
             }
@@ -852,75 +929,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             {
                 _logger.LogError(ex, "Error toggling keyboard shortcuts visibility");
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "ToggleKeyboardShortcuts"));
-            }
-        }
-
-        private async Task ClearAllDataInternalAsync()
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (!IsInitialized) return;
-
-                _logger.LogDebug("Clearing all data");
-
-                await Task.Run(() =>
-                {
-                    foreach (var row in Rows)
-                    {
-                        foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
-                        {
-                            cell.Value = null;
-                            cell.ClearValidationErrors();
-                        }
-                    }
-                });
-
-                _logger.LogInformation("All data cleared");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error clearing all data");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ClearAllDataInternalAsync"));
-            }
-        }
-
-        private async Task RemoveEmptyRowsInternalAsync()
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                _logger.LogDebug("Removing empty rows");
-
-                var result = await Task.Run(() =>
-                {
-                    var dataRows = Rows.Where(r => !r.IsEmpty).ToList();
-
-                    var minEmptyRows = Math.Min(10, _initialRowCount / 5);
-                    var emptyRowsNeeded = Math.Max(minEmptyRows, _initialRowCount - dataRows.Count);
-
-                    var newEmptyRows = new List<DataGridRow>();
-                    for (int i = 0; i < emptyRowsNeeded; i++)
-                    {
-                        newEmptyRows.Add(CreateEmptyRowWithRealTimeValidation(dataRows.Count + i));
-                    }
-
-                    return new { DataRows = dataRows, EmptyRows = newEmptyRows };
-                });
-
-                Rows.Clear();
-                Rows.AddRange(result.DataRows);
-                Rows.AddRange(result.EmptyRows);
-
-                _logger.LogInformation("Empty rows removed, {DataRowCount} data rows kept, {EmptyRowCount} empty rows added",
-                    result.DataRows.Count, result.EmptyRows.Count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing empty rows");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsInternalAsync"));
             }
         }
 
