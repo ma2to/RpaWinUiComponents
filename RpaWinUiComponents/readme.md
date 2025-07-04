@@ -557,39 +557,3 @@ DataGridControl.ErrorOccurred += (sender, e) =>
 ## 📄 Licencia
 
 Tento projekt je licencovaný pod MIT licenciou - pozrite si [LICENSE](LICENSE) súbor pre detaily.
-
-## 🤝 Prispievanie
-
-Prispievanie je vítané! Prosím:
-
-1. Fork repository
-2. Vytvorte feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit zmeny (`git commit -m 'Add some AmazingFeature'`)
-4. Push do branch (`git push origin feature/AmazingFeature`)
-5. Otvorte Pull Request
-
-### Development setup
-
-```bash
-git clone https://github.com/your-repo/RpaWinUiComponents
-cd RpaWinUiComponents
-dotnet restore
-dotnet build
-```
-
-## 📞 Podpora
-
-- 📧 Email: support@rpasolutions.sk
-- 🐛 Issues: [GitHub Issues](https://github.com/your-repo/RpaWinUiComponents/issues)
-- 📖 Wiki: [GitHub Wiki](https://github.com/your-repo/RpaWinUiComponents/wiki)
-
-## 🙏 Poďakovanie
-
-Špeciálne poďakovanie pre:
-- Microsoft WinUI 3 tím
-- .NET komunitu
-- Všetkých prispievateľov
-
----
-
-**Vyrobené s ❤️ pre WinUI 3 komunitu**
