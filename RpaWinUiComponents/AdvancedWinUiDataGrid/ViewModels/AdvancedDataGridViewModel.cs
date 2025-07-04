@@ -1,4 +1,4 @@
-﻿//ViewModels/AdvancedDataGridViewModel.cs - OPRAVA CS0104 s explicitnými typmi
+﻿//ViewModels/AdvancedDataGridViewModel.cs - FINÁLNA OPRAVA ZACYKLENIA VALIDÁCIE
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,7 +24,7 @@ using ThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.Throttl
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// ViewModel pre AdvancedWinUiDataGrid komponent - OPRAVA CS0104 - FINÁLNA VERZIA
+    /// ViewModel pre AdvancedWinUiDataGrid komponent - FINÁLNA OPRAVA ZACYKLENIA
     /// </summary>
     public class AdvancedDataGridViewModel : INotifyPropertyChanged, IDisposable
     {
@@ -48,11 +48,20 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private int _initialRowCount = 100;
         private bool _disposed = false;
 
-        // KĽÚČOVÁ OPRAVA ZACYKLENIA: Kontrola event subscriptions
+        // KĽÚČOVÁ OPRAVA ZACYKLENIA: Vylepšené sledovanie eventov a validácií
         private readonly HashSet<string> _subscribedCells = new(); // Sleduje ktoré bunky už majú event handler
         private readonly Dictionary<string, CancellationTokenSource> _pendingValidations = new();
         private readonly HashSet<string> _validatingCells = new(); // Ochrana pred súčasným validovaním
+        private readonly object _validationLock = new object(); // Thread-safe prístup
         private SemaphoreSlim? _validationSemaphore;
+
+        // NOVÁ OCHRANA: Sledovanie PropertyChanged eventov
+        private readonly HashSet<string> _propertyChangeInProgress = new();
+        private readonly object _propertyChangeLock = new object();
+
+        // NOVÁ OCHRANA: Throttling pre UI updates
+        private readonly Dictionary<string, DateTime> _lastUIUpdate = new();
+        private readonly TimeSpan _uiUpdateThrottle = TimeSpan.FromMilliseconds(50);
 
         public AdvancedDataGridViewModel(
             IDataService dataService,
@@ -276,8 +285,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 ValidationStatus = "Načítavajú sa dáta...";
                 ValidationProgress = 0;
 
-                Rows.Clear();
-                _subscribedCells.Clear(); // KĽÚČOVÉ: Vyčistiť sledovanie eventov
+                // KĽÚČOVÁ OPRAVA: Vyčistiť všetko pred načítaním nových dát
+                await ClearAllTrackingDataSafely();
 
                 var newRows = new List<DataGridRow>();
                 var rowIndex = 0;
@@ -590,8 +599,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     return new { DataRows = dataRows, EmptyRows = newEmptyRows };
                 });
 
+                // KĽÚČOVÁ OPRAVA: Vyčistiť tracking pred resetom riadkov
+                await ClearAllTrackingDataSafely();
+
                 Rows.Clear();
-                _subscribedCells.Clear(); // KĽÚČOVÉ: Vyčistiť sledovanie eventov
                 Rows.AddRange(result.DataRows);
                 Rows.AddRange(result.EmptyRows);
 
@@ -679,14 +690,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 return rowList;
             });
 
-            Rows.Clear();
-            _subscribedCells.Clear(); // KĽÚČOVÉ: Vyčistiť sledovanie eventov
+            // KĽÚČOVÁ OPRAVA: Vyčistiť tracking pred pridaním nových riadkov
+            await ClearAllTrackingDataSafely();
             Rows.AddRange(rows);
 
             _logger.LogDebug("Created {RowCount} initial empty rows", rowCount);
         }
 
-        // KĽÚČOVÁ OPRAVA: Bezpečné vytvorenie riadku s kontrolou duplicitných eventov
+        // KĽÚČOVÁ OPRAVA: Bezpečné vytvorenie riadku s pokročilou kontrolou duplicitných eventov
         private DataGridRow CreateEmptyRowWithSafeValidation(int rowIndex)
         {
             var row = new DataGridRow(rowIndex);
@@ -698,20 +709,29 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     IsReadOnly = column.IsReadOnly
                 };
 
-                // KĽÚČOVÁ OPRAVA: Kontrola či už má bunka event handler
-                var cellKey = $"{rowIndex}_{column.Name}";
+                // KĽÚČOVÁ OPRAVA: Pokročilá kontrola či už má bunka event handler
+                var cellKey = GenerateCellKey(rowIndex, column.Name);
                 if (!_subscribedCells.Contains(cellKey) && !IsSpecialColumn(column.Name))
                 {
-                    _subscribedCells.Add(cellKey);
-
-                    // Subscribe to real-time validation iba raz
-                    cell.PropertyChanged += async (s, e) =>
+                    lock (_validationLock)
                     {
-                        if (e.PropertyName == nameof(DataGridCell.Value))
+                        // Double-check v lock-u
+                        if (!_subscribedCells.Contains(cellKey))
                         {
-                            await OnCellValueChangedSafely(row, cell);
+                            _subscribedCells.Add(cellKey);
+
+                            // Subscribe to real-time validation iba raz
+                            cell.PropertyChanged += async (s, e) =>
+                            {
+                                if (e.PropertyName == nameof(DataGridCell.Value) && !_disposed)
+                                {
+                                    await OnCellValueChangedSafely(row, cell);
+                                }
+                            };
+
+                            _logger.LogTrace("Subscribed to cell value changed: {CellKey}", cellKey);
                         }
-                    };
+                    }
                 }
 
                 row.AddCell(column.Name, cell);
@@ -720,17 +740,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             return row;
         }
 
-        // KĽÚČOVÁ OPRAVA: Bezpečné spracovanie zmeny hodnoty bunky
+        // KĽÚČOVÁ OPRAVA: Vylepšené bezpečné spracovanie zmeny hodnoty bunky
         private async Task OnCellValueChangedSafely(DataGridRow row, DataGridCell cell)
         {
             if (_disposed) return;
 
+            var cellKey = GenerateCellKey(row.RowIndex, cell.ColumnName);
+
             try
             {
-                var cellKey = $"{row.RowIndex}_{cell.ColumnName}";
-
                 // PREVENCIA ZACYKLENIA: Kontrola či už prebieha validácia tejto bunky
-                lock (_validatingCells)
+                lock (_validationLock)
                 {
                     if (_validatingCells.Contains(cellKey))
                     {
@@ -742,6 +762,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
                 try
                 {
+                    // NOVÁ OCHRANA: Throttling UI updates
+                    if (!ShouldUpdateUI(cellKey))
+                    {
+                        _logger.LogTrace("Throttling UI update for cell: {CellKey}", cellKey);
+                        return;
+                    }
+
                     // If throttling is disabled, validate immediately
                     if (!ThrottlingConfig.IsEnabled)
                     {
@@ -750,10 +777,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     }
 
                     // Cancel previous validation for this cell
-                    if (_pendingValidations.TryGetValue(cellKey, out var existingCts))
+                    lock (_validationLock)
                     {
-                        existingCts.Cancel();
-                        _pendingValidations.Remove(cellKey);
+                        if (_pendingValidations.TryGetValue(cellKey, out var existingCts))
+                        {
+                            existingCts.Cancel();
+                            _pendingValidations.Remove(cellKey);
+                        }
                     }
 
                     // If row is empty, clear validation immediately
@@ -766,7 +796,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
                     // Create new cancellation token for this validation
                     var cts = new CancellationTokenSource();
-                    _pendingValidations[cellKey] = cts;
+                    lock (_validationLock)
+                    {
+                        _pendingValidations[cellKey] = cts;
+                    }
 
                     try
                     {
@@ -788,14 +821,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     finally
                     {
                         // Clean up
-                        _pendingValidations.Remove(cellKey);
+                        lock (_validationLock)
+                        {
+                            _pendingValidations.Remove(cellKey);
+                        }
                         cts.Dispose();
                     }
                 }
                 finally
                 {
                     // KĽÚČOVÉ: Vždy odstrániť zo zoznamu validujúcich sa buniek
-                    lock (_validatingCells)
+                    lock (_validationLock)
                     {
                         _validatingCells.Remove(cellKey);
                     }
@@ -803,7 +839,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in safe cell validation");
+                _logger.LogError(ex, "Error in safe cell validation for {CellKey}", cellKey);
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "OnCellValueChangedSafely"));
             }
         }
@@ -1024,18 +1060,23 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 // KĽÚČOVÁ OPRAVA: Subscribe to validation len pre bunky ktoré ešte nemajú event handler
                 foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
                 {
-                    var cellKey = $"{row.RowIndex}_{cell.ColumnName}";
-                    if (!_subscribedCells.Contains(cellKey))
+                    var cellKey = GenerateCellKey(row.RowIndex, cell.ColumnName);
+                    lock (_validationLock)
                     {
-                        _subscribedCells.Add(cellKey);
-
-                        cell.PropertyChanged += async (s, e) =>
+                        if (!_subscribedCells.Contains(cellKey))
                         {
-                            if (e.PropertyName == nameof(DataGridCell.Value))
+                            _subscribedCells.Add(cellKey);
+
+                            cell.PropertyChanged += async (s, e) =>
                             {
-                                await OnCellValueChangedSafely(row, cell);
-                            }
-                        };
+                                if (e.PropertyName == nameof(DataGridCell.Value) && !_disposed)
+                                {
+                                    await OnCellValueChangedSafely(row, cell);
+                                }
+                            };
+
+                            _logger.LogTrace("Subscribed to loaded cell: {CellKey}", cellKey);
+                        }
                     }
                 }
             }
@@ -1068,6 +1109,71 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
 
             return dataTable;
+        }
+
+        // NOVÉ POMOCNÉ METÓDY PRE ZLEPŠENIE VÝKONU A OCHRANY
+
+        /// <summary>
+        /// Generuje unikátny kľúč pre bunku
+        /// </summary>
+        private static string GenerateCellKey(int rowIndex, string columnName)
+        {
+            return $"{rowIndex}_{columnName}";
+        }
+
+        /// <summary>
+        /// Kontroluje či sa má aktualizovať UI (throttling)
+        /// </summary>
+        private bool ShouldUpdateUI(string cellKey)
+        {
+            var now = DateTime.UtcNow;
+
+            if (_lastUIUpdate.TryGetValue(cellKey, out var lastUpdate))
+            {
+                if (now - lastUpdate < _uiUpdateThrottle)
+                {
+                    return false;
+                }
+            }
+
+            _lastUIUpdate[cellKey] = now;
+            return true;
+        }
+
+        /// <summary>
+        /// Bezpečne vyčistí všetky tracking dáta
+        /// </summary>
+        private async Task ClearAllTrackingDataSafely()
+        {
+            await Task.Run(() =>
+            {
+                lock (_validationLock)
+                {
+                    // Cancel all pending validations
+                    foreach (var cts in _pendingValidations.Values)
+                    {
+                        try
+                        {
+                            cts.Cancel();
+                            cts.Dispose();
+                        }
+                        catch { }
+                    }
+                    _pendingValidations.Clear();
+
+                    // Clear tracking collections
+                    _subscribedCells.Clear();
+                    _validatingCells.Clear();
+                    _lastUIUpdate.Clear();
+                }
+
+                lock (_propertyChangeLock)
+                {
+                    _propertyChangeInProgress.Clear();
+                }
+
+                _logger.LogDebug("All tracking data cleared safely");
+            });
         }
 
         private static bool IsSpecialColumn(string columnName)
@@ -1135,7 +1241,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     // Unsubscribe from all events
                     UnsubscribeFromEvents();
 
-                    // Clear collections
+                    // Clear collections and tracking data
                     ClearCollections();
 
                     // Dispose semaphore
@@ -1190,20 +1296,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         {
             try
             {
-                // Cancel all pending validations
-                foreach (var cts in _pendingValidations.Values)
-                {
-                    cts.Cancel();
-                    cts.Dispose();
-                }
-                _pendingValidations.Clear();
-
-                // KĽÚČOVÉ: Vyčistiť sledovanie eventov a validujúcich buniek
-                _subscribedCells.Clear();
-                lock (_validatingCells)
-                {
-                    _validatingCells.Clear();
-                }
+                // Clear tracking data safely
+                _ = ClearAllTrackingDataSafely();
 
                 // Clear rows and unsubscribe from cell events
                 if (Rows?.Count > 0)
@@ -1272,12 +1366,33 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         {
             if (_disposed) return false;
 
-            if (EqualityComparer<T>.Default.Equals(backingStore, value))
-                return false;
+            // NOVÁ OCHRANA: Prevencia zacyklenia PropertyChanged eventov
+            lock (_propertyChangeLock)
+            {
+                if (_propertyChangeInProgress.Contains(propertyName))
+                {
+                    _logger.LogTrace("Property change already in progress: {PropertyName}", propertyName);
+                    return false;
+                }
+                _propertyChangeInProgress.Add(propertyName);
+            }
 
-            backingStore = value;
-            OnPropertyChanged(propertyName);
-            return true;
+            try
+            {
+                if (EqualityComparer<T>.Default.Equals(backingStore, value))
+                    return false;
+
+                backingStore = value;
+                OnPropertyChanged(propertyName);
+                return true;
+            }
+            finally
+            {
+                lock (_propertyChangeLock)
+                {
+                    _propertyChangeInProgress.Remove(propertyName);
+                }
+            }
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

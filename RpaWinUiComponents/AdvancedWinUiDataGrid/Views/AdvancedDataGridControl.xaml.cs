@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA VŠETKÝCH CHÝB
+﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA VŠETKÝCH CHÝB - FINÁLNA VERZIA
 using System;
 using System.Collections.Generic;
 using System.Data;
