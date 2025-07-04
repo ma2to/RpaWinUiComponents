@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - Kompletne opravený
+﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA VŠETKÝCH CHÝB
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -13,15 +13,14 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
-// Alias pre riešenie konfliktu ColumnDefinition
-using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-using ThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+// OPRAVA CS1537: Aliasy už sú definované v GlobalUsings.cs, netreba ich tu
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// Hlavný UserControl pre AdvancedWinUiDataGrid komponent
+    /// Hlavný UserControl pre AdvancedWinUiDataGrid komponent - KOMPLETNE OPRAVENÝ
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -46,7 +45,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         #region Properties and Events
 
         /// <summary>
-        /// OPRAVA: Pridanie public property ViewModel
+        /// OPRAVA: Pridanie public property ViewModel - POTREBNÉ PRE XAML
         /// </summary>
         public AdvancedDataGridViewModel? ViewModel
         {
@@ -300,16 +299,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region OPRAVA: Event Handlers pre XAML
+        #region OPRAVA: VŠETKY Event Handlers pre XAML - MUST HAVE
 
         /// <summary>
-        /// OPRAVA: Event handler pre delete row button
+        /// OPRAVA: Event handler pre delete row button - POTREBNÝ PRE XAML
         /// </summary>
         public void OnDeleteRowClick(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (sender is Button button && button.CommandParameter is RpaWinUiComponents.AdvancedWinUiDataGrid.Models.DataGridRow row)
+                if (sender is Button button && button.CommandParameter is DataGridRow row)
                 {
                     _viewModel?.DeleteRowCommand?.Execute(row);
                     _logger.LogDebug("Delete row button clicked for row: {RowIndex}", row.RowIndex);
@@ -323,13 +322,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// OPRAVA: Event handler pre cell editing lost focus
+        /// OPRAVA: Event handler pre cell editing lost focus - POTREBNÝ PRE XAML
         /// </summary>
         public void OnCellEditingLostFocus(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (sender is TextBox textBox && textBox.DataContext is RpaWinUiComponents.AdvancedWinUiDataGrid.Models.DataGridCell cell)
+                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
                 {
                     cell.IsEditing = false;
                     _logger.LogTrace("Cell editing ended for: {ColumnName}", cell.ColumnName);
@@ -342,13 +341,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// OPRAVA: Event handler pre cell editing key down
+        /// OPRAVA: Event handler pre cell editing key down - POTREBNÝ PRE XAML
         /// </summary>
         public void OnCellEditingKeyDown(object sender, KeyRoutedEventArgs e)
         {
             try
             {
-                if (sender is TextBox textBox && textBox.DataContext is RpaWinUiComponents.AdvancedWinUiDataGrid.Models.DataGridCell cell)
+                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
                 {
                     switch (e.Key)
                     {
@@ -383,7 +382,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// OPRAVA: Event handler pre toggle keyboard shortcuts
+        /// OPRAVA: Event handler pre toggle keyboard shortcuts - POTREBNÝ PRE XAML
         /// </summary>
         public void OnToggleKeyboardShortcuts_Click(object sender, RoutedEventArgs e)
         {

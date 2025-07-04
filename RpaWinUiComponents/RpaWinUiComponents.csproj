@@ -4,14 +4,14 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.4</PackageVersion>
+    <PackageVersion>1.0.5</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- KRITICKÉ: Disable default XAML items -->
+    <!-- KRITICKÉ: Disable default XAML items pre NuGet library -->
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
 
-    <!-- Disable problematic features -->
+    <!-- Disable problematic features pre NuGet -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
@@ -19,9 +19,15 @@
     <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
 
     <!-- Suppress všetky warnings -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;WMC1013;NETSDK1022</NoWarn>
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;WMC1013;NETSDK1022</NoWarn>
+
+    <!-- NuGet library specific settings -->
+    <IncludeBuildOutput>true</IncludeBuildOutput>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <!-- Závislosti -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
@@ -30,7 +36,7 @@
     <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 
-  <!-- Explicitne definované XAML súbory - len tie ktoré skutočne existujú -->
+  <!-- EXPLICITNE definované XAML súbory - len tie ktoré skutočne existujú -->
   <ItemGroup>
     <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -49,16 +55,31 @@
     </Compile>
   </ItemGroup>
 
+  <!-- NuGet build súbory pre targets -->
+  <ItemGroup>
+    <None Include="build\RpaWinUiComponents.targets" Pack="true" PackagePath="build\RpaWinUiComponents.targets" />
+    <None Include="buildTransitive\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\RpaWinUiComponents.targets" />
+  </ItemGroup>
+
+  <!-- Readme pre NuGet -->
+  <ItemGroup Condition="Exists('readme.md')">
+    <None Include="readme.md" Pack="true" PackagePath="readme.md" />
+  </ItemGroup>
+
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8.</Description>
     <Authors>RPA Solutions</Authors>
     <Company>RPA Solutions</Company>
     <Product>RpaWinUiComponents</Product>
     <Copyright>Copyright © RPA Solutions 2024</Copyright>
-    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA</PackageTags>
+    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>v1.0.5: Oprava všetkých CS1061 a CS1537 chýb, oprava zacyklenia validácie buniek, optimalizácia pre NuGet distribúciu.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

@@ -1,4 +1,4 @@
-﻿// AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - KOMPLETNÝ OPRAVENÝ
+﻿//AdvancedWinUiDataGridControl.cs - HLAVNÝ WRAPPER PRE NUGET - KOMPLETNÁ OPRAVA
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using ThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
-using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+
+// OPRAVA CS1537: Aliasy už sú definované v GlobalUsings.cs, netreba ich tu
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {

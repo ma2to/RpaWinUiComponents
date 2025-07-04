@@ -1,4 +1,4 @@
-﻿// GlobalUsings.cs - KOMPLETNÁ OPRAVA pre CS1537 chyby
+﻿// GlobalUsings.cs - KOMPLETNÁ OPRAVA pre CS1537 chyby - FINÁLNA VERZIA
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
@@ -18,7 +18,7 @@ global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 
 // KRITICKÁ OPRAVA: Explicit aliasy pre predchádzanie konfliktov
-// Tieto aliasy riešia CS1537 chyby s ColumnDefinition
+// Tieto aliasy riešia CS1537 chyby s ColumnDefinition navždy
 global using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;
 global using WinUIRowDefinition = Microsoft.UI.Xaml.Controls.RowDefinition;
 global using WinUIColumnDefinition = Microsoft.UI.Xaml.Controls.ColumnDefinition;
@@ -28,6 +28,15 @@ global using WinUIScrollViewer = Microsoft.UI.Xaml.Controls.ScrollViewer;
 global using WinUITextBlock = Microsoft.UI.Xaml.Controls.TextBlock;
 global using WinUIButton = Microsoft.UI.Xaml.Controls.Button;
 global using WinUITextBox = Microsoft.UI.Xaml.Controls.TextBox;
+global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
+global using WinUIItemsRepeater = Microsoft.UI.Xaml.Controls.ItemsRepeater;
+global using WinUIProgressBar = Microsoft.UI.Xaml.Controls.ProgressBar;
 
 // HLAVNÝ ALIAS - tento rieši všetky CS1537 chyby v celom projekte
+// Všade kde sa používa "ColumnDefinition" sa bude používať náš model
 global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+
+// DOPLNKOVÉ ALIASY pre konzistenciu
+global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+global using DataGridValidationResult = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationResult;

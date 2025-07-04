@@ -1,4 +1,4 @@
-﻿//ViewModels/AdvancedDataGridViewModel.cs - KOMPLETNÝ OPRAVENÝ
+﻿//ViewModels/AdvancedDataGridViewModel.cs - OPRAVA ZACYKLENIA VALIDÁCIE
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,10 +16,12 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 
+// OPRAVA CS1537: Aliasy už sú definované v GlobalUsings.cs
+
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// ViewModel pre AdvancedWinUiDataGrid komponent - KOMPLETNÁ OPRAVENÁ VERZIA
+    /// ViewModel pre AdvancedWinUiDataGrid komponent - OPRAVA ZACYKLENIA
     /// </summary>
     public class AdvancedDataGridViewModel : INotifyPropertyChanged, IDisposable
     {
@@ -43,8 +45,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private int _initialRowCount = 100;
         private bool _disposed = false;
 
-        // Throttling support
+        // OPRAVA ZACYKLENIA: Throttling support s ochranou pred rekurziou
         private readonly Dictionary<string, CancellationTokenSource> _pendingValidations = new();
+        private readonly HashSet<string> _validatingCells = new(); // NOVINKA: ochrana pred rekurziou
         private SemaphoreSlim? _validationSemaphore;
 
         public AdvancedDataGridViewModel(
@@ -522,7 +525,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
-        /// OPRAVA: Zmenené z private na public - Vymaže všetky dáta
+        /// Vymaže všetky dáta
         /// </summary>
         public async Task ClearAllDataAsync()
         {
@@ -556,7 +559,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
-        /// OPRAVA: Zmenené z private na public - Odstráni prázdne riadky
+        /// Odstráni prázdne riadky
         /// </summary>
         public async Task RemoveEmptyRowsAsync()
         {
@@ -632,14 +635,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #region Private Methods
 
-        /// <summary>
-        /// OPRAVA: Commands teraz volajú public metódy
-        /// </summary>
         private void InitializeCommands()
         {
             ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync);
-            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync); // Opravené na public metódu
-            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync); // Opravené na public metódu
+            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync);
+            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync);
             CopyCommand = new AsyncRelayCommand(CopySelectedCellsInternalAsync);
             PasteCommand = new AsyncRelayCommand(PasteFromClipboardInternalAsync);
             DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRowInternal);
@@ -690,7 +690,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     IsReadOnly = column.IsReadOnly
                 };
 
-                // Subscribe to real-time validation
+                // OPRAVA ZACYKLENIA: Subscribe to real-time validation s ochranou
                 cell.PropertyChanged += async (s, e) =>
                 {
                     if (e.PropertyName == nameof(DataGridCell.Value))
@@ -705,63 +705,86 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             return row;
         }
 
+        // OPRAVA ZACYKLENIA: Kompletne prepísaná metóda s ochranou pred rekurziou
         private async Task OnCellValueChangedRealTime(DataGridRow row, DataGridCell cell)
         {
             if (_disposed) return;
 
             try
             {
-                // If throttling is disabled, validate immediately
-                if (!ThrottlingConfig.IsEnabled)
+                // KĽÚČOVÁ OPRAVA: Jedinečný kľúč pre bunku
+                var cellKey = $"{row.RowIndex}_{cell.ColumnName}";
+
+                // PREVENCIA ZACYKLENIA: Kontrola či už prebieha validácia tejto bunky
+                lock (_validatingCells)
                 {
-                    await ValidateCellImmediately(row, cell);
-                    return;
+                    if (_validatingCells.Contains(cellKey))
+                    {
+                        _logger.LogTrace("Skipping validation - already in progress for cell: {CellKey}", cellKey);
+                        return; // Už prebieha validácia tejto bunky
+                    }
+                    _validatingCells.Add(cellKey);
                 }
-
-                // Create unique key for this cell
-                var cellKey = $"{Rows.IndexOf(row)}_{cell.ColumnName}";
-
-                // Cancel previous validation for this cell
-                if (_pendingValidations.TryGetValue(cellKey, out var existingCts))
-                {
-                    existingCts.Cancel();
-                    _pendingValidations.Remove(cellKey);
-                }
-
-                // If row is empty, clear validation immediately
-                if (row.IsEmpty)
-                {
-                    cell.ClearValidationErrors();
-                    row.UpdateValidationStatus();
-                    return;
-                }
-
-                // Create new cancellation token for this validation
-                var cts = new CancellationTokenSource();
-                _pendingValidations[cellKey] = cts;
 
                 try
                 {
-                    // Apply throttling delay
-                    await Task.Delay(ThrottlingConfig.TypingDelayMs, cts.Token);
-
-                    // Check if still valid (not cancelled and not disposed)
-                    if (cts.Token.IsCancellationRequested || _disposed)
+                    // If throttling is disabled, validate immediately
+                    if (!ThrottlingConfig.IsEnabled)
+                    {
+                        await ValidateCellImmediately(row, cell);
                         return;
+                    }
 
-                    // Perform throttled validation
-                    await ValidateCellThrottled(row, cell, cellKey, cts.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Validation was cancelled - this is normal
-                    _logger.LogTrace("Validation cancelled for cell: {CellKey}", cellKey);
+                    // Cancel previous validation for this cell
+                    if (_pendingValidations.TryGetValue(cellKey, out var existingCts))
+                    {
+                        existingCts.Cancel();
+                        _pendingValidations.Remove(cellKey);
+                    }
+
+                    // If row is empty, clear validation immediately
+                    if (row.IsEmpty)
+                    {
+                        cell.ClearValidationErrors();
+                        row.UpdateValidationStatus();
+                        return;
+                    }
+
+                    // Create new cancellation token for this validation
+                    var cts = new CancellationTokenSource();
+                    _pendingValidations[cellKey] = cts;
+
+                    try
+                    {
+                        // Apply throttling delay
+                        await Task.Delay(ThrottlingConfig.TypingDelayMs, cts.Token);
+
+                        // Check if still valid (not cancelled and not disposed)
+                        if (cts.Token.IsCancellationRequested || _disposed)
+                            return;
+
+                        // Perform throttled validation
+                        await ValidateCellThrottled(row, cell, cellKey, cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Validation was cancelled - this is normal
+                        _logger.LogTrace("Validation cancelled for cell: {CellKey}", cellKey);
+                    }
+                    finally
+                    {
+                        // Clean up
+                        _pendingValidations.Remove(cellKey);
+                        cts.Dispose();
+                    }
                 }
                 finally
                 {
-                    // Clean up
-                    _pendingValidations.Remove(cellKey);
-                    cts.Dispose();
+                    // KĽÚČOVÉ: Vždy odstrániť zo zoznamu validujúcich sa buniek
+                    lock (_validatingCells)
+                    {
+                        _validatingCells.Remove(cellKey);
+                    }
                 }
             }
             catch (Exception ex)
@@ -984,6 +1007,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     row.UpdateValidationStatus();
                 }
 
+                // OPRAVA: Subscribe to validation iba raz, po načítaní
                 foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
                 {
                     cell.PropertyChanged += async (s, e) =>
@@ -1153,6 +1177,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     cts.Dispose();
                 }
                 _pendingValidations.Clear();
+
+                // OPRAVA: Vyčistiť zoznam validujúcich sa buniek
+                lock (_validatingCells)
+                {
+                    _validatingCells.Clear();
+                }
 
                 // Clear rows and unsubscribe from cell events
                 if (Rows?.Count > 0)

@@ -1,38 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- build/RpaWinUiComponents.targets - Jednoduchý bez kopírovania -->
+<!-- build/RpaWinUiComponents.targets - OPRAVA PRE VŠETKY PLATFORMY -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.4</RpaWinUiComponentsVersion>
-    <UseWinUI Condition="'$(UseWinUI)' == ''">true</UseWinUI>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.5</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
-  <!-- ✅ Ensure WinUI 3 dependencies -->
-  <ItemGroup Condition="'$(UseWinUI)' == 'true'">
+  <!-- ✅ Detect target framework and set paths accordingly -->
+  <PropertyGroup>
+    <_RpaWinUiTargetFramework Condition="'$(TargetFramework)' != ''">$(TargetFramework)</_RpaWinUiTargetFramework>
+    <_RpaWinUiTargetFramework Condition="'$(_RpaWinUiTargetFramework)' == '' AND '$(TargetFrameworkMoniker)' != ''">$(TargetFrameworkMoniker.Substring($(TargetFrameworkMoniker.LastIndexOf('='))').Replace('=',''))</_RpaWinUiTargetFramework>
+    <_RpaWinUiTargetFramework Condition="'$(_RpaWinUiTargetFramework)' == ''">net8.0-windows10.0.19041.0</_RpaWinUiTargetFramework>
+  </PropertyGroup>
+
+  <!-- ✅ Set library path -->
+  <PropertyGroup>
+    <_RpaWinUiComponentsLibPath>$(MSBuildThisFileDirectory)../lib/$(_RpaWinUiTargetFramework)/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath>
+    <!-- Fallback to any available framework if exact match not found -->
+    <_RpaWinUiComponentsLibPathFallback>$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPathFallback>
+  </PropertyGroup>
+
+  <!-- ✅ Ensure WinUI 3 dependencies for consuming projects -->
+  <ItemGroup Condition="'$(UseWinUI)' == 'true' OR '$(TargetFramework)' == 'net8.0-windows10.0.19041.0'">
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.WindowsAppSDK'))' == ''" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.DependencyInjection'))' == ''" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.Hosting'))' == ''" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.Logging.Abstractions'))' == ''" />
   </ItemGroup>
+
+  <!-- ✅ Force UseWinUI if not set and we're targeting Windows -->
+  <PropertyGroup Condition="'$(UseWinUI)' == '' AND ('$(TargetFramework)' == 'net8.0-windows10.0.19041.0' OR $(TargetFramework.Contains('windows')))">
+    <UseWinUI>true</UseWinUI>
+  </PropertyGroup>
 
   <!-- ✅ Add main assembly reference -->
   <Target Name="AddRpaWinUiComponentsReference" BeforeTargets="ResolveAssemblyReferences">
     <PropertyGroup>
-      <_RpaWinUiComponentsPath>$(MSBuildThisFileDirectory)../lib/$(TargetFramework)/RpaWinUiComponents.dll</_RpaWinUiComponentsPath>
+      <_LibraryPath Condition="Exists('$(_RpaWinUiComponentsLibPath)')">$(_RpaWinUiComponentsLibPath)</_LibraryPath>
+      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPathFallback)')">$(_RpaWinUiComponentsLibPathFallback)</_LibraryPath>
     </PropertyGroup>
 
-    <ItemGroup Condition="Exists('$(_RpaWinUiComponentsPath)')">
-      <Reference Include="$(_RpaWinUiComponentsPath)">
+    <ItemGroup Condition="'$(_LibraryPath)' != ''">
+      <Reference Include="$(_LibraryPath)">
         <Private>false</Private>
+        <Specific>false</Specific>
+        <HintPath>$(_LibraryPath)</HintPath>
       </Reference>
     </ItemGroup>
 
-    <Message Text="✅ RpaWinUiComponents: Added reference to $(_RpaWinUiComponentsPath)" Importance="normal" Condition="Exists('$(_RpaWinUiComponentsPath)')" />
-    <Warning Text="❌ RpaWinUiComponents: Main DLL not found at $(_RpaWinUiComponentsPath)" Condition="!Exists('$(_RpaWinUiComponentsPath)')" />
+    <Message Text="✅ RpaWinUiComponents: Added reference to $(_LibraryPath)" Importance="normal" Condition="'$(_LibraryPath)' != ''" />
+    <Warning Text="❌ RpaWinUiComponents: Library not found. Searched in: $(_RpaWinUiComponentsLibPath) and $(_RpaWinUiComponentsLibPathFallback)" Condition="'$(_LibraryPath)' == ''" />
   </Target>
 
   <!-- ✅ Info message -->
   <Target Name="RpaWinUiComponentsInfo" BeforeTargets="Build">
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) loaded for $(TargetFramework)" Importance="normal" />
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) loaded for $(_RpaWinUiTargetFramework)" Importance="normal" />
+    <Message Text="🔧 UseWinUI: $(UseWinUI), TargetFramework: $(TargetFramework)" Importance="low" />
   </Target>
+
+  <!-- ✅ Ensure proper configuration for WinUI projects -->
+  <Target Name="ConfigureWinUIProperties" BeforeTargets="PrepareForBuild" Condition="'$(UseWinUI)' == 'true'">
+    <PropertyGroup>
+      <!-- Set default values if not already set -->
+      <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
+      <WindowsAppSDKSelfContained Condition="'$(WindowsAppSDKSelfContained)' == ''">false</WindowsAppSDKSelfContained>
+      <EnableMsixTooling Condition="'$(EnableMsixTooling)' == ''">false</EnableMsixTooling>
+    </PropertyGroup>
+  </Target>
+
+  <!-- ✅ Suppress common warnings in consuming projects -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS1537;WMC1013</NoWarn>
+  </PropertyGroup>
 
 </Project>

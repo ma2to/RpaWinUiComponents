@@ -16,19 +16,69 @@
     <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
     <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
 
-    <!-- Suppress všetky warnings -->
-    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;WMC1013</NoWarn>
+    <!-- Suppress warnings -->
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013</NoWarn>
 
     <!-- Default XAML handling -->
     <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
+
+    <!-- Application properties -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <UseWindowsTargetingPack>true</UseWindowsTargetingPack>
   </PropertyGroup>
 
+  <!-- Package Dependencies -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
-    <PackageReference Include="RpaWinUiComponents" Version="1.0.4" />
+    <PackageReference Include="RpaWinUiComponents" Version="1.0.5" />
+
+    <!-- HLAVNÁ REFERENCIA NA NUGET BALÍK -->
   </ItemGroup>
+
+  <!-- Application manifest -->
+  <ItemGroup Condition="!Exists('app.manifest')">
+    <None Update="app.manifest" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Assets -->
+  <ItemGroup>
+    <Content Include="Assets\**" />
+  </ItemGroup>
+
+  <!-- XAML súbory -->
+  <ItemGroup>
+    <Page Update="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <!-- Code-behind súbory -->
+  <ItemGroup>
+    <Compile Update="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <!-- Project metadata -->
+  <PropertyGroup>
+    <AssemblyTitle>RpaWinUiComponents Demo</AssemblyTitle>
+    <AssemblyDescription>Demo aplikácia pre testovanie RpaWinUiComponents balíka</AssemblyDescription>
+    <AssemblyConfiguration>Demo</AssemblyConfiguration>
+    <AssemblyCompany>RPA Solutions</AssemblyCompany>
+    <AssemblyProduct>RpaWinUiComponents Demo</AssemblyProduct>
+    <AssemblyCopyright>Copyright © RPA Solutions 2024</AssemblyCopyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
 </Project>
