@@ -5,18 +5,17 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
 
-
-    <!-- OPRAVA: Správne nastavenie pre demo aplikáciu -->
+    <!-- HLAVNÁ OPRAVA: Self-contained Windows App SDK -->
     <WindowsPackageType>None</WindowsPackageType>
-    <EnableMsixTooling>false</EnableMsixTooling>
-    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>false</SelfContained>
-
+    <PublishSingleFile>false</PublishSingleFile>
 
     <!-- Disable problematic features -->
-    <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
+    <EnableMsixTooling>false</EnableMsixTooling>
     <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
     <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
+    <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
 
     <!-- Suppress warnings -->
     <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013</NoWarn>
@@ -27,15 +26,24 @@
     <!-- Application properties -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <UseWindowsTargetingPack>true</UseWindowsTargetingPack>
+
+    <!-- NOVÁ OPRAVA: Runtime identifiers -->
+    <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- HLAVNÁ ZMENA: Iba NuGet balík, žiadne duplicitné súbory -->
+  <!-- OPRAVA: Aktualizované balíčky na najnovšie verzie -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
+
+    <!-- KĽÚČOVÁ OPRAVA: Najnovšia verzia Windows App SDK -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
     <PackageReference Include="RpaWinUiComponents" Version="1.0.8" />
+    
+    <!-- NuGet balík namiesto lokálnych súborov -->
   </ItemGroup>
 
   <!-- Application manifest -->

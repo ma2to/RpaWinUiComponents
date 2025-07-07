@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Views/AdvancedDataGridControl.xaml - OPRAVA CS1061 CHÝB -->
+<!-- Views/AdvancedDataGridControl.xaml - OPRAVA: Plne funkčné dynamické stĺpce -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -21,60 +21,6 @@
         <converters:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
         <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
         <converters:AlternatingRowBackgroundConverter x:Key="AlternatingRowBackgroundConverter"/>
-
-        <!-- DataTemplate for Cell Content - OPRAVA: Odstránené problematické event handlers z template -->
-        <DataTemplate x:Key="CellContentTemplate" x:DataType="models:DataGridCell">
-            <Border Background="{x:Bind HasValidationError, Converter={StaticResource ValidationErrorToBrushConverter}, Mode=OneWay}"
-                    BorderBrush="{x:Bind HasValidationError, Converter={StaticResource ValidationErrorToBorderBrushConverter}, Mode=OneWay}"
-                    BorderThickness="{x:Bind HasValidationError, Converter={StaticResource ValidationErrorToBorderThicknessConverter}, Mode=OneWay}"
-                    Padding="4,2"
-                    MinHeight="32">
-                <Grid>
-                    <TextBlock Text="{x:Bind Value, Mode=OneWay, Converter={StaticResource ObjectToStringConverter}}"
-                               VerticalAlignment="Center"
-                               TextWrapping="Wrap"
-                               IsTextSelectionEnabled="True"
-                               Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
-
-                    <!-- OPRAVA: Odstránené problematické event handlers, zostáva len basic TextBox -->
-                    <TextBox Text="{x:Bind Value, Mode=TwoWay, Converter={StaticResource ObjectToStringConverter}}"
-                             VerticalAlignment="Stretch"
-                             BorderThickness="0"
-                             Background="Transparent"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                </Grid>
-            </Border>
-        </DataTemplate>
-
-        <!-- DataTemplate for DeleteAction Column - OPRAVA: Zjednodušené -->
-        <DataTemplate x:Key="DeleteActionTemplate" x:DataType="models:DataGridRow">
-            <Button Content="🗑️"
-                    Width="32"
-                    Height="28"
-                    FontSize="12"
-                    Background="#DC3545"
-                    Foreground="White"
-                    BorderThickness="0"
-                    CornerRadius="4"
-                    CommandParameter="{x:Bind}"
-                    ToolTipService.ToolTip="Vymazať riadok">
-                <!-- OPRAVA: Click handler bude nastavený programaticky v code-behind -->
-            </Button>
-        </DataTemplate>
-
-        <!-- DataTemplate for ValidAlerts Column -->
-        <DataTemplate x:Key="ValidAlertsTemplate" x:DataType="models:DataGridRow">
-            <Border Padding="8,4" Background="#FFF3CD" BorderBrush="#FFEAA7" BorderThickness="1" CornerRadius="4"
-                    Visibility="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                <TextBlock Text="{x:Bind ValidationErrorsText, Mode=OneWay}"
-                           TextWrapping="Wrap"
-                           FontSize="11"
-                           Foreground="#856404"
-                           VerticalAlignment="Center"/>
-            </Border>
-        </DataTemplate>
 
         <!-- Progress Bar Style -->
         <Style x:Key="ValidationProgressStyle" TargetType="ProgressBar">
@@ -100,6 +46,24 @@
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
+        <!-- Cell Style -->
+        <Style x:Key="DataGridCellStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#DEE2E6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="MinHeight" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Header Style -->
+        <Style x:Key="DataGridHeaderStyle" TargetType="Border">
+            <Setter Property="Background" Value="#F8F9FA"/>
+            <Setter Property="BorderBrush" Value="#DEE2E6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="MinHeight" Value="40"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -114,7 +78,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Validation Progress Panel - OPRAVA: Správny binding cez ViewModel property -->
+        <!-- Validation Progress Panel -->
         <Border Grid.Row="0" 
                 x:Name="ValidationProgressPanel"
                 Background="#F8F9FA" 
@@ -157,7 +121,7 @@
             </Grid>
         </Border>
 
-        <!-- Main Content - ScrollViewer with Grid inside -->
+        <!-- Main Content - ScrollViewer with Dynamic Grid -->
         <ScrollViewer Grid.Row="1" 
                       x:Name="MainScrollViewer"
                       ZoomMode="Disabled"
@@ -167,7 +131,7 @@
                       VerticalScrollBarVisibility="Auto"
                       Background="#FFFFFF">
 
-            <!-- Header and Data Grid Container -->
+            <!-- OPRAVA: Kompletne prerobený DataGrid s dynamickými stĺpcami -->
             <Grid x:Name="DataGridContainer" MinWidth="800">
                 <Grid.RowDefinitions>
                     <!-- Headers -->
@@ -176,17 +140,17 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Column Headers -->
-                <Border Grid.Row="0" 
-                        Background="#F8F9FA" 
-                        BorderBrush="#DEE2E6" 
-                        BorderThickness="1,1,1,0">
-                    <Grid x:Name="HeaderGrid" Height="40">
-                        <!-- Headers will be dynamically generated via code-behind -->
-                    </Grid>
-                </Border>
+                <!-- OPRAVA: Dynamický Header Grid -->
+                <Grid x:Name="HeaderGrid" 
+                      Grid.Row="0"
+                      Background="#F8F9FA" 
+                      BorderBrush="#DEE2E6" 
+                      BorderThickness="1,1,1,0"
+                      Height="40">
+                    <!-- Headers budú generované dynamicky v code-behind -->
+                </Grid>
 
-                <!-- Data Rows Container - OPRAVA: Správny binding cez ViewModel property -->
+                <!-- OPRAVA: Dynamické Data Rows -->
                 <ItemsRepeater Grid.Row="1" 
                                x:Name="RowsRepeater"
                                ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}">
@@ -195,15 +159,10 @@
                             <Border BorderBrush="#DEE2E6" 
                                     BorderThickness="1,0,1,1"
                                     Background="{x:Bind IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}, Mode=OneWay}">
+
+                                <!-- OPRAVA: Dynamický Row Grid pre bunky -->
                                 <Grid x:Name="RowGrid" MinHeight="32">
-                                    <!-- OPRAVA: Row content will be dynamically generated via code-behind -->
-                                    <!-- Temporarily show row index for debugging -->
-                                    <TextBlock Text="{x:Bind RowIndex, Mode=OneWay}" 
-                                               HorizontalAlignment="Left" 
-                                               VerticalAlignment="Center" 
-                                               Margin="8,0" 
-                                               FontSize="12" 
-                                               Foreground="Gray"/>
+                                    <!-- Grid columns a content budú generované dynamicky -->
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -218,7 +177,6 @@
                 Padding="6"
                 BorderBrush="#DEE2E6"
                 BorderThickness="0,1,0,0">
-            <!-- OPRAVA: Click handler je teraz správne definovaný -->
             <Button x:Name="ToggleKeyboardShortcutsButton"
                     Click="OnToggleKeyboardShortcuts_Click"
                     Style="{StaticResource ToggleShortcutsButtonStyle}"
@@ -265,9 +223,6 @@
                     <LineBreak/>
                     <Run Text="📋 Clipboard:" FontWeight="SemiBold"/>
                     <Run Text="Ctrl+C = kopírovať • Ctrl+V = vložiť"/>
-                    <LineBreak/>
-                    <Run Text="🔄 Sorting:" FontWeight="SemiBold"/>
-                    <Run Text="Klik na header = sort (prázdne riadky zostávajú na konci)"/>
                 </TextBlock>
             </StackPanel>
         </Border>
