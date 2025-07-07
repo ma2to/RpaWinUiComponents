@@ -6,7 +6,7 @@ global using System.Threading.Tasks;
 global using System.ComponentModel;
 global using System.Runtime.CompilerServices;
 
-// WinUI 3 basic namespaces s aliasmi pre zamedzenie konfliktov
+// WinUI 3 basic namespaces
 global using Microsoft.UI.Xaml;
 global using Microsoft.UI.Xaml.Controls;
 global using Microsoft.UI.Xaml.Data;
@@ -31,8 +31,7 @@ global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
 global using WinUIItemsRepeater = Microsoft.UI.Xaml.Controls.ItemsRepeater;
 global using WinUIProgressBar = Microsoft.UI.Xaml.Controls.ProgressBar;
 
-// HLAVNÉ ALIASY pre naše modely - používať VŽDY tieto
+// HLAVNÉ ALIASY pre naše modely - KĽÚČOVÁ OPRAVA
 global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
-global using DataGridValidationResult = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationResult;

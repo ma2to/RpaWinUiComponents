@@ -1249,6 +1249,53 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
+        /// <summary>
+        /// Odstráni riadky ktoré spĺňajú zadanú podmienku - OPRAVA CS1061
+        /// </summary>
+        public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized) return;
+
+                _logger.LogDebug("Removing rows by condition for column: {ColumnName}", columnName);
+                await _dataService.RemoveRowsByConditionAsync(columnName, condition);
+                _logger.LogInformation("Rows removed by condition for column: {ColumnName}", columnName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing rows by condition for column: {ColumnName}", columnName);
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - OPRAVA CS1061
+        /// </summary>
+        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized) return 0;
+
+                _logger.LogDebug("Removing rows by custom validation with {RuleCount} rules", customRules?.Count ?? 0);
+                var result = await _dataService.RemoveRowsByValidationAsync(customRules ?? new List<ValidationRule>());
+                _logger.LogInformation("Removed {RowCount} rows by custom validation", result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing rows by custom validation");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
+                return 0;
+            }
+        }
+
         private void ClearCollections()
         {
             try

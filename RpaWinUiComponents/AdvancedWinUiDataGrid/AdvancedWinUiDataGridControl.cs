@@ -10,6 +10,11 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
+// LOKÁLNE ALIASY pre zamedzenie CS0104 chýb
+using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
@@ -77,16 +82,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         #region Inicializácia a Konfigurácia
 
         /// <summary>
-        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami
+        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - OPRAVA CS0104
         /// </summary>
         /// <param name="columns">Definície stĺpcov</param>
         /// <param name="validationRules">Validačné pravidlá (voliteľné)</param>
         /// <param name="throttling">Throttling konfigurácia (voliteľné)</param>
         /// <param name="initialRowCount">Počiatočný počet riadkov</param>
         public async Task InitializeAsync(
-            List<ColumnDefinition> columns,
-            List<ValidationRule>? validationRules = null,
-            ThrottlingConfig? throttling = null,
+            List<LocalColumnDefinition> columns,
+            List<LocalValidationRule>? validationRules = null,
+            LocalThrottlingConfig? throttling = null,
             int initialRowCount = 100)
         {
             try
@@ -248,7 +253,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
-        /// Odstráni riadky ktoré spĺňajú zadanú podmienku
+        /// Odstráni riadky ktoré spĺňajú zadanú podmienku - OPRAVA CS1061
         /// </summary>
         public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
         {
@@ -270,9 +275,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
-        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám
+        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - OPRAVA CS1061
         /// </summary>
-        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
+        public async Task<int> RemoveRowsByValidationAsync(List<LocalValidationRule> customRules)
         {
             try
             {
@@ -355,9 +360,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             /// <summary>
             /// Vytvorí pravidlo pre povinné pole
             /// </summary>
-            public static ValidationRule Required(string columnName, string? errorMessage = null)
+            public static LocalValidationRule Required(string columnName, string? errorMessage = null)
             {
-                return new ValidationRule(
+                return new LocalValidationRule(
                     columnName,
                     (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
                     errorMessage ?? $"{columnName} je povinné pole"
@@ -370,9 +375,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             /// <summary>
             /// Vytvorí pravidlo pre kontrolu dĺžky textu
             /// </summary>
-            public static ValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
+            public static LocalValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
             {
-                return new ValidationRule(
+                return new LocalValidationRule(
                     columnName,
                     (value, row) =>
                     {
@@ -389,9 +394,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             /// <summary>
             /// Vytvorí pravidlo pre kontrolu číselného rozsahu
             /// </summary>
-            public static ValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
+            public static LocalValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
             {
-                return new ValidationRule(
+                return new LocalValidationRule(
                     columnName,
                     (value, row) =>
                     {
@@ -415,13 +420,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             /// <summary>
             /// Vytvorí podmienené validačné pravidlo
             /// </summary>
-            public static ValidationRule Conditional(string columnName,
+            public static LocalValidationRule Conditional(string columnName,
                 Func<object?, GridDataRow, bool> validationFunction,
                 Func<GridDataRow, bool> condition,
                 string errorMessage,
                 string? ruleName = null)
             {
-                return new ValidationRule(
+                return new LocalValidationRule(
                     columnName,
                     (value, row) => validationFunction(value, new GridDataRow(row)),
                     errorMessage
@@ -435,9 +440,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             /// <summary>
             /// Vytvorí pravidlo pre validáciu číselných hodnôt
             /// </summary>
-            public static ValidationRule Numeric(string columnName, string? errorMessage = null)
+            public static LocalValidationRule Numeric(string columnName, string? errorMessage = null)
             {
-                return new ValidationRule(
+                return new LocalValidationRule(
                     columnName,
                     (value, row) =>
                     {
@@ -456,9 +461,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             /// <summary>
             /// Vytvorí pravidlo pre validáciu emailu
             /// </summary>
-            public static ValidationRule Email(string columnName, string? errorMessage = null)
+            public static LocalValidationRule Email(string columnName, string? errorMessage = null)
             {
-                return new ValidationRule(
+                return new LocalValidationRule(
                     columnName,
                     (value, row) =>
                     {

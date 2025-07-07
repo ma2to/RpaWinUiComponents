@@ -15,6 +15,11 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
+// LOKÁLNE ALIASY pre zamedzenie CS0104 chýb
+using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
@@ -43,12 +48,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         #region Properties and Events
 
         /// <summary>
-        /// OPRAVA CS1061: Public property ViewModel s public setter - POTREBNÉ PRE XAML BINDING
+        /// OPRAVA CS1061: Public property ViewModel - POTREBNÉ PRE XAML BINDING
         /// </summary>
         public AdvancedDataGridViewModel? ViewModel
         {
             get => _viewModel;
-            set // OPRAVA: Public setter pre XAML binding
+            set // Public setter pre XAML binding
             {
                 if (_viewModel != null)
                 {
@@ -195,9 +200,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami
         /// </summary>
         public async Task InitializeAsync(
-            List<DataGridColumnDefinition> columns,
-            List<ValidationRule>? validationRules = null,
-            ThrottlingConfig? throttling = null,
+            List<LocalColumnDefinition> columns,
+            List<LocalValidationRule>? validationRules = null,
+            LocalThrottlingConfig? throttling = null,
             int initialRowCount = 100)
         {
             ThrowIfDisposed();
@@ -213,7 +218,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     ViewModel = _viewModel; // Použitie property pre správne nastavenie
                 }
 
-                await _viewModel.InitializeAsync(columns, validationRules ?? new List<ValidationRule>(), throttling, initialRowCount);
+                await _viewModel.InitializeAsync(columns, validationRules ?? new List<LocalValidationRule>(), throttling, initialRowCount);
 
                 _logger.LogInformation("AdvancedDataGrid initialized successfully with {InitialRowCount} rows", initialRowCount);
             }
