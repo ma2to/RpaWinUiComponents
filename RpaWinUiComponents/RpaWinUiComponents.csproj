@@ -4,7 +4,7 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.7</PackageVersion>
+    <PackageVersion>1.0.8</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- KRITICKÉ: Disable default XAML items pre NuGet library -->
@@ -25,7 +25,7 @@
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    
+
     <!-- Multi-platform support -->
     <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
     <DefaultPlatform>AnyCPU</DefaultPlatform>
@@ -73,7 +73,7 @@
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. Opravené všetky CS0104, CS1061, CS1503 a CS1537 chyby.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.8 - Vyriešené duplicitné súbory a všetky CS1061 chyby.</Description>
     <Authors>RPA Solutions</Authors>
     <Company>RPA Solutions</Company>
     <Product>RpaWinUiComponents</Product>
@@ -84,6 +84,6 @@
     <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.7: FINÁLNA OPRAVA - Vyriešené všetky CS0104 (ambiguous reference), CS1061 (missing methods), CS1503 (type conversion) a CS1537 (using alias) chyby. Kompletne funkčný NuGet balík pripravený na produkciu.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.8: FINÁLNA OPRAVA - Vyriešené duplicitné XAML súbory v Demo projekte. Odstránené všetky CS1061 chyby. NuGet balík je teraz plne funkčný a ready na produkciu. Demo projekt používa čisto NuGet balík bez duplicitných súborov.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

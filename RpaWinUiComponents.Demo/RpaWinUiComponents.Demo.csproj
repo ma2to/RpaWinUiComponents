@@ -5,7 +5,7 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
 
-    <!-- OPRAVA: Zmenené na false pre správne fungovanie s NuGet balíkom -->
+    <!-- OPRAVA: Správne nastavenie pre demo aplikáciu -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
@@ -27,16 +27,14 @@
     <UseWindowsTargetingPack>true</UseWindowsTargetingPack>
   </PropertyGroup>
 
-  <!-- Package Dependencies -->
+  <!-- HLAVNÁ ZMENA: Iba NuGet balík, žiadne duplicitné súbory -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
-    <PackageReference Include="RpaWinUiComponents" Version="1.0.7" />
-
-    <!-- HLAVNÁ REFERENCIA NA NUGET BALÍK -->
+    <PackageReference Include="RpaWinUiComponents" Version="1.0.8" />
   </ItemGroup>
 
   <!-- Application manifest -->
@@ -49,7 +47,7 @@
     <Content Include="Assets\**" />
   </ItemGroup>
 
-  <!-- XAML súbory -->
+  <!-- IBA MainWindow a App XAML súbory -->
   <ItemGroup>
     <Page Update="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
