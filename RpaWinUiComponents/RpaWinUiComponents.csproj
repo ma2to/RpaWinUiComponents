@@ -13,6 +13,7 @@
 
     <!-- Disable problematic features pre NuGet -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+    <selfContained>true</selfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>

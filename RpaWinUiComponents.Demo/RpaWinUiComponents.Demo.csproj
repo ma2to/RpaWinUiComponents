@@ -5,11 +5,13 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
 
+
     <!-- OPRAVA: Správne nastavenie pre demo aplikáciu -->
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <SelfContained>false</SelfContained>
+
 
     <!-- Disable problematic features -->
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
@@ -33,7 +35,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
     <PackageReference Include="RpaWinUiComponents" Version="1.0.8" />
   </ItemGroup>
 
