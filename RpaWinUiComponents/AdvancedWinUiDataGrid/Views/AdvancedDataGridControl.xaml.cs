@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA VŠETKÝCH CHÝB - FINÁLNA VERZIA
+﻿//Views/AdvancedDataGridControl.xaml.cs - OPRAVA VŠETKÝCH CS1061 CHÝB - FINÁLNA VERZIA
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,8 +14,6 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
-
-// OPRAVA CS1537: Aliasy už sú definované v GlobalUsings.cs, netreba ich tu
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
@@ -45,12 +43,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         #region Properties and Events
 
         /// <summary>
-        /// OPRAVA: Pridanie public property ViewModel - POTREBNÉ PRE XAML
+        /// OPRAVA CS1061: Public property ViewModel s public setter - POTREBNÉ PRE XAML BINDING
         /// </summary>
         public AdvancedDataGridViewModel? ViewModel
         {
             get => _viewModel;
-            private set
+            set // OPRAVA: Public setter pre XAML binding
             {
                 if (_viewModel != null)
                 {
@@ -70,11 +68,124 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     UpdateKeyboardShortcutsVisibility();
                 }
 
+                // OPRAVA: Nastavenie DataContext pre XAML binding
                 this.DataContext = _viewModel;
+                OnPropertyChanged(nameof(ViewModel));
             }
         }
 
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        #endregion
+
+        #region OPRAVA CS1061: VŠETKY Event Handlers pre XAML - MUST HAVE
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre delete row button - POTREBNÝ PRE XAML
+        /// </summary>
+        public void OnDeleteRowClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is Button button && button.CommandParameter is DataGridRow row)
+                {
+                    _viewModel?.DeleteRowCommand?.Execute(row);
+                    _logger.LogDebug("Delete row button clicked for row: {RowIndex}", row.RowIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling delete row click");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "OnDeleteRowClick"));
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre cell editing lost focus - POTREBNÝ PRE XAML
+        /// </summary>
+        public void OnCellEditingLostFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
+                {
+                    cell.IsEditing = false;
+                    _logger.LogTrace("Cell editing ended for: {ColumnName}", cell.ColumnName);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell editing lost focus");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre cell editing key down - POTREBNÝ PRE XAML
+        /// </summary>
+        public void OnCellEditingKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
+                {
+                    switch (e.Key)
+                    {
+                        case VirtualKey.Enter:
+                            if (!e.KeyStatus.IsMenuKeyDown) // Shift+Enter pre nový riadok
+                            {
+                                cell.IsEditing = false;
+                                _viewModel?.NavigationService.MoveToNextRow();
+                                e.Handled = true;
+                            }
+                            break;
+                        case VirtualKey.Escape:
+                            cell.CancelEditing();
+                            cell.IsEditing = false;
+                            e.Handled = true;
+                            break;
+                        case VirtualKey.Tab:
+                            cell.IsEditing = false;
+                            if (e.KeyStatus.IsMenuKeyDown) // Shift+Tab
+                                _viewModel?.NavigationService.MoveToPreviousCell();
+                            else
+                                _viewModel?.NavigationService.MoveToNextCell();
+                            e.Handled = true;
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell editing key down");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre toggle keyboard shortcuts - POTREBNÝ PRE XAML
+        /// </summary>
+        public void OnToggleKeyboardShortcuts_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _logger.LogDebug("Toggle keyboard shortcuts button clicked");
+
+                _isKeyboardShortcutsVisible = !_isKeyboardShortcutsVisible;
+                UpdateKeyboardShortcutsVisibility();
+
+                if (_viewModel != null)
+                {
+                    _viewModel.IsKeyboardShortcutsVisible = _isKeyboardShortcutsVisible;
+                }
+
+                _logger.LogInformation("Keyboard shortcuts visibility toggled to: {IsVisible}", _isKeyboardShortcutsVisible);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling keyboard shortcuts");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "OnToggleKeyboardShortcuts_Click"));
+            }
+        }
 
         #endregion
 
@@ -99,7 +210,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 if (_viewModel == null)
                 {
                     _viewModel = CreateViewModel();
-                    ViewModel = _viewModel;
+                    ViewModel = _viewModel; // Použitie property pre správne nastavenie
                 }
 
                 await _viewModel.InitializeAsync(columns, validationRules ?? new List<ValidationRule>(), throttling, initialRowCount);
@@ -299,116 +410,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region OPRAVA: VŠETKY Event Handlers pre XAML - MUST HAVE
-
-        /// <summary>
-        /// OPRAVA: Event handler pre delete row button - POTREBNÝ PRE XAML
-        /// </summary>
-        public void OnDeleteRowClick(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is Button button && button.CommandParameter is DataGridRow row)
-                {
-                    _viewModel?.DeleteRowCommand?.Execute(row);
-                    _logger.LogDebug("Delete row button clicked for row: {RowIndex}", row.RowIndex);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling delete row click");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "OnDeleteRowClick"));
-            }
-        }
-
-        /// <summary>
-        /// OPRAVA: Event handler pre cell editing lost focus - POTREBNÝ PRE XAML
-        /// </summary>
-        public void OnCellEditingLostFocus(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
-                {
-                    cell.IsEditing = false;
-                    _logger.LogTrace("Cell editing ended for: {ColumnName}", cell.ColumnName);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling cell editing lost focus");
-            }
-        }
-
-        /// <summary>
-        /// OPRAVA: Event handler pre cell editing key down - POTREBNÝ PRE XAML
-        /// </summary>
-        public void OnCellEditingKeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
-                {
-                    switch (e.Key)
-                    {
-                        case VirtualKey.Enter:
-                            if (!e.KeyStatus.IsMenuKeyDown) // Shift+Enter pre nový riadok
-                            {
-                                cell.IsEditing = false;
-                                _viewModel?.NavigationService.MoveToNextRow();
-                                e.Handled = true;
-                            }
-                            break;
-                        case VirtualKey.Escape:
-                            cell.CancelEditing();
-                            cell.IsEditing = false;
-                            e.Handled = true;
-                            break;
-                        case VirtualKey.Tab:
-                            cell.IsEditing = false;
-                            if (e.KeyStatus.IsMenuKeyDown) // Shift+Tab
-                                _viewModel?.NavigationService.MoveToPreviousCell();
-                            else
-                                _viewModel?.NavigationService.MoveToNextCell();
-                            e.Handled = true;
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling cell editing key down");
-            }
-        }
-
-        /// <summary>
-        /// OPRAVA: Event handler pre toggle keyboard shortcuts - POTREBNÝ PRE XAML
-        /// </summary>
-        public void OnToggleKeyboardShortcuts_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                _logger.LogDebug("Toggle keyboard shortcuts button clicked");
-
-                _isKeyboardShortcutsVisible = !_isKeyboardShortcutsVisible;
-                UpdateKeyboardShortcutsVisibility();
-
-                if (_viewModel != null)
-                {
-                    _viewModel.IsKeyboardShortcutsVisible = _isKeyboardShortcutsVisible;
-                }
-
-                _logger.LogInformation("Keyboard shortcuts visibility toggled to: {IsVisible}", _isKeyboardShortcutsVisible);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error toggling keyboard shortcuts");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "OnToggleKeyboardShortcuts_Click"));
-            }
-        }
-
-        #endregion
-
         #region Private Event Handlers
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -417,10 +418,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             try
             {
-                _viewModel ??= CreateViewModel();
-                ViewModel = _viewModel;
-                SetupEventHandlers();
+                // OPRAVA ZACYKLENIA: Inicializácia len ak nie je už inicializované
+                if (_viewModel == null)
+                {
+                    _viewModel = CreateViewModel();
+                    ViewModel = _viewModel; // Použitie property
+                }
 
+                SetupEventHandlers();
                 UpdateKeyboardShortcutsVisibility();
 
                 _logger.LogDebug("AdvancedDataGrid loaded");
@@ -681,6 +686,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
 
             return dataTable;
+        }
+
+        #endregion
+
+        #region Property Changed Implementation
+
+        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
         }
 
         #endregion

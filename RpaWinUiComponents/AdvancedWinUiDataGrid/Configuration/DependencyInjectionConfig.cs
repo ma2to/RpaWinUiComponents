@@ -1,4 +1,4 @@
-﻿//Configuration/DependencyInjectionConfig.cs - PRIDANIE EXTENSION METÓD
+﻿//Configuration/DependencyInjectionConfig.cs - KOMPLETNÁ OPRAVA EXTENSION METÓD
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -94,10 +94,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
     public static class ServiceCollectionExtensions
     {
         /// <summary>
-        /// Registruje všetky služby potrebné pre AdvancedWinUiDataGrid
+        /// HLAVNÁ EXTENSION METÓDA: Registruje všetky služby potrebné pre AdvancedWinUiDataGrid
         /// </summary>
         public static IServiceCollection AddAdvancedWinUiDataGrid(this IServiceCollection services, ILoggerFactory? loggerFactory = null)
         {
+            if (services == null)
+                throw new ArgumentNullException(nameof(services));
+
             // Register logger provider
             if (loggerFactory != null)
             {
@@ -131,6 +134,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
         /// </summary>
         public static IServiceCollection AddAdvancedWinUiDataGridForTesting(this IServiceCollection services)
         {
+            if (services == null)
+                throw new ArgumentNullException(nameof(services));
+
             services.AddSingleton<IDataGridLoggerProvider, NullDataGridLoggerProvider>();
 
             // Register services
@@ -141,6 +147,31 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
             services.AddScoped<IExportService, ExportService>();
             services.AddScoped<INavigationService, NavigationService>();
 
+            services.AddTransient<AdvancedDataGridViewModel>();
+
+            return services;
+        }
+
+        /// <summary>
+        /// Minimálna registrácia pre základné fungovanie (fallback)
+        /// </summary>
+        public static IServiceCollection AddAdvancedWinUiDataGridMinimal(this IServiceCollection services)
+        {
+            if (services == null)
+                throw new ArgumentNullException(nameof(services));
+
+            // Minimal logging
+            services.AddSingleton<IDataGridLoggerProvider, NullDataGridLoggerProvider>();
+
+            // Core services with minimal dependencies
+            services.AddSingleton<IDataService, DataService>();
+            services.AddSingleton<IValidationService, ValidationService>();
+            services.AddSingleton<IClipboardService, ClipboardService>();
+            services.AddSingleton<IColumnService, ColumnService>();
+            services.AddSingleton<IExportService, ExportService>();
+            services.AddSingleton<INavigationService, NavigationService>();
+
+            // ViewModel
             services.AddTransient<AdvancedDataGridViewModel>();
 
             return services;

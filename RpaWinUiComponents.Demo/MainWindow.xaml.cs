@@ -1,431 +1,520 @@
-﻿// MainWindow.xaml.cs - OPRAVA CS0104 a CS1061 chýb - FINÁLNA VERZIA
-using Microsoft.Extensions.DependencyInjection;
+﻿//AdvancedWinUiDataGridControl.cs - HLAVNÝ WRAPPER PRE NUGET - OPRAVA VŠETKÝCH CHÝB
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Views;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
-// OPRAVA: Správne using direktívy pre NuGet balík s explicitnými aliasmi
-using RpaWinUiComponents.AdvancedWinUiDataGrid;
-using ColumnDef = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-using ThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
-
-namespace RpaWinUiComponents.Demo
+namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
-    public sealed partial class MainWindow : Window
+    /// <summary>
+    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid s konfigurovateľnou validáciou
+    /// KOMPLETNE OPRAVENÁ VERZIA - definuje všetky metódy ktoré sa používajú v demo aplikácii
+    /// </summary>
+    public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
-        private readonly ILogger<MainWindow> _logger;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly AdvancedDataGridControl _internalView;
+        private bool _disposed = false;
         private bool _isInitialized = false;
-        private AdvancedWinUiDataGridControl? _dataGridControl;
 
-        public MainWindow()
+        public AdvancedWinUiDataGridControl()
         {
-            this.InitializeComponent();
+            _internalView = new AdvancedDataGridControl();
+            Content = _internalView;
 
-            _serviceProvider = CreateServiceProvider();
-            _logger = _serviceProvider.GetRequiredService<ILogger<MainWindow>>();
-
-            // Spustenie inicializácie na pozadí
-            _ = InitializeAsync();
-
-            this.Closed += OnWindowClosed;
-            _logger.LogInformation("Demo MainWindow created");
+            // Pripojenie error eventov
+            _internalView.ErrorOccurred += OnInternalError;
         }
 
-        private void OnWindowClosed(object sender, WindowEventArgs e)
+        #region Events
+
+        /// <summary>
+        /// Event ktorý sa spustí pri chybe v komponente
+        /// </summary>
+        public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
+
+        #endregion
+
+        #region Static Configuration Methods
+
+        /// <summary>
+        /// Konfiguruje dependency injection pre AdvancedWinUiDataGrid
+        /// </summary>
+        public static class Configuration
+        {
+            /// <summary>
+            /// Konfiguruje služby pre AdvancedWinUiDataGrid
+            /// </summary>
+            public static void ConfigureServices(IServiceProvider serviceProvider)
+            {
+                RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration.DependencyInjectionConfig.ConfigureServices(serviceProvider);
+            }
+
+            /// <summary>
+            /// Konfiguruje logging pre AdvancedWinUiDataGrid
+            /// </summary>
+            public static void ConfigureLogging(ILoggerFactory loggerFactory)
+            {
+                RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration.LoggerFactory.Configure(loggerFactory);
+            }
+
+            /// <summary>
+            /// Zapne/vypne debug logging
+            /// </summary>
+            public static void SetDebugLogging(bool enabled)
+            {
+                RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers.DebugHelper.IsDebugEnabled = enabled;
+            }
+        }
+
+        #endregion
+
+        #region Inicializácia a Konfigurácia
+
+        /// <summary>
+        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami
+        /// </summary>
+        /// <param name="columns">Definície stĺpcov</param>
+        /// <param name="validationRules">Validačné pravidlá (voliteľné)</param>
+        /// <param name="throttling">Throttling konfigurácia (voliteľné)</param>
+        /// <param name="initialRowCount">Počiatočný počet riadkov</param>
+        public async Task InitializeAsync(
+            List<ColumnDefinition> columns,
+            List<ValidationRule>? validationRules = null,
+            ThrottlingConfig? throttling = null,
+            int initialRowCount = 100)
         {
             try
             {
-                _dataGridControl?.Dispose();
-                _logger.LogInformation("Demo application closed");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during application shutdown");
-            }
-        }
-
-        private async Task InitializeAsync()
-        {
-            try
-            {
-                UpdateStatusText("Inicializuje sa komponent...");
-                await Task.Delay(500);
-
-                _dataGridControl = DataGridControl;
-
-                UpdateStatusText("Nastavujú sa stĺpce...");
-                await Task.Delay(300);
-
-                UpdateStatusText("Vytvárajú sa validačné pravidlá...");
-                await Task.Delay(300);
-
-                var columns = CreateSampleColumns();
-                var validationRules = CreateSampleValidationRules();
-                var throttling = ThrottlingConfig.Default;
-
-                UpdateStatusText("Inicializuje sa DataGrid...");
-                await _dataGridControl.InitializeAsync(columns, validationRules, throttling, 20);
-
-                _dataGridControl.ErrorOccurred += OnDataGridError;
-
-                // Skrytie loading panela a zobrazenie DataGrid
-                if (LoadingPanel != null)
-                    LoadingPanel.Visibility = Visibility.Collapsed;
-                if (DataGridControl != null)
-                    DataGridControl.Visibility = Visibility.Visible;
-
+                await _internalView.InitializeAsync(columns, validationRules, throttling, initialRowCount);
                 _isInitialized = true;
-
-                // Aktualizácia UI
-                if (InitStatusText != null)
-                {
-                    InitStatusText.Text = " - ✅ Pripravené";
-                    InitStatusText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Green);
-                }
-
-                UpdateStatusText("DataGrid inicializovaný - pripravený na použitie");
-
-                _logger.LogInformation("DataGrid initialized successfully");
-
-                // Auto-load sample data
-                await Task.Delay(1000);
-                await LoadSampleDataInternal();
-
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during DataGrid initialization");
-                if (LoadingPanel != null)
-                    LoadingPanel.Visibility = Visibility.Collapsed;
-                if (InitStatusText != null)
-                {
-                    InitStatusText.Text = " - ❌ Chyba";
-                    InitStatusText.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Red);
-                }
-                UpdateStatusText("Chyba pri inicializácii DataGrid");
-                await ShowErrorDialog("Chyba inicializácie", ex.Message);
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "InitializeAsync"));
+                throw;
             }
         }
 
-        private List<ColumnDef> CreateSampleColumns()
+        /// <summary>
+        /// Resetuje komponent do pôvodného stavu
+        /// </summary>
+        public void Reset()
         {
-            return new List<ColumnDef>
+            try
             {
-                new("Meno", typeof(string)) { MinWidth = 120, MaxWidth = 200, Header = "👤 Meno" },
-                new("Priezvisko", typeof(string)) { MinWidth = 120, MaxWidth = 200, Header = "👥 Priezvisko" },
-                new("Email", typeof(string)) { MinWidth = 200, MaxWidth = 300, Header = "📧 Email" },
-                new("Pozicia", typeof(string)) { MinWidth = 150, MaxWidth = 250, Header = "💼 Pozícia" },
-                new("Plat", typeof(decimal)) { MinWidth = 100, MaxWidth = 150, Header = "💰 Plat (€)" },
-                new("Vek", typeof(int)) { MinWidth = 60, MaxWidth = 100, Header = "🎂 Vek" }
-            };
+                _internalView.Reset();
+                _isInitialized = false;
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "Reset"));
+            }
         }
 
-        private List<ValidationRule> CreateSampleValidationRules()
+        #endregion
+
+        #region Načítanie Dát
+
+        /// <summary>
+        /// Načíta dáta z DataTable s automatickou validáciou
+        /// </summary>
+        public async Task LoadDataAsync(DataTable dataTable)
         {
-            return new List<ValidationRule>
+            try
             {
-                new("Meno", (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
-                    "❌ Meno je povinné pole") { RuleName = "Meno_Required", Priority = 100 },
+                if (!_isInitialized)
+                    throw new InvalidOperationException("Component must be initialized first");
 
-                new("Priezvisko", (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
-                    "❌ Priezvisko je povinné pole") { RuleName = "Priezvisko_Required", Priority = 100 },
+                await _internalView.LoadDataAsync(dataTable);
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
+                throw;
+            }
+        }
 
-                new("Email", (value, row) => {
-                    var email = value?.ToString()?.Trim();
-                    if (string.IsNullOrEmpty(email)) return true;
-                    return email.Contains("@") && email.Contains(".") && email.Length > 5;
-                }, "❌ Neplatný formát emailu") { RuleName = "Email_Format", Priority = 85 },
+        /// <summary>
+        /// Načíta dáta zo zoznamu dictionary objektov
+        /// </summary>
+        public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
+        {
+            try
+            {
+                if (!_isInitialized)
+                    throw new InvalidOperationException("Component must be initialized first");
 
-                new("Vek", (value, row) => {
-                    if (value == null || string.IsNullOrWhiteSpace(value.ToString())) return true;
-                    if (int.TryParse(value.ToString(), out int age))
-                        return age >= 18 && age <= 67;
+                await _internalView.LoadDataAsync(data);
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region Export Dát
+
+        /// <summary>
+        /// Exportuje validné dáta do DataTable
+        /// </summary>
+        public async Task<DataTable> ExportToDataTableAsync()
+        {
+            try
+            {
+                if (!_isInitialized)
+                    return new DataTable();
+
+                return await _internalView.ExportToDataTableAsync();
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ExportToDataTableAsync"));
+                return new DataTable();
+            }
+        }
+
+        #endregion
+
+        #region Validácia
+
+        /// <summary>
+        /// Validuje všetky riadky a vráti true ak sú všetky validné
+        /// </summary>
+        public async Task<bool> ValidateAllRowsAsync()
+        {
+            try
+            {
+                if (!_isInitialized)
                     return false;
-                }, "❌ Vek musí byť medzi 18 a 67 rokov") { RuleName = "Vek_Range", Priority = 80 },
 
-                new("Plat", (value, row) => {
-                    if (value == null || string.IsNullOrWhiteSpace(value.ToString())) return true;
-                    if (decimal.TryParse(value.ToString(), out decimal plat))
-                        return plat >= 500 && plat <= 10000;
-                    return false;
-                }, "❌ Plat musí byť medzi 500-10000 EUR") { RuleName = "Plat_Range", Priority = 80 }
-            };
-        }
-
-        private async void OnLoadSampleDataClick(object sender, RoutedEventArgs e)
-        {
-            await LoadSampleDataInternal();
-        }
-
-        private async Task LoadSampleDataInternal()
-        {
-            try
-            {
-                if (!_isInitialized || _dataGridControl == null) return;
-
-                UpdateStatusText("Načítavam ukážkové dáta...");
-                if (LoadSampleDataButton != null)
-                    LoadSampleDataButton.IsEnabled = false;
-
-                var sampleData = CreateSampleData();
-                await _dataGridControl.LoadDataAsync(sampleData);
-
-                UpdateStatusText($"Načítaných {sampleData.Count} ukážkových záznamov");
-                _logger.LogInformation("Sample data loaded: {RecordCount} records", sampleData.Count);
-
+                return await _internalView.ValidateAllRowsAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading sample data");
-                await ShowErrorDialog("Chyba pri načítaní dát", ex.Message);
-            }
-            finally
-            {
-                if (LoadSampleDataButton != null)
-                    LoadSampleDataButton.IsEnabled = true;
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
+                return false;
             }
         }
 
-        private async void OnValidateAllClick(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region Manipulácia s Riadkami
+
+        /// <summary>
+        /// Vymaže všetky dáta zo všetkých buniek
+        /// </summary>
+        public async Task ClearAllDataAsync()
         {
             try
             {
-                if (!_isInitialized || _dataGridControl == null) return;
+                if (!_isInitialized)
+                    return;
 
-                UpdateStatusText("Validujem všetky dáta...");
-                if (ValidateAllButton != null)
-                    ValidateAllButton.IsEnabled = false;
-
-                var isValid = await _dataGridControl.ValidateAllRowsAsync();
-                var statusText = isValid ? "✅ Všetky dáta sú validné" : "❌ Nájdené validačné chyby";
-                UpdateStatusText(statusText);
-
-                _logger.LogInformation("Validation completed: {IsValid}", isValid);
+                await _internalView.ClearAllDataAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during validation");
-                await ShowErrorDialog("Chyba pri validácii", ex.Message);
-            }
-            finally
-            {
-                if (ValidateAllButton != null)
-                    ValidateAllButton.IsEnabled = true;
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ClearAllDataAsync"));
+                throw;
             }
         }
 
-        private async void OnClearDataClick(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Odstráni všetky prázdne riadky
+        /// </summary>
+        public async Task RemoveEmptyRowsAsync()
         {
             try
             {
-                if (!_isInitialized || _dataGridControl == null) return;
+                if (!_isInitialized)
+                    return;
 
-                var result = await ShowConfirmDialog("Potvrdenie", "Naozaj chcete vymazať všetky dáta?");
-                if (!result) return;
-
-                UpdateStatusText("Mažem dáta...");
-                if (ClearDataButton != null)
-                    ClearDataButton.IsEnabled = false;
-
-                await _dataGridControl.ClearAllDataAsync();
-                UpdateStatusText("Všetky dáta vymazané");
-
-                _logger.LogInformation("All data cleared");
+                await _internalView.RemoveEmptyRowsAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error clearing data");
-                await ShowErrorDialog("Chyba pri mazaní dát", ex.Message);
-            }
-            finally
-            {
-                if (ClearDataButton != null)
-                    ClearDataButton.IsEnabled = true;
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
+                throw;
             }
         }
 
-        private async void OnExportDataClick(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Odstráni riadky ktoré spĺňajú zadanú podmienku
+        /// </summary>
+        public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
         {
             try
             {
-                if (!_isInitialized || _dataGridControl == null) return;
+                if (!_isInitialized)
+                    return;
 
-                UpdateStatusText("Exportujem dáta...");
-                if (ExportDataButton != null)
-                    ExportDataButton.IsEnabled = false;
-
-                var dataTable = await _dataGridControl.ExportToDataTableAsync();
-                UpdateStatusText($"Exportovaných {dataTable.Rows.Count} záznamov");
-
-                await ShowInfoDialog("Export dokončený",
-                    $"Úspešne exportovaných {dataTable.Rows.Count} validných záznamov.");
-
-                _logger.LogInformation("Data exported: {RecordCount} records", dataTable.Rows.Count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error exporting data");
-                await ShowErrorDialog("Chyba pri exporte", ex.Message);
-            }
-            finally
-            {
-                if (ExportDataButton != null)
-                    ExportDataButton.IsEnabled = true;
-            }
-        }
-
-        private async void OnDataGridError(object? sender, RpaWinUiComponents.AdvancedWinUiDataGrid.Events.ComponentErrorEventArgs e)
-        {
-            try
-            {
-                _logger.LogError(e.Exception, "DataGrid error in operation: {Operation}", e.Operation);
-                await ShowErrorDialog($"Chyba v DataGrid ({e.Operation})", e.Exception.Message);
-                UpdateStatusText($"Chyba: {e.Operation}");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling DataGrid error");
-            }
-        }
-
-        private List<Dictionary<string, object?>> CreateSampleData()
-        {
-            var random = new Random();
-            var data = new List<Dictionary<string, object?>>();
-
-            var mena = new[] { "Ján", "Peter", "Mária", "Anna", "Michal" };
-            var priezviska = new[] { "Novák", "Svoboda", "Dvořák", "Černý", "Procházka" };
-            var pozicie = new[] { "Developer", "Tester", "Analyst", "Manager" };
-
-            // Validné záznamy
-            for (int i = 0; i < 5; i++)
-            {
-                data.Add(new Dictionary<string, object?>
+                if (_internalView.ViewModel != null)
                 {
-                    ["Meno"] = mena[i],
-                    ["Priezvisko"] = priezviska[i],
-                    ["Email"] = $"{mena[i].ToLower()}.{priezviska[i].ToLower()}@company.sk",
-                    ["Pozicia"] = pozicie[random.Next(pozicie.Length)],
-                    ["Plat"] = random.Next(1000, 5000),
-                    ["Vek"] = random.Next(25, 60)
-                });
-            }
-
-            // Nevalidné záznamy pre testovanie
-            data.AddRange(new[]
-            {
-                new Dictionary<string, object?>
-                {
-                    ["Meno"] = "", // Chýba meno
-                    ["Priezvisko"] = "Test",
-                    ["Email"] = "test@company.sk",
-                    ["Pozicia"] = "Developer",
-                    ["Plat"] = 1500m,
-                    ["Vek"] = 30
-                },
-                new Dictionary<string, object?>
-                {
-                    ["Meno"] = "Test",
-                    ["Priezvisko"] = "User",
-                    ["Email"] = "invalid-email", // Nevalidný email
-                    ["Pozicia"] = "Tester",
-                    ["Plat"] = 1200m,
-                    ["Vek"] = 28
-                },
-                new Dictionary<string, object?>
-                {
-                    ["Meno"] = "Mladý",
-                    ["Priezvisko"] = "Student",
-                    ["Email"] = "student@company.sk",
-                    ["Pozicia"] = "Developer",
-                    ["Plat"] = 800m,
-                    ["Vek"] = 16 // Príliš mladý
+                    await _internalView.ViewModel.RemoveRowsByConditionAsync(columnName, condition);
                 }
-            });
-
-            return data;
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
+                throw;
+            }
         }
 
-        private void UpdateStatusText(string message)
+        /// <summary>
+        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám
+        /// </summary>
+        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
         {
             try
             {
-                this.DispatcherQueue.TryEnqueue(() =>
+                if (!_isInitialized)
+                    return 0;
+
+                if (_internalView.ViewModel != null)
                 {
-                    if (StatusTextBlock != null)
+                    return await _internalView.ViewModel.RemoveRowsByValidationAsync(customRules);
+                }
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
+                return 0;
+            }
+        }
+
+        #endregion
+
+        #region Public API Models
+
+        /// <summary>
+        /// Wrapper pre prístup k riadku v validačných funkciách
+        /// </summary>
+        public class GridDataRow
+        {
+            private readonly DataGridRow _internal;
+
+            internal GridDataRow(DataGridRow internalModel)
+            {
+                _internal = internalModel;
+            }
+
+            /// <summary>
+            /// Získa hodnotu z bunky podľa názvu stĺpca
+            /// </summary>
+            public object? GetValue(string columnName) => _internal.GetCell(columnName)?.Value;
+
+            /// <summary>
+            /// Získa typovú hodnotu z bunky podľa názvu stĺpca
+            /// </summary>
+            public T? GetValue<T>(string columnName) => _internal.GetValue<T>(columnName);
+        }
+
+        /// <summary>
+        /// Informácie o chybe v komponente
+        /// </summary>
+        public class ComponentError : EventArgs
+        {
+            public Exception Exception { get; set; }
+            public string Operation { get; set; }
+            public string AdditionalInfo { get; set; }
+            public DateTime Timestamp { get; set; } = DateTime.Now;
+
+            public ComponentError(Exception exception, string operation, string additionalInfo = "")
+            {
+                Exception = exception;
+                Operation = operation;
+                AdditionalInfo = additionalInfo;
+            }
+
+            public override string ToString()
+            {
+                return $"[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Operation}: {Exception.Message}" +
+                       (string.IsNullOrEmpty(AdditionalInfo) ? "" : $" - {AdditionalInfo}");
+            }
+        }
+
+        #endregion
+
+        #region Static Validation Helpers
+
+        /// <summary>
+        /// Pomocné metódy pre tvorbu validačných pravidiel
+        /// </summary>
+        public static class Validation
+        {
+            /// <summary>
+            /// Vytvorí pravidlo pre povinné pole
+            /// </summary>
+            public static ValidationRule Required(string columnName, string? errorMessage = null)
+            {
+                return new ValidationRule(
+                    columnName,
+                    (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
+                    errorMessage ?? $"{columnName} je povinné pole"
+                )
+                {
+                    RuleName = $"{columnName}_Required"
+                };
+            }
+
+            /// <summary>
+            /// Vytvorí pravidlo pre kontrolu dĺžky textu
+            /// </summary>
+            public static ValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
+            {
+                return new ValidationRule(
+                    columnName,
+                    (value, row) =>
                     {
-                        StatusTextBlock.Text = message;
-                    }
-                });
+                        var text = value?.ToString() ?? "";
+                        return text.Length >= minLength && text.Length <= maxLength;
+                    },
+                    errorMessage ?? $"{columnName} musí mať dĺžku medzi {minLength} a {maxLength} znakmi"
+                )
+                {
+                    RuleName = $"{columnName}_Length"
+                };
+            }
+
+            /// <summary>
+            /// Vytvorí pravidlo pre kontrolu číselného rozsahu
+            /// </summary>
+            public static ValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
+            {
+                return new ValidationRule(
+                    columnName,
+                    (value, row) =>
+                    {
+                        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                            return true;
+
+                        if (double.TryParse(value.ToString(), out double numValue))
+                        {
+                            return numValue >= min && numValue <= max;
+                        }
+
+                        return false;
+                    },
+                    errorMessage ?? $"{columnName} musí byť medzi {min} a {max}"
+                )
+                {
+                    RuleName = $"{columnName}_Range"
+                };
+            }
+
+            /// <summary>
+            /// Vytvorí podmienené validačné pravidlo
+            /// </summary>
+            public static ValidationRule Conditional(string columnName,
+                Func<object?, GridDataRow, bool> validationFunction,
+                Func<GridDataRow, bool> condition,
+                string errorMessage,
+                string? ruleName = null)
+            {
+                return new ValidationRule(
+                    columnName,
+                    (value, row) => validationFunction(value, new GridDataRow(row)),
+                    errorMessage
+                )
+                {
+                    ApplyCondition = row => condition(new GridDataRow(row)),
+                    RuleName = ruleName ?? $"{columnName}_Conditional_{Guid.NewGuid().ToString("N")[..8]}"
+                };
+            }
+
+            /// <summary>
+            /// Vytvorí pravidlo pre validáciu číselných hodnôt
+            /// </summary>
+            public static ValidationRule Numeric(string columnName, string? errorMessage = null)
+            {
+                return new ValidationRule(
+                    columnName,
+                    (value, row) =>
+                    {
+                        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                            return true;
+
+                        return double.TryParse(value.ToString(), out _);
+                    },
+                    errorMessage ?? $"{columnName} musí byť číslo"
+                )
+                {
+                    RuleName = $"{columnName}_Numeric"
+                };
+            }
+
+            /// <summary>
+            /// Vytvorí pravidlo pre validáciu emailu
+            /// </summary>
+            public static ValidationRule Email(string columnName, string? errorMessage = null)
+            {
+                return new ValidationRule(
+                    columnName,
+                    (value, row) =>
+                    {
+                        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                            return true;
+
+                        var email = value.ToString();
+                        return email?.Contains("@") == true && email.Contains(".") && email.Length > 5;
+                    },
+                    errorMessage ?? $"{columnName} musí mať platný formát emailu"
+                )
+                {
+                    RuleName = $"{columnName}_Email"
+                };
+            }
+        }
+
+        #endregion
+
+        #region Private Event Handlers
+
+        private void OnInternalError(object? sender, ComponentErrorEventArgs e)
+        {
+            OnErrorOccurred(e);
+        }
+
+        private void OnErrorOccurred(ComponentErrorEventArgs error)
+        {
+            ErrorOccurred?.Invoke(this, error);
+        }
+
+        #endregion
+
+        #region IDisposable Implementation
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            try
+            {
+                // Unsubscribe od eventov
+                if (_internalView != null)
+                {
+                    _internalView.ErrorOccurred -= OnInternalError;
+                    _internalView.Dispose();
+                }
+
+                _disposed = true;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error updating status text: {Message}", message);
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "Dispose"));
             }
         }
 
-        private IServiceProvider CreateServiceProvider()
-        {
-            var services = new ServiceCollection();
-            services.AddLogging(builder =>
-            {
-                builder.AddDebug();
-                builder.AddConsole();
-                builder.SetMinimumLevel(LogLevel.Debug);
-            });
-
-            // OPRAVA CS1061: Použiť správnu extension metódu
-            services.AddAdvancedWinUiDataGrid();
-            return services.BuildServiceProvider();
-        }
-
-        private async Task ShowErrorDialog(string title, string message)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = message,
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot
-            };
-
-            await dialog.ShowAsync();
-        }
-
-        private async Task ShowInfoDialog(string title, string message)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = message,
-                CloseButtonText = "OK",
-                XamlRoot = this.Content.XamlRoot
-            };
-
-            await dialog.ShowAsync();
-        }
-
-        private async Task<bool> ShowConfirmDialog(string title, string message)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = message,
-                PrimaryButtonText = "Áno",
-                SecondaryButtonText = "Nie",
-                DefaultButton = ContentDialogButton.Secondary,
-                XamlRoot = this.Content.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-            return result == ContentDialogResult.Primary;
-        }
+        #endregion
     }
 }

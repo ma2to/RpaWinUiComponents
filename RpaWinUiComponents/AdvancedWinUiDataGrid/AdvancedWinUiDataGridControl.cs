@@ -1,4 +1,4 @@
-﻿//AdvancedWinUiDataGridControl.cs - HLAVNÝ WRAPPER PRE NUGET - KOMPLETNÁ OPRAVA
+﻿//AdvancedWinUiDataGridControl.cs - HLAVNÝ WRAPPER PRE NUGET - OPRAVA VŠETKÝCH CHÝB
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -10,13 +10,11 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-// OPRAVA CS1537: Aliasy už sú definované v GlobalUsings.cs, netreba ich tu
-
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid s konfigurovateľnou validáciou
-    /// KOMPLETNE OPRAVENÁ VERZIA - definuje všetky metódy ktoré sa používajú v MainWindow
+    /// KOMPLETNE OPRAVENÁ VERZIA - definuje všetky metódy ktoré sa používajú v demo aplikácii
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -86,7 +84,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         /// <param name="throttling">Throttling konfigurácia (voliteľné)</param>
         /// <param name="initialRowCount">Počiatočný počet riadkov</param>
         public async Task InitializeAsync(
-            List<DataGridColumnDefinition> columns,
+            List<ColumnDefinition> columns,
             List<ValidationRule>? validationRules = null,
             ThrottlingConfig? throttling = null,
             int initialRowCount = 100)
