@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA: UI rebuild triggering
+﻿//Views/AdvancedDataGridControl.xaml.cs - OPRAVA: Zjednodušená verzia s dynamickým UI
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -25,7 +25,7 @@ using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.Th
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// Hlavný UserControl pre AdvancedWinUiDataGrid komponent - FINÁLNA OPRAVA UI timing
+    /// Hlavný UserControl pre AdvancedWinUiDataGrid komponent - OPRAVA: Zjednodušená verzia
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -33,12 +33,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private readonly ILogger<AdvancedDataGridControl> _logger;
         private bool _disposed = false;
         private bool _isKeyboardShortcutsVisible = false;
-
-        // OPRAVA: Tracking pre dynamické UI
-        private readonly Dictionary<DataGridRow, Grid> _rowGrids = new();
-        private readonly List<TextBlock> _headerTextBlocks = new();
-        private bool _isUIBuilding = false;
         private bool _isInitialized = false;
+
+        // UI tracking
+        private readonly Dictionary<DataGridRow, StackPanel> _rowElements = new();
+        private readonly List<Border> _headerElements = new();
 
         public AdvancedDataGridControl()
         {
@@ -75,6 +74,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     SubscribeToViewModel(_viewModel);
                     _isKeyboardShortcutsVisible = _viewModel.IsKeyboardShortcutsVisible;
                     UpdateKeyboardShortcutsVisibility();
+
+                    // OPRAVA: Spustiť UI update keď sa nastaví ViewModel
+                    _ = UpdateUIAsync();
                 }
 
                 this.DataContext = _viewModel;
@@ -87,154 +89,94 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region FINÁLNA OPRAVA: Kompletné UI generovanie
+        #region OPRAVA: Dynamické UI generovanie
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Prebuduje celé DataGrid UI - s proper timing
+        /// OPRAVA: Aktualizuje celé UI na základe ViewModel dát
         /// </summary>
-        private async Task RebuildDataGridUIAsync()
+        private async Task UpdateUIAsync()
         {
-            if (_disposed || _isUIBuilding || _viewModel == null || !_isInitialized)
-            {
-                _logger.LogDebug("Skipping UI rebuild - disposed: {Disposed}, building: {Building}, viewModel: {HasViewModel}, initialized: {Initialized}",
-                    _disposed, _isUIBuilding, _viewModel != null, _isInitialized);
-                return;
-            }
+            if (_disposed || _viewModel == null) return;
 
             try
             {
-                _isUIBuilding = true;
-                _logger.LogInformation("🔄 Starting DataGrid UI rebuild with {ColumnCount} columns and {RowCount} rows",
-                    _viewModel.Columns?.Count ?? 0, _viewModel.Rows?.Count ?? 0);
-
-                // Clear existing UI
-                ClearDataGridUI();
-
-                // Build complete UI
-                await BuildCompleteDataGridAsync();
-
-                _logger.LogInformation("✅ DataGrid UI rebuilt successfully");
+                await Task.Run(() =>
+                {
+                    this.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        try
+                        {
+                            UpdateHeadersUI();
+                            UpdateRowsUI();
+                            _logger.LogDebug("✅ UI updated successfully");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "❌ Error updating UI");
+                        }
+                    });
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error rebuilding DataGrid UI");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RebuildDataGridUIAsync"));
-            }
-            finally
-            {
-                _isUIBuilding = false;
+                _logger.LogError(ex, "❌ Error in UpdateUIAsync");
             }
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vybuduje kompletnú DataGrid v UI thread
+        /// OPRAVA: Aktualizuje headers na základe Columns z ViewModel
         /// </summary>
-        private async Task BuildCompleteDataGridAsync()
+        private void UpdateHeadersUI()
         {
-            if (_viewModel?.Columns == null || _viewModel.Rows == null)
+            try
             {
-                _logger.LogWarning("Cannot build UI - missing columns or rows");
-                return;
-            }
+                var headersGrid = this.FindName("HeadersGrid") as Grid;
+                if (headersGrid == null || _viewModel?.Columns == null) return;
 
-            await Task.Run(() =>
-            {
-                this.DispatcherQueue.TryEnqueue(() =>
+                // Vyčistiť existujúce headers
+                headersGrid.Children.Clear();
+                headersGrid.ColumnDefinitions.Clear();
+                _headerElements.Clear();
+
+                _logger.LogDebug("🔄 Updating headers UI with {Count} columns", _viewModel.Columns.Count);
+
+                // Vytvoriť column definitions
+                foreach (var column in _viewModel.Columns)
                 {
-                    try
+                    var colDef = new Microsoft.UI.Xaml.Controls.ColumnDefinition
                     {
-                        var scrollViewer = this.FindName("MainScrollViewer") as ScrollViewer;
-                        if (scrollViewer == null)
-                        {
-                            _logger.LogError("MainScrollViewer not found!");
-                            return;
-                        }
+                        Width = new GridLength(column.Width),
+                        MinWidth = column.MinWidth,
+                        MaxWidth = column.MaxWidth
+                    };
+                    headersGrid.ColumnDefinitions.Add(colDef);
+                }
 
-                        // Vytvor kompletný DataGrid
-                        var dataGridContainer = CreateCompleteDataGrid();
-                        scrollViewer.Content = dataGridContainer;
+                // Vytvoriť header elements
+                for (int i = 0; i < _viewModel.Columns.Count; i++)
+                {
+                    var column = _viewModel.Columns[i];
+                    var headerElement = CreateHeaderElement(column, i);
 
-                        _logger.LogDebug("✅ Complete DataGrid created with {ColumnCount} columns and {RowCount} rows",
-                            _viewModel.Columns.Count, _viewModel.Rows.Count);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "❌ Error in UI thread during DataGrid build");
-                    }
-                });
-            });
+                    Grid.SetColumn(headerElement, i);
+                    headersGrid.Children.Add(headerElement);
+                    _headerElements.Add(headerElement);
+                }
+
+                _logger.LogDebug("✅ Headers UI updated with {Count} elements", _headerElements.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error updating headers UI");
+            }
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí kompletný DataGrid container
+        /// OPRAVA: Vytvorí header element
         /// </summary>
-        private Grid CreateCompleteDataGrid()
-        {
-            var mainGrid = new Grid { MinWidth = 800 };
-
-            // Row definitions
-            mainGrid.RowDefinitions.Add(new Microsoft.UI.Xaml.Controls.RowDefinition { Height = GridLength.Auto }); // Headers
-            mainGrid.RowDefinitions.Add(new Microsoft.UI.Xaml.Controls.RowDefinition { Height = GridLength.Auto }); // Data
-
-            // 1. Create Headers
-            var headerContainer = CreateHeaderContainer();
-            Grid.SetRow(headerContainer, 0);
-            mainGrid.Children.Add(headerContainer);
-
-            // 2. Create Data Rows
-            var dataContainer = CreateDataContainer();
-            Grid.SetRow(dataContainer, 1);
-            mainGrid.Children.Add(dataContainer);
-
-            return mainGrid;
-        }
-
-        /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí header container s bordrom
-        /// </summary>
-        private Border CreateHeaderContainer()
+        private Border CreateHeaderElement(LocalColumnDefinition column, int columnIndex)
         {
             var headerBorder = new Border
-            {
-                Background = new SolidColorBrush(Microsoft.UI.Colors.LightGray) { Opacity = 0.3 },
-                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
-                BorderThickness = new Thickness(1, 1, 1, 0),
-                Height = 40
-            };
-
-            var headerGrid = new Grid();
-
-            // Column definitions pre headers
-            foreach (var column in _viewModel!.Columns)
-            {
-                var colDef = new Microsoft.UI.Xaml.Controls.ColumnDefinition
-                {
-                    Width = new GridLength(column.Width),
-                    MinWidth = column.MinWidth,
-                    MaxWidth = column.MaxWidth
-                };
-                headerGrid.ColumnDefinitions.Add(colDef);
-            }
-
-            // Header cells
-            for (int i = 0; i < _viewModel.Columns.Count; i++)
-            {
-                var column = _viewModel.Columns[i];
-                var headerCell = CreateHeaderCell(column, i);
-                Grid.SetColumn(headerCell, i);
-                headerGrid.Children.Add(headerCell);
-            }
-
-            headerBorder.Child = headerGrid;
-            return headerBorder;
-        }
-
-        /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí jednotlivú header bunku
-        /// </summary>
-        private Border CreateHeaderCell(LocalColumnDefinition column, int columnIndex)
-        {
-            var border = new Border
             {
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                 BorderThickness = new Thickness(0, 0, 1, 0),
@@ -242,7 +184,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent)
             };
 
-            var textBlock = new TextBlock
+            var headerText = new TextBlock
             {
                 Text = column.Header ?? column.Name,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
@@ -255,102 +197,101 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             if (!string.IsNullOrEmpty(column.ToolTip))
             {
-                ToolTipService.SetToolTip(border, column.ToolTip);
+                ToolTipService.SetToolTip(headerBorder, column.ToolTip);
             }
 
-            border.Child = textBlock;
-            _headerTextBlocks.Add(textBlock);
+            headerBorder.Child = headerText;
 
-            _logger.LogTrace("Created header for column {ColumnName} at index {Index}", column.Name, columnIndex);
-            return border;
+            return headerBorder;
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí data container s riadkami
+        /// OPRAVA: Aktualizuje riadky na základe Rows z ViewModel
         /// </summary>
-        private StackPanel CreateDataContainer()
+        private void UpdateRowsUI()
         {
-            var dataContainer = new StackPanel { Orientation = Orientation.Vertical };
-
-            var visibleRows = _viewModel!.Rows.Take(50).ToList(); // Limit pre performance
-
-            for (int rowIndex = 0; rowIndex < visibleRows.Count; rowIndex++)
+            try
             {
-                var row = visibleRows[rowIndex];
-                row.IsEvenRow = rowIndex % 2 == 0;
+                var dataRowsContainer = this.FindName("DataRowsContainer") as StackPanel;
+                if (dataRowsContainer == null || _viewModel?.Rows == null || _viewModel?.Columns == null) return;
 
-                var rowElement = CreateDataRow(row);
-                dataContainer.Children.Add(rowElement);
+                // Vyčistiť existujúce riadky
+                dataRowsContainer.Children.Clear();
+                _rowElements.Clear();
+
+                _logger.LogDebug("🔄 Updating rows UI with {Count} rows", _viewModel.Rows.Count);
+
+                // Limit pre výkon - zobraz max 50 riadkov
+                var rowsToShow = Math.Min(50, _viewModel.Rows.Count);
+
+                for (int i = 0; i < rowsToShow; i++)
+                {
+                    var row = _viewModel.Rows[i];
+                    row.IsEvenRow = i % 2 == 0;
+
+                    var rowElement = CreateRowElement(row, i);
+                    dataRowsContainer.Children.Add(rowElement);
+                    _rowElements[row] = rowElement;
+                }
+
+                _logger.LogDebug("✅ Rows UI updated with {Count} visible rows", rowsToShow);
             }
-
-            _logger.LogDebug("Created data container with {RowCount} visible rows", visibleRows.Count);
-            return dataContainer;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error updating rows UI");
+            }
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí jeden data riadok
+        /// OPRAVA: Vytvorí row element
         /// </summary>
-        private Border CreateDataRow(DataGridRow row)
+        private Border CreateRowElement(DataGridRow row, int rowIndex)
         {
-            var rowBorder = new Border
+            var rowContainer = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                MinHeight = 32
+            };
+
+            // Add border wrapper
+            var border = new Border
             {
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                 BorderThickness = new Thickness(1, 0, 1, 1),
                 Background = row.IsEvenRow
                     ? new SolidColorBrush(Microsoft.UI.Colors.LightGray) { Opacity = 0.1 }
                     : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-                MinHeight = 32
+                Child = rowContainer
             };
 
-            var rowGrid = new Grid();
-
-            // Column definitions pre tento riadok
-            foreach (var column in _viewModel!.Columns)
-            {
-                var colDef = new Microsoft.UI.Xaml.Controls.ColumnDefinition
-                {
-                    Width = new GridLength(column.Width),
-                    MinWidth = column.MinWidth,
-                    MaxWidth = column.MaxWidth
-                };
-                rowGrid.ColumnDefinitions.Add(colDef);
-            }
-
-            // Data cells
-            for (int colIndex = 0; colIndex < _viewModel.Columns.Count; colIndex++)
+            // Vytvor bunky pre každý stĺpec
+            for (int colIndex = 0; colIndex < _viewModel!.Columns.Count; colIndex++)
             {
                 var column = _viewModel.Columns[colIndex];
                 var cell = row.GetCell(column.Name);
 
                 if (cell != null)
                 {
-                    var cellElement = CreateDataCell(cell, column);
-                    Grid.SetColumn(cellElement, colIndex);
-                    rowGrid.Children.Add(cellElement);
-                }
-                else
-                {
-                    _logger.LogWarning("Missing cell for column {ColumnName} in row {RowIndex}", column.Name, row.RowIndex);
+                    var cellElement = CreateCellElement(cell, column, colIndex);
+                    rowContainer.Children.Add(cellElement);
                 }
             }
 
-            rowBorder.Child = rowGrid;
-            _rowGrids[row] = rowGrid;
-
-            _logger.LogTrace("Created data row {RowIndex} with {CellCount} cells", row.RowIndex, row.Cells.Count);
-            return rowBorder;
+            return border;
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí data bunku
+        /// OPRAVA: Vytvorí cell element
         /// </summary>
-        private Border CreateDataCell(DataGridCell cell, LocalColumnDefinition column)
+        private Border CreateCellElement(DataGridCell cell, LocalColumnDefinition column, int columnIndex)
         {
             var cellBorder = new Border
             {
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                 BorderThickness = new Thickness(0, 0, 1, 0),
-                Padding = new Thickness(8, 4, 8, 4),
+                Padding = new Thickness(8, 4),
+                Width = column.Width,
+                MinWidth = column.MinWidth,
                 Background = cell.HasValidationError
                     ? new SolidColorBrush(Microsoft.UI.Colors.MistyRose)
                     : new SolidColorBrush(Microsoft.UI.Colors.Transparent)
@@ -358,7 +299,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             FrameworkElement cellContent;
 
-            // Special columns
+            // Rôzne typy buniek
             if (column.Name == "DeleteAction")
             {
                 cellContent = CreateDeleteButton(cell);
@@ -377,7 +318,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí delete button
+        /// OPRAVA: Vytvorí delete button
         /// </summary>
         private Button CreateDeleteButton(DataGridCell cell)
         {
@@ -389,7 +330,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 FontSize = 11,
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Red),
                 Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
-                BorderThickness = new Thickness(0, 0, 0, 0),
+                BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(3),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
@@ -399,7 +340,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 try
                 {
-                    // Find row and clear its data
+                    // Nájdi riadok a vymaž jeho dáta
                     var row = _viewModel?.Rows?.FirstOrDefault(r => r.Cells.ContainsValue(cell));
                     if (row != null)
                     {
@@ -409,7 +350,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                             c.ClearValidationErrors();
                         }
 
-                        _ = RebuildDataGridUIAsync();
+                        _ = UpdateUIAsync();
                         _logger.LogDebug("Row cleared: {RowIndex}", row.RowIndex);
                     }
                 }
@@ -424,11 +365,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí validation alerts
+        /// OPRAVA: Vytvorí validation alerts
         /// </summary>
         private TextBlock CreateValidationAlerts(DataGridCell cell)
         {
-            var alertText = new TextBlock
+            return new TextBlock
             {
                 Text = cell.ValidationErrorsText,
                 TextWrapping = TextWrapping.Wrap,
@@ -437,24 +378,22 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 VerticalAlignment = VerticalAlignment.Center,
                 Visibility = cell.HasValidationError ? Visibility.Visible : Visibility.Collapsed
             };
-
-            return alertText;
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Vytvorí editable bunku
+        /// OPRAVA: Vytvorí editable cell
         /// </summary>
         private TextBox CreateEditableCell(DataGridCell cell, LocalColumnDefinition column)
         {
             var textBox = new TextBox
             {
                 Text = cell.Value?.ToString() ?? "",
-                BorderThickness = new Thickness(0, 0, 0, 0),
+                BorderThickness = new Thickness(0),
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 VerticalAlignment = VerticalAlignment.Center,
                 IsReadOnly = cell.IsReadOnly || column.IsReadOnly,
                 FontSize = 12,
-                Padding = new Thickness(4, 2, 4, 2)
+                Padding = new Thickness(4, 2)
             };
 
             // Event handlers pre editing
@@ -482,23 +421,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             return textBox;
         }
 
-        /// <summary>
-        /// FINÁLNA OPRAVA: Vyčistí existujúce UI prvky
-        /// </summary>
-        private void ClearDataGridUI()
-        {
-            try
-            {
-                _rowGrids.Clear();
-                _headerTextBlocks.Clear();
-                _logger.LogTrace("DataGrid UI cleared");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error clearing DataGrid UI");
-            }
-        }
-
         private static bool IsSpecialColumn(string columnName)
         {
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
@@ -506,10 +428,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region FINÁLNA OPRAVA: ViewModel Event Handling
+        #region ViewModel Event Handling
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Prihlásenie na ViewModel events s proper timing
+        /// Prihlásenie na ViewModel events
         /// </summary>
         private void SubscribeToViewModel(AdvancedDataGridViewModel viewModel)
         {
@@ -518,21 +440,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 viewModel.ErrorOccurred += OnViewModelError;
                 viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
-                // Subscribe to collections with delayed UI rebuild
-                if (viewModel.Columns != null)
+                // Subscribe na zmeny v kolekciách
+                if (viewModel.Columns is INotifyCollectionChanged columnsCollection)
                 {
-                    if (viewModel.Columns is INotifyCollectionChanged columnsCollection)
-                    {
-                        columnsCollection.CollectionChanged += OnColumnsChanged;
-                    }
+                    columnsCollection.CollectionChanged += OnColumnsChanged;
                 }
 
-                if (viewModel.Rows != null)
+                if (viewModel.Rows is INotifyCollectionChanged rowsCollection)
                 {
-                    if (viewModel.Rows is INotifyCollectionChanged rowsCollection)
-                    {
-                        rowsCollection.CollectionChanged += OnRowsChanged;
-                    }
+                    rowsCollection.CollectionChanged += OnRowsChanged;
                 }
 
                 _logger.LogDebug("✅ Subscribed to ViewModel events");
@@ -544,7 +460,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Odhlásenie z ViewModel events
+        /// Odhlásenie z ViewModel events
         /// </summary>
         private void UnsubscribeFromViewModel(AdvancedDataGridViewModel viewModel)
         {
@@ -573,19 +489,19 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         private void OnColumnsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            if (!_disposed && !_isUIBuilding && _isInitialized)
+            if (!_disposed && _isInitialized)
             {
-                _logger.LogDebug("🔄 Columns changed, scheduling UI rebuild");
-                _ = Task.Delay(100).ContinueWith(_ => RebuildDataGridUIAsync());
+                _logger.LogDebug("🔄 Columns changed, updating UI");
+                _ = UpdateUIAsync();
             }
         }
 
         private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            if (!_disposed && !_isUIBuilding && _isInitialized)
+            if (!_disposed && _isInitialized)
             {
-                _logger.LogDebug("🔄 Rows changed, scheduling UI rebuild");
-                _ = Task.Delay(100).ContinueWith(_ => RebuildDataGridUIAsync());
+                _logger.LogDebug("🔄 Rows changed, updating UI");
+                _ = UpdateUIAsync();
             }
         }
 
@@ -616,11 +532,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 _isInitialized = true;
 
-                // FINÁLNA OPRAVA: Force UI rebuild po inicializácii
-                await Task.Delay(200); // Počkaj na ukončenie inicializácie
-                await RebuildDataGridUIAsync();
+                // OPRAVA: Force UI update po inicializácii
+                await UpdateUIAsync();
 
-                _logger.LogInformation("✅ AdvancedDataGrid initialized successfully with {InitialRowCount} rows", initialRowCount);
+                _logger.LogInformation("✅ AdvancedDataGrid initialized successfully");
+
+                // Debug output
+                _logger.LogDebug("📊 After initialization - Columns: {ColumnCount}, Rows: {RowCount}",
+                    _viewModel.Columns?.Count ?? 0, _viewModel.Rows?.Count ?? 0);
             }
             catch (Exception ex)
             {
@@ -637,19 +556,18 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             try
             {
                 if (_viewModel == null)
-                    throw new InvalidOperationException("Component must be initialized first! Call InitializeAsync() before LoadDataAsync().");
+                    throw new InvalidOperationException("Component must be initialized first!");
 
                 if (!_viewModel.IsInitialized)
-                    throw new InvalidOperationException("Component not properly initialized! Call InitializeAsync() with validation rules first.");
+                    throw new InvalidOperationException("Component not properly initialized!");
 
                 _logger.LogInformation("📊 Loading data from DataTable with {RowCount} rows", dataTable?.Rows.Count ?? 0);
                 await _viewModel.LoadDataAsync(dataTable);
 
-                // FINÁLNA OPRAVA: Force UI rebuild po načítaní dát
-                await Task.Delay(300); // Počkaj na ukončenie načítavania
-                await RebuildDataGridUIAsync();
+                // OPRAVA: Force UI update po načítaní dát
+                await UpdateUIAsync();
 
-                _logger.LogInformation("✅ Data loaded successfully with applied validations");
+                _logger.LogInformation("✅ Data loaded successfully");
             }
             catch (Exception ex)
             {
@@ -680,7 +598,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        // Zostávajúce metódy rovnaké...
+        // Zvyšok API metód zostáva rovnaký...
         public async Task<DataTable> ExportToDataTableAsync()
         {
             ThrowIfDisposed();
@@ -741,10 +659,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         await Task.CompletedTask;
                     }
 
-                    // FINÁLNA OPRAVA: Rebuild UI po vymazaní
-                    await Task.Delay(100);
-                    await RebuildDataGridUIAsync();
-
+                    await UpdateUIAsync();
                     _logger.LogInformation("All data cleared");
                 }
             }
@@ -773,10 +688,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         await Task.CompletedTask;
                     }
 
-                    // FINÁLNA OPRAVA: Rebuild UI po odstránení
-                    await Task.Delay(100);
-                    await RebuildDataGridUIAsync();
-
+                    await UpdateUIAsync();
                     _logger.LogInformation("Empty rows removed");
                 }
             }
@@ -799,7 +711,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _isKeyboardShortcutsVisible = false;
                 UpdateKeyboardShortcutsVisibility();
 
-                ClearDataGridUI();
+                // Clear UI
+                var headersGrid = this.FindName("HeadersGrid") as Grid;
+                var dataRowsContainer = this.FindName("DataRowsContainer") as StackPanel;
+
+                headersGrid?.Children.Clear();
+                headersGrid?.ColumnDefinitions.Clear();
+                dataRowsContainer?.Children.Clear();
+
+                _rowElements.Clear();
+                _headerElements.Clear();
                 _isInitialized = false;
 
                 _logger.LogInformation("AdvancedDataGrid reset completed");
@@ -813,85 +734,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Event Handlers - Unchanged
-
-        public void OnDeleteRowClick(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is Button button && button.CommandParameter is DataGridRow row)
-                {
-                    _viewModel?.DeleteRowCommand?.Execute(row);
-                    _logger.LogDebug("Delete row button clicked for row: {RowIndex}", row.RowIndex);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling delete row click");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "OnDeleteRowClick"));
-            }
-        }
-
-        public void OnCellEditingLostFocus(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
-                {
-                    cell.IsEditing = false;
-                    _logger.LogTrace("Cell editing ended for: {ColumnName}", cell.ColumnName);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling cell editing lost focus");
-            }
-        }
-
-        public void OnCellEditingKeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            try
-            {
-                if (sender is TextBox textBox && textBox.DataContext is DataGridCell cell)
-                {
-                    switch (e.Key)
-                    {
-                        case VirtualKey.Enter:
-                            if (!e.KeyStatus.IsMenuKeyDown)
-                            {
-                                cell.IsEditing = false;
-                                _viewModel?.NavigationService.MoveToNextRow();
-                                e.Handled = true;
-                            }
-                            break;
-                        case VirtualKey.Escape:
-                            cell.CancelEditing();
-                            cell.IsEditing = false;
-                            e.Handled = true;
-                            break;
-                        case VirtualKey.Tab:
-                            cell.IsEditing = false;
-                            if (e.KeyStatus.IsMenuKeyDown)
-                                _viewModel?.NavigationService.MoveToPreviousCell();
-                            else
-                                _viewModel?.NavigationService.MoveToNextCell();
-                            e.Handled = true;
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error handling cell editing key down");
-            }
-        }
+        #region Event Handlers
 
         public void OnToggleKeyboardShortcuts_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                _logger.LogDebug("Toggle keyboard shortcuts button clicked");
-
                 _isKeyboardShortcutsVisible = !_isKeyboardShortcutsVisible;
                 UpdateKeyboardShortcutsVisibility();
 
@@ -1028,6 +876,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
+        #endregion
+
+        #region Helper Methods
+
         private AdvancedDataGridViewModel CreateViewModel()
         {
             try
@@ -1092,21 +944,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         if (toggleIcon != null)
                         {
                             toggleIcon.Text = _isKeyboardShortcutsVisible ? "▲" : "▼";
-                        }
-
-                        var toggleButton = this.FindName("ToggleKeyboardShortcutsButton") as Button;
-                        if (toggleButton != null)
-                        {
-                            var backgroundColor = _isKeyboardShortcutsVisible
-                                ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.DodgerBlue)
-                                : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LightGray);
-
-                            var foregroundColor = _isKeyboardShortcutsVisible
-                                ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White)
-                                : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Black);
-
-                            toggleButton.Background = backgroundColor;
-                            toggleButton.Foreground = foregroundColor;
                         }
 
                         _logger.LogDebug("Keyboard shortcuts visibility updated: {IsVisible}", _isKeyboardShortcutsVisible);
@@ -1193,7 +1030,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     _viewModel = null;
                 }
 
-                ClearDataGridUI();
+                // Clear UI elements
+                _rowElements.Clear();
+                _headerElements.Clear();
                 this.DataContext = null;
 
                 _disposed = true;

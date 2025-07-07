@@ -1,119 +1,246 @@
-﻿//Helpers/DebugHelper.cs - Opravený
+﻿// Debug Helper - pridajte do MainWindow.xaml.cs pre diagnostiku
 using System;
-using Microsoft.Extensions.Logging;
-// Alias pre riešenie konfliktu s LoggerFactory
-using AppLoggerFactory = RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration.LoggerFactory;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
-namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers
+namespace RpaWinUiComponents.Demo
 {
-    internal static class DebugHelper
+    public static class DataGridDebugHelper
     {
-        private static bool _isDebugEnabled = true;
-        private static readonly ILogger _logger = AppLoggerFactory.CreateLogger("DebugHelper");
-
-        public static bool IsDebugEnabled
+        /// <summary>
+        /// Diagnostikuje stav DataGrid komponentu a ViewModel
+        /// </summary>
+        public static void DiagnoseDataGrid(RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl dataGridControl)
         {
-            get => _isDebugEnabled;
-            set => _isDebugEnabled = value;
-        }
-
-        public static void Log(string message, string category = "General")
-        {
-            if (!_isDebugEnabled) return;
-
-            var formattedMessage = $"[{category}] {message}";
-
-            // Log to both Debug output and logger
-            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {formattedMessage}");
-            _logger.LogDebug("{Message}", formattedMessage);
-        }
-
-        public static void LogError(Exception ex, string operation, string category = "Error")
-        {
-            if (!_isDebugEnabled) return;
-
-            var errorMessage = $"[{category}] {operation}: {ex.Message}";
-
-            System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {errorMessage}");
-            _logger.LogError(ex, "{Operation} failed", operation);
-
-            if (ex.InnerException != null)
+            try
             {
-                var innerMessage = $"[{category}] Inner: {ex.InnerException.Message}";
-                System.Diagnostics.Debug.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] {innerMessage}");
-                _logger.LogError(ex.InnerException, "Inner exception for {Operation}", operation);
+                System.Diagnostics.Debug.WriteLine("🔍 === DIAGNOSTIKA DATAGRID KOMPONENTU ===");
+
+                // Kontrola základného stavu
+                System.Diagnostics.Debug.WriteLine($"📊 DataGrid Control: {(dataGridControl != null ? "✅ OK" : "❌ NULL")}");
+
+                if (dataGridControl?.ViewModel == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ KRITICKÁ CHYBA: ViewModel je NULL!");
+                    System.Diagnostics.Debug.WriteLine("💡 Riešenie: Skontrolujte či sa volá InitializeAsync()");
+                    return;
+                }
+
+                var viewModel = dataGridControl.ViewModel;
+                System.Diagnostics.Debug.WriteLine($"🧠 ViewModel: ✅ OK");
+                System.Diagnostics.Debug.WriteLine($"🔧 Je inicializovaný: {(viewModel.IsInitialized ? "✅ ÁNO" : "❌ NIE")}");
+
+                // Kontrola stĺpcov
+                System.Diagnostics.Debug.WriteLine($"\n📏 === STĹPCE ===");
+                if (viewModel.Columns == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ CHYBA: Columns collection je NULL!");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"📊 Počet stĺpcov: {viewModel.Columns.Count}");
+
+                if (viewModel.Columns.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ PROBLÉM: Žiadne stĺpce nie sú definované!");
+                    System.Diagnostics.Debug.WriteLine("💡 Riešenie: Skontrolujte či sa volá InitializeAsync() s parametrom columns");
+                    return;
+                }
+
+                for (int i = 0; i < viewModel.Columns.Count; i++)
+                {
+                    var col = viewModel.Columns[i];
+                    System.Diagnostics.Debug.WriteLine($"   {i + 1}. {col.Name} ({col.Header}) - Width: {col.Width}, DataType: {col.DataType.Name}");
+                }
+
+                // Kontrola riadkov
+                System.Diagnostics.Debug.WriteLine($"\n📋 === RIADKY ===");
+                if (viewModel.Rows == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ CHYBA: Rows collection je NULL!");
+                    return;
+                }
+
+                System.Diagnostics.Debug.WriteLine($"📊 Počet riadkov: {viewModel.Rows.Count}");
+
+                if (viewModel.Rows.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ PROBLÉM: Žiadne riadky nie sú vytvorené!");
+                    System.Diagnostics.Debug.WriteLine("💡 Riešenie: Skontrolujte či sa volá LoadDataAsync() alebo či sa vytvárajú initial rows");
+                    return;
+                }
+
+                // Analýza prvých 3 riadkov
+                var rowsToAnalyze = Math.Min(3, viewModel.Rows.Count);
+                for (int i = 0; i < rowsToAnalyze; i++)
+                {
+                    var row = viewModel.Rows[i];
+                    System.Diagnostics.Debug.WriteLine($"\n   Riadok {i + 1}:");
+                    System.Diagnostics.Debug.WriteLine($"     - IsEmpty: {row.IsEmpty}");
+                    System.Diagnostics.Debug.WriteLine($"     - HasValidationErrors: {row.HasValidationErrors}");
+                    System.Diagnostics.Debug.WriteLine($"     - Počet buniek: {row.Cells.Count}");
+
+                    if (row.Cells.Count == 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine("     ❌ PROBLÉM: Riadok nemá žiadne bunky!");
+                        continue;
+                    }
+
+                    // Analýza buniek v riadku
+                    foreach (var cell in row.Cells.Values.Take(3))
+                    {
+                        var value = cell.Value?.ToString() ?? "NULL";
+                        System.Diagnostics.Debug.WriteLine($"     - {cell.ColumnName}: '{value}' (HasError: {cell.HasValidationError})");
+                    }
+                }
+
+                // Kontrola validácie
+                System.Diagnostics.Debug.WriteLine($"\n✅ === VALIDÁCIA ===");
+                System.Diagnostics.Debug.WriteLine($"🔄 Prebieha validácia: {(viewModel.IsValidating ? "✅ ÁNO" : "❌ NIE")}");
+                System.Diagnostics.Debug.WriteLine($"📊 Progress: {viewModel.ValidationProgress:F1}%");
+                System.Diagnostics.Debug.WriteLine($"📝 Status: {viewModel.ValidationStatus}");
+
+                // Štatistiky
+                System.Diagnostics.Debug.WriteLine($"\n📈 === ŠTATISTIKY ===");
+                var nonEmptyRows = viewModel.Rows.Where(r => !r.IsEmpty).Count();
+                var invalidRows = viewModel.Rows.Where(r => r.HasValidationErrors).Count();
+
+                System.Diagnostics.Debug.WriteLine($"📊 Riadky s dátami: {nonEmptyRows}/{viewModel.Rows.Count}");
+                System.Diagnostics.Debug.WriteLine($"❌ Nevalidné riadky: {invalidRows}/{viewModel.Rows.Count}");
+
+                System.Diagnostics.Debug.WriteLine($"\n🎉 === DIAGNOSTIKA DOKONČENÁ ===");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Chyba počas diagnostiky: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"❌ Stack trace: {ex.StackTrace}");
             }
         }
 
-        public static void LogValidation(string columnName, string value, bool isValid, string errors = "")
+        /// <summary>
+        /// Testuje XAML binding - skontroluje či sa UI elementy správne bindujú na data
+        /// </summary>
+        public static void TestXamlBinding(RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl dataGridControl)
         {
-            if (!_isDebugEnabled) return;
-
-            var status = isValid ? "✓ VALID" : "✗ INVALID";
-            var errorInfo = isValid ? "" : $" | Errors: {errors}";
-            var message = $"{status} | {columnName} = '{value}'{errorInfo}";
-
-            Log(message, "Validation");
-
-            if (isValid)
+            try
             {
-                _logger.LogDebug("Validation passed for {ColumnName} = '{Value}'", columnName, value);
+                System.Diagnostics.Debug.WriteLine("🔍 === TEST XAML BINDING ===");
+
+                if (dataGridControl?.ViewModel == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ ViewModel je NULL - binding nemôže fungovať");
+                    return;
+                }
+
+                var viewModel = dataGridControl.ViewModel;
+
+                // Test DataContext
+                var dataContext = dataGridControl.DataContext;
+                System.Diagnostics.Debug.WriteLine($"📊 DataContext: {(dataContext == viewModel ? "✅ OK" : "❌ PROBLÉM")}");
+
+                if (dataContext != viewModel)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ DataContext nie je nastavený na ViewModel!");
+                    System.Diagnostics.Debug.WriteLine("💡 Riešenie: Skontrolujte setter property ViewModel v code-behind");
+                }
+
+                // Test Collections binding
+                System.Diagnostics.Debug.WriteLine($"📏 Columns pre binding: {viewModel.Columns?.Count ?? 0}");
+                System.Diagnostics.Debug.WriteLine($"📋 Rows pre binding: {viewModel.Rows?.Count ?? 0}");
+
+                // Test INotifyPropertyChanged
+                System.Diagnostics.Debug.WriteLine("🔔 Testovanie PropertyChanged events...");
+
+                bool propertyChangedWorks = false;
+                viewModel.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == "ValidationStatus")
+                    {
+                        propertyChangedWorks = true;
+                        System.Diagnostics.Debug.WriteLine("✅ PropertyChanged funguje správne");
+                    }
+                };
+
+                // Trigger property change
+                var originalStatus = viewModel.ValidationStatus;
+                viewModel.GetType().GetProperty("ValidationStatus")?.SetValue(viewModel, "Test");
+                viewModel.GetType().GetProperty("ValidationStatus")?.SetValue(viewModel, originalStatus);
+
+                if (!propertyChangedWorks)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ PropertyChanged nefunguje - UI sa nebude aktualizovať");
+                }
+
+                System.Diagnostics.Debug.WriteLine("🎉 === TEST XAML BINDING DOKONČENÝ ===");
             }
-            else
+            catch (Exception ex)
             {
-                _logger.LogWarning("Validation failed for {ColumnName} = '{Value}': {Errors}", columnName, value, errors);
+                System.Diagnostics.Debug.WriteLine($"❌ Chyba pri teste XAML binding: {ex.Message}");
             }
         }
 
-        public static void LogNavigation(int fromRow, int fromCol, int toRow, int toCol)
+        /// <summary>
+        /// Vygeneruje testové dáta pre debugging
+        /// </summary>
+        public static DataTable CreateTestDataTable()
         {
-            if (!_isDebugEnabled) return;
+            var dataTable = new DataTable();
 
-            var message = $"Navigation: [{fromRow},{fromCol}] → [{toRow},{toCol}]";
-            Log(message, "Navigation");
-            _logger.LogTrace("Cell navigation from [{FromRow},{FromCol}] to [{ToRow},{ToCol}]", fromRow, fromCol, toRow, toCol);
+            // Pridanie stĺpcov
+            dataTable.Columns.Add("Meno", typeof(string));
+            dataTable.Columns.Add("Email", typeof(string));
+            dataTable.Columns.Add("Vek", typeof(int));
+            dataTable.Columns.Add("Plat", typeof(decimal));
+
+            // Pridanie testovacích dát
+            dataTable.Rows.Add("Test Používateľ 1", "test1@example.com", 25, 2000.00m);
+            dataTable.Rows.Add("Test Používateľ 2", "test2@example.com", 30, 2500.00m);
+            dataTable.Rows.Add("Test Používateľ 3", "test3@example.com", 35, 3000.00m);
+
+            System.Diagnostics.Debug.WriteLine($"✅ Vygenerovaný test DataTable s {dataTable.Rows.Count} riadkami");
+            return dataTable;
         }
 
-        public static void LogDataOperation(string operation, int rowCount, int columnCount = 0)
+        /// <summary>
+        /// Vygeneruje validačné pravidlá pre debugging
+        /// </summary>
+        public static List<ValidationRule> CreateTestValidationRules()
         {
-            if (!_isDebugEnabled) return;
+            var rules = new List<ValidationRule>
+            {
+                new ValidationRule("Meno",
+                    (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
+                    "Meno je povinné") { RuleName = "Meno_Required" },
 
-            var info = columnCount > 0 ? $"{rowCount} rows, {columnCount} columns" : $"{rowCount} rows";
-            var message = $"{operation}: {info}";
-            Log(message, "Data");
-            _logger.LogInformation("Data operation {Operation}: {RowCount} rows, {ColumnCount} columns", operation, rowCount, columnCount);
+                new ValidationRule("Email",
+                    (value, row) =>
+                    {
+                        var email = value?.ToString();
+                        return string.IsNullOrEmpty(email) || email.Contains("@");
+                    },
+                    "Neplatný email") { RuleName = "Email_Format" }
+            };
+
+            System.Diagnostics.Debug.WriteLine($"✅ Vygenerovaných {rules.Count} validačných pravidiel");
+            return rules;
+        }
+    }
+
+    // Extension metódy pre ľahšie debugging
+    public static class DebugExtensions
+    {
+        public static void DebugDump(this RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl dataGrid)
+        {
+            DataGridDebugHelper.DiagnoseDataGrid(dataGrid);
         }
 
-        public static void LogClipboard(string operation, int rows = 0, int cols = 0)
+        public static void TestBinding(this RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl dataGrid)
         {
-            if (!_isDebugEnabled) return;
-
-            var size = rows > 0 ? $"{rows}×{cols}" : "unknown size";
-            var message = $"{operation}: {size}";
-            Log(message, "Clipboard");
-            _logger.LogDebug("Clipboard operation {Operation} with size {Rows}×{Cols}", operation, rows, cols);
-        }
-
-        public static void LogComponent(string component, string message)
-        {
-            if (!_isDebugEnabled) return;
-
-            Log(message, component);
-            _logger.LogDebug("[{Component}] {Message}", component, message);
-        }
-
-        public static void EnableDebug()
-        {
-            _isDebugEnabled = true;
-            Log("Debug logging enabled", "Debug");
-            _logger.LogInformation("Debug logging enabled");
-        }
-
-        public static void DisableDebug()
-        {
-            Log("Debug logging disabled", "Debug");
-            _logger.LogInformation("Debug logging disabled");
-            _isDebugEnabled = false;
+            DataGridDebugHelper.TestXamlBinding(dataGrid);
         }
     }
 }
