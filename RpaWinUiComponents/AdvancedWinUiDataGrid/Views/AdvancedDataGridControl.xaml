@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Views/AdvancedDataGridControl.xaml - OPRAVA: Zjednodušená verzia bez XLS0501 chýb -->
+<!-- Views/AdvancedDataGridControl.xaml - OPRAVA: Vyriešené WMC0035 chyby -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -40,7 +40,7 @@
         <Border Grid.Row="0" 
                 x:Name="ValidationProgressPanel"
                 Background="#F8F9FA" 
-                Padding="12,8"
+                Padding="12,8,12,8"
                 BorderBrush="#DEE2E6"
                 BorderThickness="0,0,0,1"
                 Visibility="{x:Bind ViewModel.IsValidating, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -98,16 +98,12 @@
                       BorderBrush="#DEE2E6" 
                       BorderThickness="1,1,1,0"
                       Height="40">
-
                     <!-- Headers budú vygenerované dynamicky v code-behind -->
-
                 </Grid>
 
                 <!-- Data Rows Container -->
                 <StackPanel x:Name="DataRowsContainer">
-
                     <!-- Rows budú vygenerované dynamicky v code-behind -->
-
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
@@ -115,7 +111,7 @@
         <!-- Toggle Button Panel -->
         <Border Grid.Row="2" 
                 Background="#F8F9FA" 
-                Padding="6"
+                Padding="6,6,6,6"
                 BorderBrush="#DEE2E6"
                 BorderThickness="0,1,0,0">
 
@@ -124,7 +120,7 @@
                     Background="#F8F9FA"
                     Foreground="Black"
                     BorderBrush="#DEE2E6"
-                    BorderThickness="1"
+                    BorderThickness="1,1,1,1"
                     HorizontalAlignment="Center"
                     ToolTipService.ToolTip="Zobraziť/skryť klávesové skratky">
 
@@ -146,7 +142,7 @@
         <Border x:Name="KeyboardShortcutsPanel"
                 Grid.Row="3" 
                 Background="#F8F9FA" 
-                Padding="8,6"
+                Padding="8,6,8,6"
                 BorderBrush="#DEE2E6"
                 BorderThickness="0,1,0,0"
                 Visibility="Collapsed">

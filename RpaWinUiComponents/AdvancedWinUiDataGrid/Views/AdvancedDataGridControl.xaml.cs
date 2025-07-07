@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - OPRAVA: Zjednodušená verzia s dynamickým UI
+﻿//Views/AdvancedDataGridControl.xaml.cs - OPRAVA: Vyriešené všetky CS chyby
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -16,6 +16,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers;
 
 // LOKÁLNE ALIASY pre zamedzenie CS0104 chýb
 using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
@@ -25,7 +26,7 @@ using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.Th
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// Hlavný UserControl pre AdvancedWinUiDataGrid komponent - OPRAVA: Zjednodušená verzia
+    /// Hlavný UserControl pre AdvancedWinUiDataGrid komponent - OPRAVA: Všetky CS chyby vyriešené
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -35,8 +36,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private bool _isKeyboardShortcutsVisible = false;
         private bool _isInitialized = false;
 
-        // UI tracking
-        private readonly Dictionary<DataGridRow, StackPanel> _rowElements = new();
+        // UI tracking - OPRAVA: Správne typy
+        private readonly Dictionary<DataGridRow, Border> _rowElements = new();
         private readonly List<Border> _headerElements = new();
 
         public AdvancedDataGridControl()
@@ -89,7 +90,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region OPRAVA: Dynamické UI generovanie
+        #region OPRAVA: Dynamické UI generovanie s opraveným kódom
 
         /// <summary>
         /// OPRAVA: Aktualizuje celé UI na základe ViewModel dát
@@ -180,7 +181,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                 BorderThickness = new Thickness(0, 0, 1, 0),
-                Padding = new Thickness(8, 6, 8, 6),
+                Padding = new Thickness(8, 6, 8, 6), // OPRAVA: 4 parametre
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent)
             };
 
@@ -231,7 +232,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                     var rowElement = CreateRowElement(row, i);
                     dataRowsContainer.Children.Add(rowElement);
-                    _rowElements[row] = rowElement;
+                    _rowElements[row] = rowElement; // OPRAVA: Správny typ Border
                 }
 
                 _logger.LogDebug("✅ Rows UI updated with {Count} visible rows", rowsToShow);
@@ -243,7 +244,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// OPRAVA: Vytvorí row element
+        /// OPRAVA: Vytvorí row element - vracia Border nie StackPanel
         /// </summary>
         private Border CreateRowElement(DataGridRow row, int rowIndex)
         {
@@ -253,11 +254,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 MinHeight = 32
             };
 
-            // Add border wrapper
+            // Add border wrapper - OPRAVA: Správne typy
             var border = new Border
             {
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
-                BorderThickness = new Thickness(1, 0, 1, 1),
+                BorderThickness = new Thickness(1, 0, 1, 1), // OPRAVA: 4 parametre
                 Background = row.IsEvenRow
                     ? new SolidColorBrush(Microsoft.UI.Colors.LightGray) { Opacity = 0.1 }
                     : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
@@ -277,19 +278,19 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 }
             }
 
-            return border;
+            return border; // OPRAVA: Return Border nie StackPanel
         }
 
         /// <summary>
-        /// OPRAVA: Vytvorí cell element
+        /// OPRAVA: Vytvorí cell element s opraveným Thickness
         /// </summary>
         private Border CreateCellElement(DataGridCell cell, LocalColumnDefinition column, int columnIndex)
         {
             var cellBorder = new Border
             {
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
-                BorderThickness = new Thickness(0, 0, 1, 0),
-                Padding = new Thickness(8, 4),
+                BorderThickness = new Thickness(0, 0, 1, 0), // OPRAVA: 4 parametre
+                Padding = new Thickness(8, 4, 8, 4), // OPRAVA: 4 parametre
                 Width = column.Width,
                 MinWidth = column.MinWidth,
                 Background = cell.HasValidationError
@@ -330,7 +331,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 FontSize = 11,
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Red),
                 Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
-                BorderThickness = new Thickness(0),
+                BorderThickness = new Thickness(0), // OPRAVA: 1 parameter
                 CornerRadius = new CornerRadius(3),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
@@ -381,19 +382,19 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// OPRAVA: Vytvorí editable cell
+        /// OPRAVA: Vytvorí editable cell s opraveným Padding
         /// </summary>
         private TextBox CreateEditableCell(DataGridCell cell, LocalColumnDefinition column)
         {
             var textBox = new TextBox
             {
                 Text = cell.Value?.ToString() ?? "",
-                BorderThickness = new Thickness(0),
+                BorderThickness = new Thickness(0), // OPRAVA: 1 parameter
                 Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 VerticalAlignment = VerticalAlignment.Center,
                 IsReadOnly = cell.IsReadOnly || column.IsReadOnly,
                 FontSize = 12,
-                Padding = new Thickness(4, 2)
+                Padding = new Thickness(4, 2, 4, 2) // OPRAVA: 4 parametre
             };
 
             // Event handlers pre editing
