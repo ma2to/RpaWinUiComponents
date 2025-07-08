@@ -1,15 +1,16 @@
-﻿// App.xaml.cs - DEMO APLIKÁCIA S KOMPLETNOU DI KONFIGURÁCIOU
+﻿// App.xaml.cs - KOMPLETNÁ OPRAVA DI konfigurácie
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using System;
+using System.Threading.Tasks;
 
 namespace RpaWinUiComponents.Demo
 {
     /// <summary>
-    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka
+    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA
     /// </summary>
     public partial class App : Application
     {
@@ -25,37 +26,51 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Inicializuje služby a DI kontajner pre demo aplikáciu
+        /// Inicializuje služby a DI kontajner pre demo aplikáciu - KOMPLETNÁ OPRAVA
         /// </summary>
         private void InitializeServices()
         {
             try
             {
-                // Vytvorenie host builderu
+                System.Diagnostics.Debug.WriteLine("🔧 Inicializuje sa DI kontajner...");
+
+                // Vytvorenie host builderu s robustnou konfiguráciou
                 var hostBuilder = Host.CreateDefaultBuilder()
                     .ConfigureLogging(logging =>
                     {
                         logging.ClearProviders();
                         logging.AddConsole();
                         logging.AddDebug();
-                        logging.SetMinimumLevel(LogLevel.Debug);
+                        logging.SetMinimumLevel(LogLevel.Information);
                     })
                     .ConfigureServices((context, services) =>
                     {
-                        // Registrácia služieb pre AdvancedWinUiDataGrid
-                        services.AddAdvancedWinUiDataGrid();
+                        try
+                        {
+                            System.Diagnostics.Debug.WriteLine("📦 Registrujú sa služby...");
 
-                        // Registrácia demo aplikácie služieb
-                        services.AddSingleton<MainWindow>();
+                            // KĽÚČOVÁ OPRAVA: Registrácia služieb pre AdvancedWinUiDataGrid
+                            services.AddAdvancedWinUiDataGrid();
 
-                        // Dodatočné služby pre demo
-                        services.AddTransient<IDemoDataService, DemoDataService>();
+                            // Registrácia demo aplikácie služieb
+                            services.AddSingleton<MainWindow>();
+
+                            // Dodatočné služby pre demo (voliteľné)
+                            services.AddTransient<IDemoDataService, DemoDataService>();
+
+                            System.Diagnostics.Debug.WriteLine("✅ Služby úspešne zaregistrované");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"❌ Chyba pri registrácii služieb: {ex.Message}");
+                            throw;
+                        }
                     });
 
                 // Build host
                 _host = hostBuilder.Build();
 
-                // Konfigurácia RpaWinUiComponents s DI kontajnerom
+                // KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom
                 RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
                     .Configuration.ConfigureServices(_host.Services);
 
@@ -73,18 +88,22 @@ namespace RpaWinUiComponents.Demo
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ Demo App: Error initializing services: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+
                 // Fallback - vytvor základnú konfiguráciu
                 CreateFallbackConfiguration();
             }
         }
 
         /// <summary>
-        /// Vytvorí zjednodušenú konfiguráciu ak zlyhá hlavná inicializácia
+        /// Vytvorí zjednodušenú konfiguráciu ak zlyhá hlavná inicializácia - VYLEPŠENÝ FALLBACK
         /// </summary>
         private void CreateFallbackConfiguration()
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine("🔄 Vytváram fallback konfiguráciu...");
+
                 var services = new ServiceCollection();
 
                 // Základné logging
@@ -95,8 +114,12 @@ namespace RpaWinUiComponents.Demo
                     builder.SetMinimumLevel(LogLevel.Information);
                 });
 
-                // Registrácia AdvancedWinUiDataGrid služieb
+                // KĽÚČOVÁ OPRAVA: Registrácia AdvancedWinUiDataGrid služieb
                 services.AddAdvancedWinUiDataGrid();
+
+                // Demo služby
+                services.AddSingleton<MainWindow>();
+                services.AddTransient<IDemoDataService, DemoDataService>();
 
                 var serviceProvider = services.BuildServiceProvider();
 
@@ -104,11 +127,20 @@ namespace RpaWinUiComponents.Demo
                 RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
                     .Configuration.ConfigureServices(serviceProvider);
 
+                // Vytvorenie pseudo-host pre fallback
+                _host = new FallbackHost(serviceProvider);
+
                 System.Diagnostics.Debug.WriteLine("✅ Demo App: Fallback configuration created");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ Demo App: Even fallback configuration failed: {ex.Message}");
+
+                // Úplný fallback - len basic service provider
+                var basicServices = new ServiceCollection();
+                basicServices.AddSingleton<MainWindow>();
+                var basicProvider = basicServices.BuildServiceProvider();
+                _host = new FallbackHost(basicProvider);
             }
         }
 
@@ -116,18 +148,33 @@ namespace RpaWinUiComponents.Demo
         {
             try
             {
-                // Štart host služieb
-                _host?.StartAsync();
+                System.Diagnostics.Debug.WriteLine("🚀 Spúšťa sa aplikácia...");
+
+                // Štart host služieb (ak nie je fallback)
+                if (_host != null && _host is not FallbackHost)
+                {
+                    _host.StartAsync();
+                }
 
                 // Vytvorenie hlavného okna
                 if (_host != null)
                 {
-                    // Získaj MainWindow z DI kontajnera
-                    m_window = _host.Services.GetService<MainWindow>() ?? new MainWindow();
+                    try
+                    {
+                        // Získaj MainWindow z DI kontajnera
+                        m_window = _host.Services.GetService<MainWindow>();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"⚠️ Chyba pri získavaní MainWindow z DI: {ex.Message}");
+                        m_window = null;
+                    }
                 }
-                else
+
+                // Fallback ak DI zlyhá
+                if (m_window == null)
                 {
-                    // Fallback
+                    System.Diagnostics.Debug.WriteLine("🔄 Vytváram MainWindow bez DI...");
                     m_window = new MainWindow();
                 }
 
@@ -140,8 +187,16 @@ namespace RpaWinUiComponents.Demo
                 System.Diagnostics.Debug.WriteLine($"❌ Demo App: Error during launch: {ex.Message}");
 
                 // Emergency fallback
-                m_window = new MainWindow();
-                m_window.Activate();
+                try
+                {
+                    m_window = new MainWindow();
+                    m_window.Activate();
+                    System.Diagnostics.Debug.WriteLine("✅ Emergency fallback window created");
+                }
+                catch (Exception emergencyEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ Emergency fallback failed: {emergencyEx.Message}");
+                }
             }
         }
 
@@ -152,7 +207,7 @@ namespace RpaWinUiComponents.Demo
         {
             try
             {
-                if (_host != null)
+                if (_host != null && _host is not FallbackHost)
                 {
                     await _host.StopAsync();
                     _host.Dispose();
@@ -168,7 +223,7 @@ namespace RpaWinUiComponents.Demo
     }
 
     /// <summary>
-    /// Demo služba pre testovanie DI
+    /// Demo služba pre testovanie DI - OPRAVENÁ
     /// </summary>
     public interface IDemoDataService
     {
@@ -177,17 +232,34 @@ namespace RpaWinUiComponents.Demo
 
     public class DemoDataService : IDemoDataService
     {
-        private readonly ILogger<DemoDataService> _logger;
+        private readonly ILogger<DemoDataService>? _logger;
 
-        public DemoDataService(ILogger<DemoDataService> logger)
+        public DemoDataService(ILogger<DemoDataService>? logger = null)
         {
             _logger = logger;
         }
 
         public string GetDemoInfo()
         {
-            _logger.LogInformation("Demo data service called");
+            _logger?.LogInformation("Demo data service called");
             return "Demo service is working!";
         }
+    }
+
+    /// <summary>
+    /// Jednoduchý fallback host pre prípad zlyhania hlavného host builderu
+    /// </summary>
+    public class FallbackHost : IHost
+    {
+        public IServiceProvider Services { get; }
+
+        public FallbackHost(IServiceProvider serviceProvider)
+        {
+            Services = serviceProvider;
+        }
+
+        public void Dispose() { }
+        public Task StartAsync(System.Threading.CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task StopAsync(System.Threading.CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

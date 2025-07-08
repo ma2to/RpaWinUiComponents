@@ -1,85 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Views/AdvancedDataGridControl.xaml - OPRAVA: Vyriešené WMC0035 chyby -->
+<!-- Views/AdvancedDataGridControl.xaml - JEDNODUCHÁ TEST VERZIA -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:models="using:RpaWinUiComponents.AdvancedWinUiDataGrid.Models"
-    xmlns:controls="using:RpaWinUiComponents.AdvancedWinUiDataGrid.Controls"
-    xmlns:converters="using:RpaWinUiComponents.AdvancedWinUiDataGrid.Converters"
-    xmlns:viewmodels="using:RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels"
     mc:Ignorable="d"
-    d:DataContext="{d:DesignInstance Type=viewmodels:AdvancedDataGridViewModel}">
-
-    <UserControl.Resources>
-        <!-- Converters -->
-        <converters:ValidationErrorToBrushConverter x:Key="ValidationErrorToBrushConverter"/>
-        <converters:ValidationErrorToBorderBrushConverter x:Key="ValidationErrorToBorderBrushConverter"/>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <converters:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
-        <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
-        <converters:AlternatingRowBackgroundConverter x:Key="AlternatingRowBackgroundConverter"/>
-        <converters:ColumnTypeConverter x:Key="ColumnTypeConverter"/>
-    </UserControl.Resources>
+    Background="White">
 
     <Grid>
         <Grid.RowDefinitions>
-            <!-- Validation Progress -->
             <RowDefinition Height="Auto"/>
-            <!-- Main Content -->
             <RowDefinition Height="*"/>
-            <!-- Toggle Button Panel -->
-            <RowDefinition Height="Auto"/>
-            <!-- Keyboard Shortcuts Helper -->
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Validation Progress Panel -->
-        <Border Grid.Row="0" 
-                x:Name="ValidationProgressPanel"
-                Background="#F8F9FA" 
-                Padding="12,8,12,8"
-                BorderBrush="#DEE2E6"
-                BorderThickness="0,0,0,1"
-                Visibility="{x:Bind ViewModel.IsValidating, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBlock Grid.Row="0" Grid.Column="0"
-                           Text="{x:Bind ViewModel.ValidationStatus, Mode=OneWay}"
-                           FontSize="12"
-                           Foreground="#6C757D"
-                           VerticalAlignment="Center"/>
-
-                <TextBlock Grid.Row="0" Grid.Column="1"
-                           Text="{x:Bind ViewModel.ValidationProgress, Mode=OneWay, Converter={StaticResource ProgressToPercentageConverter}}"
-                           FontSize="12"
-                           FontWeight="Bold"
-                           Foreground="#007BFF"
-                           Margin="8,0,0,0"
-                           VerticalAlignment="Center"/>
-
-                <ProgressBar Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
-                             Value="{x:Bind ViewModel.ValidationProgress, Mode=OneWay}"
-                             Maximum="100"
-                             Height="4"
-                             Background="#E9ECEF"
-                             Foreground="#007BFF"
-                             Margin="0,6,0,0"/>
-            </Grid>
+        <!-- Debug Header -->
+        <Border Grid.Row="0" Background="#E3F2FD" Padding="10" BorderBrush="#2196F3" BorderThickness="0,0,0,1">
+            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - Debug Mode" 
+                       FontSize="14" 
+                       FontWeight="Bold" 
+                       Foreground="#1976D2"/>
         </Border>
 
-        <!-- Main Content ScrollViewer -->
+        <!-- Main Content Area -->
         <ScrollViewer Grid.Row="1" 
                       x:Name="MainScrollViewer"
                       ZoomMode="Disabled"
@@ -87,87 +32,55 @@
                       VerticalScrollMode="Auto"
                       HorizontalScrollBarVisibility="Auto"
                       VerticalScrollBarVisibility="Auto"
-                      Background="#FFFFFF">
+                      Background="White"
+                      Padding="10">
 
-            <!-- OPRAVA: Zjednodušená štruktúra bez Border konfliktov -->
-            <StackPanel x:Name="DataGridContainer" MinWidth="800">
+            <Border Background="White" 
+                    BorderBrush="#E0E0E0" 
+                    BorderThickness="1" 
+                    CornerRadius="4">
 
-                <!-- Headers Row -->
-                <Grid x:Name="HeadersGrid" 
-                      Background="#F8F9FA" 
-                      BorderBrush="#DEE2E6" 
-                      BorderThickness="1,1,1,0"
-                      Height="40">
-                    <!-- Headers budú vygenerované dynamicky v code-behind -->
-                </Grid>
+                <!-- JEDNODUCHÝ KONTAJNER PRE MANUÁLNE UI -->
+                <StackPanel x:Name="DataGridContainer" 
+                           Background="White"
+                           MinWidth="600"
+                           MinHeight="300">
 
-                <!-- Data Rows Container -->
-                <StackPanel x:Name="DataRowsContainer">
-                    <!-- Rows budú vygenerované dynamicky v code-behind -->
+                    <!-- Placeholder obsah -->
+                    <Border Background="#F5F5F5" 
+                            BorderBrush="#CCCCCC" 
+                            BorderThickness="1" 
+                            Padding="20"
+                            Margin="10">
+                        <StackPanel>
+                            <TextBlock Text="📊 DataGrid Container" 
+                                       FontSize="16" 
+                                       FontWeight="Bold" 
+                                       Foreground="#333333"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="UI sa vytvorí dynamicky po inicializácii" 
+                                       FontSize="12" 
+                                       Foreground="#666666"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,5,0,0"/>
+                        </StackPanel>
+                    </Border>
+
                 </StackPanel>
-            </StackPanel>
+            </Border>
         </ScrollViewer>
 
-        <!-- Toggle Button Panel -->
-        <Border Grid.Row="2" 
-                Background="#F8F9FA" 
-                Padding="6,6,6,6"
-                BorderBrush="#DEE2E6"
-                BorderThickness="0,1,0,0">
-
-            <Button x:Name="ToggleKeyboardShortcutsButton"
-                    Click="OnToggleKeyboardShortcuts_Click"
-                    Background="#F8F9FA"
-                    Foreground="Black"
-                    BorderBrush="#DEE2E6"
-                    BorderThickness="1,1,1,1"
-                    HorizontalAlignment="Center"
-                    ToolTipService.ToolTip="Zobraziť/skryť klávesové skratky">
-
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock x:Name="ToggleIcon"
-                               Text="▼"
-                               FontSize="12" 
-                               Margin="0,0,4,0"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text="Klávesové skratky" 
-                               FontSize="11" 
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
-        </Border>
-
-        <!-- Keyboard Shortcuts Helper -->
-        <Border x:Name="KeyboardShortcutsPanel"
-                Grid.Row="3" 
-                Background="#F8F9FA" 
-                Padding="8,6,8,6"
-                BorderBrush="#DEE2E6"
-                BorderThickness="0,1,0,0"
-                Visibility="Collapsed">
-
-            <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-                <TextBlock FontSize="10" 
-                           Foreground="#495057"
-                           FontWeight="SemiBold"
-                           HorizontalAlignment="Center"
-                           Text="⌨️ KLÁVESOVÉ SKRATKY"
-                           Margin="0,0,0,2"/>
-                <TextBlock FontSize="9" 
-                           Foreground="#6C757D"
-                           HorizontalAlignment="Center"
-                           TextWrapping="Wrap">
-                    <Run Text="📋 Navigácia:" FontWeight="SemiBold"/>
-                    <Run Text="Tab/Shift+Tab = ďalšia/predchádzajúca bunka • Enter = ďalší riadok • F2 = začať editáciu"/>
-                    <LineBreak/>
-                    <Run Text="✏️ Editácia:" FontWeight="SemiBold"/>
-                    <Run Text="ESC = zrušiť zmeny • Delete = vymazať obsah • Shift+Enter = nový riadok v bunke"/>
-                    <LineBreak/>
-                    <Run Text="📋 Clipboard:" FontWeight="SemiBold"/>
-                    <Run Text="Ctrl+C = kopírovať • Ctrl+V = vložiť"/>
-                </TextBlock>
+        <!-- Debug Footer -->
+        <Border Grid.Row="2" Background="#F5F5F5" Padding="10" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="🛠️ Status: " FontSize="11" Foreground="#666666"/>
+                <TextBlock x:Name="DebugStatusText" 
+                           Text="Čaká na inicializáciu..." 
+                           FontSize="11" 
+                           Foreground="#2196F3" 
+                           FontWeight="SemiBold"/>
             </StackPanel>
         </Border>
+
     </Grid>
 </UserControl>

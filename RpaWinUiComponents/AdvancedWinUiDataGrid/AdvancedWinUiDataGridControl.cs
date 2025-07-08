@@ -8,12 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
-
 // LOKÁLNE ALIASY pre zamedzenie CS0104 chýb
 using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
@@ -121,6 +121,114 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "Reset"));
             }
         }
+
+        // Pridajte tieto metódy do AdvancedWinUiDataGridControl.cs
+
+        #region Public Info Methods - NOVÉ METÓDY PRE DEBUG
+
+        /// <summary>
+        /// Získa počet stĺpcov v DataGrid
+        /// </summary>
+        public int GetColumnCount()
+        {
+            ThrowIfDisposed();
+            return _internalView?.ViewModel?.Columns?.Count ?? 0;
+        }
+
+        /// <summary>
+        /// Získa počet riadkov v DataGrid
+        /// </summary>
+        public int GetRowCount()
+        {
+            ThrowIfDisposed();
+            return _internalView?.ViewModel?.Rows?.Count ?? 0;
+        }
+
+        /// <summary>
+        /// Získa názvy všetkých stĺpcov
+        /// </summary>
+        public List<string> GetColumnNames()
+        {
+            ThrowIfDisposed();
+
+            if (_internalView?.ViewModel?.Columns == null)
+                return new List<string>();
+
+            return _internalView.ViewModel.Columns.Select(c => c.Name).ToList();
+        }
+
+        /// <summary>
+        /// Získa informácie o stĺpcoch pre debug
+        /// </summary>
+        public string GetColumnsInfo()
+        {
+            ThrowIfDisposed();
+
+            if (_internalView?.ViewModel?.Columns == null)
+                return "Žiadne stĺpce";
+
+            var info = new StringBuilder();
+            info.AppendLine($"Celkovo stĺpcov: {_internalView.ViewModel.Columns.Count}");
+
+            foreach (var col in _internalView.ViewModel.Columns)
+            {
+                info.AppendLine($"  - {col.Name} ({col.Header}) - {col.Width}px");
+            }
+
+            return info.ToString();
+        }
+
+        /// <summary>
+        /// Kontroluje či je komponent inicializovaný
+        /// </summary>
+        public bool IsInitialized()
+        {
+            ThrowIfDisposed();
+            return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
+        }
+
+        /// <summary>
+        /// Získa počet neprázdnych riadkov
+        /// </summary>
+        public int GetDataRowCount()
+        {
+            ThrowIfDisposed();
+
+            if (_internalView?.ViewModel?.Rows == null)
+                return 0;
+
+            return _internalView.ViewModel.Rows.Count(r => !r.IsEmpty);
+        }
+
+        /// <summary>
+        /// Získa debug informácie o stave komponenta
+        /// </summary>
+        public string GetDebugInfo()
+        {
+            ThrowIfDisposed();
+
+            var info = new StringBuilder();
+            info.AppendLine($"Komponent inicializovaný: {IsInitialized()}");
+            info.AppendLine($"Počet stĺpcov: {GetColumnCount()}");
+            info.AppendLine($"Počet riadkov: {GetRowCount()}");
+            info.AppendLine($"Počet dátových riadkov: {GetDataRowCount()}");
+
+            if (_internalView?.ViewModel != null)
+            {
+                info.AppendLine($"Validácia prebieha: {_internalView.ViewModel.IsValidating}");
+                info.AppendLine($"Validačný status: {_internalView.ViewModel.ValidationStatus}");
+            }
+
+            return info.ToString();
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(AdvancedWinUiDataGridControl));
+        }
+
+        #endregion
 
         #endregion
 
