@@ -11,11 +11,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+// LOKÁLNE ALIASY pre rozlíšenie internal vs public API
+using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÝ API s public aliases
     /// Demo aplikácie vidia len tento komponent a public alias triedy
+    /// FINÁLNE RIEŠENIE CS0234 CHÝB
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -64,10 +70,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region Inicializácia a Konfigurácia
+        #region Inicializácia a Konfigurácia - PUBLIC API
 
         /// <summary>
-        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - OPRAVENÝ API s public aliases
+        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - PUBLIC API
+        /// FINÁLNE RIEŠENIE: Používa public alias triedy
         /// </summary>
         public async Task InitializeAsync(
             List<ColumnDefinition> columns,
@@ -77,12 +84,33 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         {
             try
             {
-                // Konverzia na interné triedy cez ToPublic
-                var internalColumns = columns.Select(c => c.ToPublic()).ToList();
-                var internalRules = validationRules?.Select(r => r.ToPublic()).ToList();
-                var internalThrottling = throttling?.ToPublic();
+                // KĽÚČOVÁ OPRAVA: Konverzia z public API na internal API
+                var internalColumns = columns.Select(c => c.ToInternal()).ToList();
+                var internalRules = validationRules?.Select(r => r.ToInternal()).ToList();
+                var internalThrottling = throttling?.ToInternal();
 
                 await _internalView.InitializeAsync(internalColumns, internalRules, internalThrottling, initialRowCount);
+                _isInitialized = true;
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "InitializeAsync"));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// OVERLOAD: Inicializácia s internal API pre backward compatibility
+        /// </summary>
+        internal async Task InitializeAsync(
+            List<InternalColumnDefinition> columns,
+            List<InternalValidationRule>? validationRules = null,
+            InternalThrottlingConfig? throttling = null,
+            int initialRowCount = 100)
+        {
+            try
+            {
+                await _internalView.InitializeAsync(columns, validationRules, throttling, initialRowCount);
                 _isInitialized = true;
             }
             catch (Exception ex)
@@ -367,7 +395,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
-        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám
+        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - PUBLIC API
         /// </summary>
         public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
         {
@@ -378,7 +406,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
                 if (_internalView.ViewModel != null)
                 {
-                    var internalRules = customRules.Select(r => r.ToPublic().ToInternal()).ToList();
+                    // KĽÚČOVÁ OPRAVA: Konverzia z public API na internal API
+                    var internalRules = customRules.Select(r => r.ToInternal()).ToList();
                     return await _internalView.ViewModel.RemoveRowsByValidationAsync(internalRules);
                 }
                 return 0;

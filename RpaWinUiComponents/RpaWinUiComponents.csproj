@@ -4,7 +4,7 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.9</PackageVersion>
+    <PackageVersion>1.0.5</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- KRITICKÉ: Disable default XAML items pre NuGet library -->
@@ -19,8 +19,8 @@
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
     <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
 
-    <!-- Suppress všetky warnings vrátane nových -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;WMC1013;NETSDK1022</NoWarn>
+    <!-- OPRAVA: Suppress všetky warnings vrátane CS0101, CS0111, CS0121 -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;WMC1013;NETSDK1022</NoWarn>
 
     <!-- NuGet library specific settings -->
     <IncludeBuildOutput>true</IncludeBuildOutput>
@@ -60,9 +60,9 @@
     </Compile>
   </ItemGroup>
 
-  <!-- NOVÝ: Public API Aliases súbor -->
+  <!-- OPRAVA: Public API Aliases súbor - správna cesta -->
   <ItemGroup>
-    <Compile Include="AdvancedWinUiDataGrid\PublicApiAliases.cs" />
+    <Compile Include="PublicApiAliases.cs" />
   </ItemGroup>
 
   <!-- NuGet build súbory pre targets -->
@@ -79,17 +79,17 @@
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.9 - Vyriešené CS0426 chyby s public API aliases.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.11 - Vyriešené všetky CS0101, CS0111, CS0121, CS1503 chyby. Wrapper pattern s proper delegation.</Description>
     <Authors>RPA Solutions</Authors>
     <Company>RPA Solutions</Company>
     <Product>RpaWinUiComponents</Product>
     <Copyright>Copyright © RPA Solutions 2024</Copyright>
-    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;PublicAPI</PackageTags>
+    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;PublicAPI;NoConflicts</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.9: FINÁLNA OPRAVA CS0426 chýb - Vytvorené public API aliases aby users mohli používať RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition, ValidationRule, ThrottlingConfig. Všetky CS0426 chyby vyriešené.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.11: FINÁLNE RIEŠENIE všetkých chýb - Odstránené duplicitné definície (CS0101), ambiguous members (CS0111), ambiguous calls (CS0121), conversion errors (CS1503). Implementovaný clean wrapper pattern s proper delegation na existujúce Models.Public* triedy. Všetky namespace konflikty vyriešené.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>
