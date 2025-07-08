@@ -5,17 +5,17 @@ global using System.Linq;
 global using System.Threading.Tasks;
 global using System.ComponentModel;
 global using System.Runtime.CompilerServices;
-
-// WinUI 3 basic namespaces
-global using Microsoft.UI.Xaml;
-global using Microsoft.UI.Xaml.Controls;
-global using Microsoft.UI.Xaml.Data;
-global using Microsoft.UI.Xaml.Media;
-global using Microsoft.UI.Xaml.Input;
+global using System.Text;
 
 // .NET Extensions
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
+
+// WinUI 3 - ZÁKLADNÉ TYPY BEZ KONFLIKTOV
+global using Microsoft.UI.Xaml;
+global using Microsoft.UI.Xaml.Data;
+global using Microsoft.UI.Xaml.Media;
+global using Microsoft.UI.Xaml.Input;
 
 // KRITICKÁ OPRAVA: Explicitné aliasy pre WinUI komponenty
 global using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;

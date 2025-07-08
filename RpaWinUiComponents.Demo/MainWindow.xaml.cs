@@ -1,10 +1,15 @@
-﻿// MainWindow.xaml.cs - OPRAVENÁ VERZIA S DEBUG METÓDAMI
+﻿// MainWindow.xaml.cs - KOMPLETNE OPRAVENÝ
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
-using Microsoft.UI.Xaml;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
+
+// KĽÚČOVÁ OPRAVA: Použitie rovnakých aliasov ako v hlavnom komponente
+using MyColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using MyValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using MyThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+
 
 namespace RpaWinUiComponents.Demo
 {
@@ -59,7 +64,7 @@ namespace RpaWinUiComponents.Demo
                 System.Diagnostics.Debug.WriteLine($"🔧 Nastavujem počet riadkov na: {customRowCount}");
 
                 // Throttling config pre stabilitu
-                var throttlingConfig = new ThrottlingConfig
+                var throttlingConfig = new MyThrottlingConfig
                 {
                     TypingDelayMs = 500,
                     PasteDelayMs = 200,
@@ -134,11 +139,12 @@ namespace RpaWinUiComponents.Demo
         /// <summary>
         /// NOVÁ FUNKCIONALITA: Konfigurovateľné vytvorenie stĺpcov
         /// Môžete upraviť podľa potreby vašej aplikácie
+        /// OPRAVENÉ: Používa MyColumnDefinition alias
         /// </summary>
-        private List<ColumnDefinition> CreateColumnDefinitions()
+        private List<MyColumnDefinition> CreateColumnDefinitions()
         {
             // KONFIGUROVATEĽNÉ STĹPCE - môžete zmeniť podľa potreby
-            var columns = new List<ColumnDefinition>
+            var columns = new List<MyColumnDefinition>
             {
                 new("ID", typeof(int))
                 {
@@ -196,13 +202,14 @@ namespace RpaWinUiComponents.Demo
 
         /// <summary>
         /// KONFIGUROVATEĽNÉ validačné pravidlá
+        /// OPRAVENÉ: Používa MyValidationRule alias
         /// </summary>
-        private List<ValidationRule> CreateValidationRules()
+        private List<MyValidationRule> CreateValidationRules()
         {
-            var rules = new List<ValidationRule>
+            var rules = new List<MyValidationRule>
             {
                 // ID - povinné a jedinečné
-                new ValidationRule("ID",
+                new MyValidationRule("ID",
                     (value, row) => value != null && int.TryParse(value.ToString(), out int id) && id > 0,
                     "ID musí byť kladné číslo")
                 {
@@ -210,7 +217,7 @@ namespace RpaWinUiComponents.Demo
                 },
 
                 // Meno - povinné
-                new ValidationRule("Meno",
+                new MyValidationRule("Meno",
                     (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
                     "Meno je povinné pole")
                 {
@@ -218,7 +225,7 @@ namespace RpaWinUiComponents.Demo
                 },
 
                 // Email - formát
-                new ValidationRule("Email",
+                new MyValidationRule("Email",
                     (value, row) =>
                     {
                         var email = value?.ToString();
@@ -230,7 +237,7 @@ namespace RpaWinUiComponents.Demo
                 },
 
                 // Vek - rozsah
-                new ValidationRule("Vek",
+                new MyValidationRule("Vek",
                     (value, row) =>
                     {
                         if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
@@ -247,7 +254,7 @@ namespace RpaWinUiComponents.Demo
                 },
 
                 // Plat - rozsah
-                new ValidationRule("Plat",
+                new MyValidationRule("Plat",
                     (value, row) =>
                     {
                         if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
@@ -264,7 +271,7 @@ namespace RpaWinUiComponents.Demo
                 },
 
                 // Pozícia - voliteľná ale ak je zadaná, min dĺžka
-                new ValidationRule("Pozicia",
+                new MyValidationRule("Pozicia",
                     (value, row) =>
                     {
                         var pozicia = value?.ToString();
