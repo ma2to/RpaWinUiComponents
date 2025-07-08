@@ -1,4 +1,4 @@
-﻿//AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - OPRAVENÝ s top-level triedami
+﻿//AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - OPRAVENÝ API s public aliases
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -11,16 +11,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-// Importy pre public API triedy s premenevanými názvami
-using PublicColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.PublicColumnDefinition;
-using PublicValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.PublicValidationRule;
-using PublicThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.PublicThrottlingConfig;
-
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÝ API s top-level triedami
-    /// Demo aplikácie vidia len tento komponent a top-level triedy v Models namespace
+    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÝ API s public aliases
+    /// Demo aplikácie vidia len tento komponent a public alias triedy
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -72,20 +67,20 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         #region Inicializácia a Konfigurácia
 
         /// <summary>
-        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - OPRAVENÝ API
+        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - OPRAVENÝ API s public aliases
         /// </summary>
         public async Task InitializeAsync(
-            List<PublicColumnDefinition> columns,
-            List<PublicValidationRule>? validationRules = null,
-            PublicThrottlingConfig? throttling = null,
+            List<ColumnDefinition> columns,
+            List<ValidationRule>? validationRules = null,
+            ThrottlingConfig? throttling = null,
             int initialRowCount = 100)
         {
             try
             {
-                // Konverzia na interné triedy
-                var internalColumns = columns.Select(c => c.ToInternal()).ToList();
-                var internalRules = validationRules?.Select(r => r.ToInternal()).ToList();
-                var internalThrottling = throttling?.ToInternal();
+                // Konverzia na interné triedy cez ToPublic
+                var internalColumns = columns.Select(c => c.ToPublic()).ToList();
+                var internalRules = validationRules?.Select(r => r.ToPublic()).ToList();
+                var internalThrottling = throttling?.ToPublic();
 
                 await _internalView.InitializeAsync(internalColumns, internalRules, internalThrottling, initialRowCount);
                 _isInitialized = true;
@@ -374,7 +369,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         /// <summary>
         /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám
         /// </summary>
-        public async Task<int> RemoveRowsByValidationAsync(List<PublicValidationRule> customRules)
+        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
         {
             try
             {
@@ -383,7 +378,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
                 if (_internalView.ViewModel != null)
                 {
-                    var internalRules = customRules.Select(r => r.ToInternal()).ToList();
+                    var internalRules = customRules.Select(r => r.ToPublic().ToInternal()).ToList();
                     return await _internalView.ViewModel.RemoveRowsByValidationAsync(internalRules);
                 }
                 return 0;

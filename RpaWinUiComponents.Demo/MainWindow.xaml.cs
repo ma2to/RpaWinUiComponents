@@ -1,4 +1,4 @@
-﻿// MainWindow.xaml.cs - FINÁLNA VERZIA pre NuGet balík s custom validáciami
+﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA CS0426 - používame public API aliases
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -6,10 +6,11 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-// ✅ POUŽÍVAM VNORENÉ TRIEDY z NuGet balíka (funguje s v1.0.8)
-using MyColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl.ColumnDefinition;
-using MyThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl.ThrottlingConfig;
-using MyValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl.ValidationRule;
+
+// ✅ FINÁLNA OPRAVA: Používame public API aliases - tieto teraz existujú!
+using MyColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
+using MyThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig;
+using MyValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 
 namespace RpaWinUiComponents.Demo
 {
@@ -200,7 +201,7 @@ namespace RpaWinUiComponents.Demo
         {
             var rules = new List<MyValidationRule>();
 
-            // ✅ 1. ZÁKLADNÉ POMOCNÉ VALIDÁCIE
+            // ✅ 1. ZÁKLADNÉ POMOCNÉ VALIDÁCIE - používame static helper metódy
             rules.Add(MyValidationRule.Required("ID", "ID je povinné pole"));
             rules.Add(MyValidationRule.Required("Meno", "Meno je povinné pole"));
             rules.Add(MyValidationRule.Email("Email", "Email musí mať platný formát"));
@@ -209,109 +210,39 @@ namespace RpaWinUiComponents.Demo
             rules.Add(MyValidationRule.Length("Pozicia", 0, 50, "Pozícia môže mať max 50 znakov"));
 
             // 🎯 2. CUSTOM VALIDÁCIA - Kontrola dĺžky mena
-            rules.Add(new MyValidationRule("Meno",
-                (value, row) =>
-                {
-                    var meno = value?.ToString() ?? "";
-                    // Meno musí mať aspoň 2 slová (meno a priezvisko)
-                    var slova = meno.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    return slova.Length >= 2 && slova.All(s => s.Length >= 2);
-                },
-                "Meno musí obsahovať aspoň meno a priezvisko (min 2 znaky každé)")
+            rules.Add(new MyValidationRule("Meno", value =>
+            {
+                var meno = value?.ToString() ?? "";
+                // Meno musí mať aspoň 2 slová (meno a priezvisko)
+                var slova = meno.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                return slova.Length >= 2 && slova.All(s => s.Length >= 2);
+            }, "Meno musí obsahovať aspoň meno a priezvisko (min 2 znaky každé)")
             {
                 RuleName = "Meno_CompleteNameValidation",
                 Priority = 10
             });
 
             // 🎯 3. CUSTOM VALIDÁCIA - Kontrola formátu ID
-            rules.Add(new MyValidationRule("ID",
-                (value, row) =>
+            rules.Add(new MyValidationRule("ID", value =>
+            {
+                if (int.TryParse(value?.ToString(), out int id))
                 {
-                    if (int.TryParse(value?.ToString(), out int id))
-                    {
-                        // ID musí byť kladné a nepárne (biznis pravidlo)
-                        return id > 0 && id % 2 == 1;
-                    }
-                    return false;
-                },
-                "ID musí byť kladné nepárne číslo")
+                    // ID musí byť kladné a nepárne (biznis pravidlo)
+                    return id > 0 && id % 2 == 1;
+                }
+                return false;
+            }, "ID musí byť kladné nepárne číslo")
             {
                 RuleName = "ID_OddNumberValidation",
                 Priority = 5
             });
 
-            // 🎯 4. PODMIENENÁ VALIDÁCIA - Senior pozície vyžadujú vyšší plat
-            rules.Add(new MyValidationRule("Plat",
-                (value, row) =>
-                {
-                    var pozicia = row.GetValue<string>("Pozicia")?.ToLower() ?? "";
-                    var plat = decimal.TryParse(value?.ToString(), out decimal p) ? p : 0;
-
-                    if (pozicia.Contains("senior") || pozicia.Contains("lead") || pozicia.Contains("architekt"))
-                    {
-                        return plat >= 3000; // Senior pozície vyžadujú min 3000€
-                    }
-                    return true;
-                },
-                "Senior pozície vyžadujú plat minimálne 3000€")
-            {
-                RuleName = "Plat_SeniorPositionValidation",
-                Priority = 8,
-                ApplyCondition = row =>
-                {
-                    var pozicia = row.GetValue<string>("Pozicia")?.ToLower() ?? "";
-                    return pozicia.Contains("senior") || pozicia.Contains("lead") || pozicia.Contains("architekt");
-                }
-            });
-
-            // 🎯 5. CROSS-FIELD VALIDÁCIA - Vek vs Pozícia
-            rules.Add(new MyValidationRule("Vek",
-                (value, row) =>
-                {
-                    var vek = int.TryParse(value?.ToString(), out int v) ? v : 0;
-                    var pozicia = row.GetValue<string>("Pozicia")?.ToLower() ?? "";
-
-                    if (pozicia.Contains("junior"))
-                    {
-                        return vek <= 35; // Junior max 35 rokov
-                    }
-                    else if (pozicia.Contains("senior") || pozicia.Contains("lead"))
-                    {
-                        return vek >= 25; // Senior min 25 rokov
-                    }
-                    return true;
-                },
-                "Vek neodpovedá pozícii (Junior max 35, Senior min 25)")
-            {
-                RuleName = "Vek_PositionCompatibilityValidation",
-                Priority = 6
-            });
-
-            // 🎯 6. REGEX VALIDÁCIA - Email domain kontrola
-            rules.Add(new MyValidationRule("Email",
-                (value, row) =>
-                {
-                    var email = value?.ToString() ?? "";
-                    if (string.IsNullOrEmpty(email)) return true;
-
-                    // Povolené sú len firemné domény
-                    var allowedDomains = new[] { "example.com", "company.sk", "firma.sk", "test.com" };
-                    return allowedDomains.Any(domain => email.EndsWith($"@{domain}", StringComparison.OrdinalIgnoreCase));
-                },
-                "Email musí byť z povolenej domény (example.com, company.sk, firma.sk, test.com)")
-            {
-                RuleName = "Email_DomainValidation",
-                Priority = 7
-            });
-
-            // 🎯 7. ASYNC VALIDÁCIA - Simulácia kontroly duplicitného emailu
-            rules.Add(new MyValidationRule("Email", (_, _) => true, "Email už existuje v systéme")
+            // 🎯 4. ASYNC VALIDÁCIA - Simulácia kontroly duplicitného emailu
+            rules.Add(new MyValidationRule("Email", _ => true, "Email už existuje v systéme")
             {
                 RuleName = "Email_DuplicateCheckAsync",
                 IsAsync = true,
-                Priority = 15,
-                ValidationTimeout = TimeSpan.FromSeconds(3),
-                AsyncValidationFunction = async (value, row, cancellationToken) =>
+                AsyncValidationFunction = async (value, cancellationToken) =>
                 {
                     var email = value?.ToString() ?? "";
                     if (string.IsNullOrEmpty(email)) return true;
@@ -331,85 +262,25 @@ namespace RpaWinUiComponents.Demo
                 }
             });
 
-            // 🎯 8. CUSTOM DÁTUM VALIDÁCIA - Dátum nástupu
-            rules.Add(new MyValidationRule("DatumNastupu",
-                (value, row) =>
+            // 🎯 5. CUSTOM DÁTUM VALIDÁCIA - Dátum nástupu
+            rules.Add(new MyValidationRule("DatumNastupu", value =>
+            {
+                if (value == null) return true;
+
+                if (DateTime.TryParse(value.ToString(), out DateTime datum))
                 {
-                    if (value == null) return true;
+                    var dnes = DateTime.Now.Date;
+                    var pred5Rokmi = dnes.AddYears(-5);
+                    var za1Rok = dnes.AddYears(1);
 
-                    if (DateTime.TryParse(value.ToString(), out DateTime datum))
-                    {
-                        var dnes = DateTime.Now.Date;
-                        var pred5Rokmi = dnes.AddYears(-5);
-                        var za1Rok = dnes.AddYears(1);
-
-                        // Dátum nástupu môže byť max 5 rokov v minulosti alebo 1 rok v budúcnosti
-                        return datum >= pred5Rokmi && datum <= za1Rok;
-                    }
-                    return false;
-                },
-                "Dátum nástupu môže byť max 5 rokov v minulosti alebo 1 rok v budúcnosti")
+                    // Dátum nástupu môže byť max 5 rokov v minulosti alebo 1 rok v budúcnosti
+                    return datum >= pred5Rokmi && datum <= za1Rok;
+                }
+                return false;
+            }, "Dátum nástupu môže byť max 5 rokov v minulosti alebo 1 rok v budúcnosti")
             {
                 RuleName = "DatumNastupu_RangeValidation",
                 Priority = 5
-            });
-
-            // 🎯 9. KOMPLEXNÁ BUSINESS VALIDÁCIA - Oddelenie vs Pozícia
-            rules.Add(new MyValidationRule("Oddelenie",
-                (value, row) =>
-                {
-                    var oddelenie = value?.ToString()?.ToLower() ?? "";
-                    var pozicia = row.GetValue<string>("Pozicia")?.ToLower() ?? "";
-
-                    if (string.IsNullOrEmpty(oddelenie)) return true;
-
-                    // Business pravidlá pre oddelenia
-                    var validCombinations = new Dictionary<string, string[]>
-                    {
-                        ["it"] = new[] { "programátor", "analytik", "tester", "architekt", "junior", "senior", "lead" },
-                        ["hr"] = new[] { "hr", "personal", "nábor", "mzdy" },
-                        ["finance"] = new[] { "účtovník", "kontrolór", "analytik", "manažér" },
-                        ["marketing"] = new[] { "marketér", "designer", "copywriter", "social media" },
-                        ["sales"] = new[] { "predajca", "obchodník", "manažér", "konzultant" }
-                    };
-
-                    foreach (var dept in validCombinations.Keys)
-                    {
-                        if (oddelenie.Contains(dept))
-                        {
-                            return validCombinations[dept].Any(pos => pozicia.Contains(pos));
-                        }
-                    }
-
-                    return true; // Ak oddelenie nie je v zozname, povol
-                },
-                "Pozícia neodpovedá oddeleniu")
-            {
-                RuleName = "Oddelenie_PositionCompatibilityValidation",
-                Priority = 12
-            });
-
-            // 🎯 10. CUSTOM VALIDÁCIA s MULTIPLE CONDITIONS
-            rules.Add(new MyValidationRule("Plat",
-                (value, row) =>
-                {
-                    var plat = decimal.TryParse(value?.ToString(), out decimal p) ? p : 0;
-                    var vek = int.TryParse(row.GetValue<string>("Vek")?.ToString(), out int v) ? v : 0;
-                    var pozicia = row.GetValue<string>("Pozicia")?.ToLower() ?? "";
-
-                    // Zložité business pravidlo: plat vs vek vs pozícia
-                    if (vek < 25 && plat > 2500)
-                        return false; // Mladší ako 25 nemôže mať viac ako 2500€
-
-                    if (vek > 50 && plat < 2000 && !pozicia.Contains("junior"))
-                        return false; // Starší ako 50 s nízky platom len ako junior
-
-                    return true;
-                },
-                "Plat neodpovedá kombinácii veku a pozície")
-            {
-                RuleName = "Plat_ComplexBusinessRuleValidation",
-                Priority = 20 // Najvyššia priorita
             });
 
             System.Diagnostics.Debug.WriteLine($"📋 Vytvorených {rules.Count} validačných pravidiel:");
