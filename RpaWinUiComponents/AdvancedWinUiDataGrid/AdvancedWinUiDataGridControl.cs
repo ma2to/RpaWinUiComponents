@@ -1,4 +1,4 @@
-﻿//RpaWinUiComponents/AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs
+﻿//AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - OPRAVENÝ s top-level triedami
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -11,11 +11,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+// Importy pre public API triedy s premenevanými názvami
+using PublicColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.PublicColumnDefinition;
+using PublicValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.PublicValidationRule;
+using PublicThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.PublicThrottlingConfig;
+
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - ČISTÝ API
-    /// Demo aplikácie vidia len tento komponent a jeho vnorené triedy
+    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÝ API s top-level triedami
+    /// Demo aplikácie vidia len tento komponent a top-level triedy v Models namespace
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -64,187 +69,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region Public API Classes - JEDINÉ TRIEDY KTORÉ DEMO VIDÍ
-
-        /// <summary>
-        /// Definícia stĺpca pre DataGrid - ČISTÝ API
-        /// </summary>
-        public class ColumnDefinition
-        {
-            public string Name { get; set; } = string.Empty;
-            public Type DataType { get; set; } = typeof(string);
-            public double MinWidth { get; set; } = 80;
-            public double MaxWidth { get; set; } = 300;
-            public double Width { get; set; } = 150;
-            public bool AllowResize { get; set; } = true;
-            public bool AllowSort { get; set; } = true;
-            public bool IsReadOnly { get; set; } = false;
-            public string? Header { get; set; }
-            public string? ToolTip { get; set; }
-
-            public ColumnDefinition() { }
-
-            public ColumnDefinition(string name, Type dataType)
-            {
-                Name = name;
-                DataType = dataType;
-                Header = name;
-            }
-
-            // Konverzia na internú triedu
-            internal Models.ColumnDefinition ToInternal()
-            {
-                return new Models.ColumnDefinition(Name, DataType)
-                {
-                    MinWidth = MinWidth,
-                    MaxWidth = MaxWidth,
-                    Width = Width,
-                    AllowResize = AllowResize,
-                    AllowSort = AllowSort,
-                    IsReadOnly = IsReadOnly,
-                    Header = Header,
-                    ToolTip = ToolTip
-                };
-            }
-        }
-
-        /// <summary>
-        /// Validačné pravidlo pre DataGrid - ČISTÝ API
-        /// </summary>
-        public class ValidationRule
-        {
-            public string ColumnName { get; set; } = string.Empty;
-            public Func<object?, bool> ValidationFunction { get; set; } = _ => true;
-            public string ErrorMessage { get; set; } = string.Empty;
-            public Func<bool> ApplyCondition { get; set; } = () => true;
-            public int Priority { get; set; } = 0;
-            public string RuleName { get; set; } = string.Empty;
-            public bool IsAsync { get; set; } = false;
-            public Func<object?, CancellationToken, Task<bool>>? AsyncValidationFunction { get; set; }
-            public TimeSpan ValidationTimeout { get; set; } = TimeSpan.FromSeconds(5);
-
-            public ValidationRule()
-            {
-                RuleName = Guid.NewGuid().ToString("N")[..8];
-            }
-
-            public ValidationRule(string columnName, Func<object?, bool> validationFunction, string errorMessage)
-            {
-                ColumnName = columnName;
-                ValidationFunction = validationFunction;
-                ErrorMessage = errorMessage;
-                RuleName = $"{columnName}_{Guid.NewGuid().ToString("N")[..8]}";
-            }
-
-            // Konverzia na internú triedu
-            internal Models.ValidationRule ToInternal()
-            {
-                return new Models.ValidationRule(ColumnName,
-                    (value, row) => ValidationFunction(value),
-                    ErrorMessage)
-                {
-                    Priority = Priority,
-                    RuleName = RuleName,
-                    IsAsync = IsAsync,
-                    AsyncValidationFunction = AsyncValidationFunction != null
-                        ? (value, row, token) => AsyncValidationFunction(value, token)
-                        : null,
-                    ValidationTimeout = ValidationTimeout,
-                    ApplyCondition = row => ApplyCondition()
-                };
-            }
-        }
-
-        /// <summary>
-        /// Konfigurácia throttling pre DataGrid - ČISTÝ API
-        /// </summary>
-        public class ThrottlingConfig
-        {
-            public int TypingDelayMs { get; set; } = 300;
-            public int PasteDelayMs { get; set; } = 100;
-            public int BatchValidationDelayMs { get; set; } = 200;
-            public int MaxConcurrentValidations { get; set; } = 5;
-            public bool IsEnabled { get; set; } = true;
-            public TimeSpan ValidationTimeout { get; set; } = TimeSpan.FromSeconds(30);
-            public int MinValidationIntervalMs { get; set; } = 50;
-
-            public static ThrottlingConfig Default => new();
-            public static ThrottlingConfig Fast => new()
-            {
-                TypingDelayMs = 150,
-                PasteDelayMs = 50,
-                BatchValidationDelayMs = 100,
-                MaxConcurrentValidations = 10,
-                MinValidationIntervalMs = 25
-            };
-            public static ThrottlingConfig Slow => new()
-            {
-                TypingDelayMs = 500,
-                PasteDelayMs = 200,
-                BatchValidationDelayMs = 400,
-                MaxConcurrentValidations = 3,
-                MinValidationIntervalMs = 100
-            };
-            public static ThrottlingConfig Disabled => new()
-            {
-                IsEnabled = false,
-                TypingDelayMs = 0,
-                PasteDelayMs = 0,
-                BatchValidationDelayMs = 0,
-                MinValidationIntervalMs = 0
-            };
-
-            // Konverzia na internú triedu
-            internal Models.ThrottlingConfig ToInternal()
-            {
-                return new Models.ThrottlingConfig
-                {
-                    TypingDelayMs = TypingDelayMs,
-                    PasteDelayMs = PasteDelayMs,
-                    BatchValidationDelayMs = BatchValidationDelayMs,
-                    MaxConcurrentValidations = MaxConcurrentValidations,
-                    IsEnabled = IsEnabled,
-                    ValidationTimeout = ValidationTimeout,
-                    MinValidationIntervalMs = MinValidationIntervalMs
-                };
-            }
-        }
-
-        /// <summary>
-        /// Informácie o chybe v komponente - ČISTÝ API
-        /// </summary>
-        public class ComponentError : EventArgs
-        {
-            public Exception Exception { get; set; }
-            public string Operation { get; set; }
-            public string? AdditionalInfo { get; set; }
-            public DateTime Timestamp { get; set; } = DateTime.Now;
-
-            public ComponentError(Exception exception, string operation, string? additionalInfo = null)
-            {
-                Exception = exception;
-                Operation = operation;
-                AdditionalInfo = additionalInfo;
-            }
-
-            public override string ToString()
-            {
-                return $"[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Operation}: {Exception.Message}" +
-                       (string.IsNullOrEmpty(AdditionalInfo) ? "" : $" - {AdditionalInfo}");
-            }
-        }
-
-        #endregion
-
         #region Inicializácia a Konfigurácia
 
         /// <summary>
-        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - ČISTÝ API
+        /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - OPRAVENÝ API
         /// </summary>
         public async Task InitializeAsync(
-            List<ColumnDefinition> columns,
-            List<ValidationRule>? validationRules = null,
-            ThrottlingConfig? throttling = null,
+            List<PublicColumnDefinition> columns,
+            List<PublicValidationRule>? validationRules = null,
+            PublicThrottlingConfig? throttling = null,
             int initialRowCount = 100)
         {
             try
@@ -282,7 +115,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region Public Info Methods - ČISTÝ API
+        #region Public Info Methods
+
+        /// <summary>
+        /// Kontroluje či je komponent inicializovaný
+        /// </summary>
+        public bool IsInitialized()
+        {
+            ThrowIfDisposed();
+            return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
+        }
 
         /// <summary>
         /// Získa počet stĺpcov v DataGrid
@@ -316,6 +158,19 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
+        /// Získa počet neprázdnych riadkov
+        /// </summary>
+        public int GetDataRowCount()
+        {
+            ThrowIfDisposed();
+
+            if (_internalView?.ViewModel?.Rows == null)
+                return 0;
+
+            return _internalView.ViewModel.Rows.Count(r => !r.IsEmpty);
+        }
+
+        /// <summary>
         /// Získa informácie o stĺpcoch pre debug
         /// </summary>
         public string GetColumnsInfo()
@@ -334,28 +189,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             }
 
             return info.ToString();
-        }
-
-        /// <summary>
-        /// Kontroluje či je komponent inicializovaný
-        /// </summary>
-        public bool IsInitialized()
-        {
-            ThrowIfDisposed();
-            return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
-        }
-
-        /// <summary>
-        /// Získa počet neprázdnych riadkov
-        /// </summary>
-        public int GetDataRowCount()
-        {
-            ThrowIfDisposed();
-
-            if (_internalView?.ViewModel?.Rows == null)
-                return 0;
-
-            return _internalView.ViewModel.Rows.Count(r => !r.IsEmpty);
         }
 
         /// <summary>
@@ -541,7 +374,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         /// <summary>
         /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám
         /// </summary>
-        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
+        public async Task<int> RemoveRowsByValidationAsync(List<PublicValidationRule> customRules)
         {
             try
             {
@@ -559,155 +392,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             {
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
                 return 0;
-            }
-        }
-
-        #endregion
-
-        #region Static Validation Helpers - ČISTÝ API
-
-        /// <summary>
-        /// Pomocné metódy pre tvorbu validačných pravidiel - ČISTÝ API
-        /// </summary>
-        public static class Validation
-        {
-            /// <summary>
-            /// Vytvorí pravidlo pre povinné pole
-            /// </summary>
-            public static ValidationRule Required(string columnName, string? errorMessage = null)
-            {
-                return new ValidationRule(
-                    columnName,
-                    value => !string.IsNullOrWhiteSpace(value?.ToString()),
-                    errorMessage ?? $"{columnName} je povinné pole"
-                )
-                {
-                    RuleName = $"{columnName}_Required"
-                };
-            }
-
-            /// <summary>
-            /// Vytvorí pravidlo pre kontrolu dĺžky textu
-            /// </summary>
-            public static ValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
-            {
-                return new ValidationRule(
-                    columnName,
-                    value =>
-                    {
-                        var text = value?.ToString() ?? "";
-                        return text.Length >= minLength && text.Length <= maxLength;
-                    },
-                    errorMessage ?? $"{columnName} musí mať dĺžku medzi {minLength} a {maxLength} znakmi"
-                )
-                {
-                    RuleName = $"{columnName}_Length"
-                };
-            }
-
-            /// <summary>
-            /// Vytvorí pravidlo pre kontrolu číselného rozsahu
-            /// </summary>
-            public static ValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
-            {
-                return new ValidationRule(
-                    columnName,
-                    value =>
-                    {
-                        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
-                            return true;
-
-                        if (double.TryParse(value.ToString(), out double numValue))
-                        {
-                            return numValue >= min && numValue <= max;
-                        }
-
-                        return false;
-                    },
-                    errorMessage ?? $"{columnName} musí byť medzi {min} a {max}"
-                )
-                {
-                    RuleName = $"{columnName}_Range"
-                };
-            }
-
-            /// <summary>
-            /// Vytvorí pravidlo pre validáciu číselných hodnôt
-            /// </summary>
-            public static ValidationRule Numeric(string columnName, string? errorMessage = null)
-            {
-                return new ValidationRule(
-                    columnName,
-                    value =>
-                    {
-                        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
-                            return true;
-
-                        return double.TryParse(value.ToString(), out _);
-                    },
-                    errorMessage ?? $"{columnName} musí byť číslo"
-                )
-                {
-                    RuleName = $"{columnName}_Numeric"
-                };
-            }
-
-            /// <summary>
-            /// Vytvorí pravidlo pre validáciu emailu
-            /// </summary>
-            public static ValidationRule Email(string columnName, string? errorMessage = null)
-            {
-                return new ValidationRule(
-                    columnName,
-                    value =>
-                    {
-                        if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
-                            return true;
-
-                        var email = value.ToString();
-                        return email?.Contains("@") == true && email.Contains(".") && email.Length > 5;
-                    },
-                    errorMessage ?? $"{columnName} musí mať platný formát emailu"
-                )
-                {
-                    RuleName = $"{columnName}_Email"
-                };
-            }
-
-            /// <summary>
-            /// Vytvorí podmienené validačné pravidlo
-            /// </summary>
-            public static ValidationRule Conditional(
-                string columnName,
-                Func<object?, bool> validationFunction,
-                Func<bool> condition,
-                string errorMessage,
-                string? ruleName = null)
-            {
-                return new ValidationRule(columnName, validationFunction, errorMessage)
-                {
-                    ApplyCondition = condition,
-                    RuleName = ruleName ?? $"{columnName}_Conditional_{Guid.NewGuid().ToString("N")[..8]}"
-                };
-            }
-
-            /// <summary>
-            /// Vytvorí async validačné pravidlo
-            /// </summary>
-            public static ValidationRule AsyncRule(
-                string columnName,
-                Func<object?, CancellationToken, Task<bool>> asyncValidationFunction,
-                string errorMessage,
-                TimeSpan? timeout = null,
-                string? ruleName = null)
-            {
-                return new ValidationRule(columnName, _ => true, errorMessage)
-                {
-                    IsAsync = true,
-                    AsyncValidationFunction = asyncValidationFunction,
-                    ValidationTimeout = timeout ?? TimeSpan.FromSeconds(5),
-                    RuleName = ruleName ?? $"{columnName}_Async_{Guid.NewGuid().ToString("N")[..8]}"
-                };
             }
         }
 
