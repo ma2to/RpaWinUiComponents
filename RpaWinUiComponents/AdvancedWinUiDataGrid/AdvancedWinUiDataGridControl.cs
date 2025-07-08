@@ -21,7 +21,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
     /// <summary>
     /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÝ API s public aliases
     /// Demo aplikácie vidia len tento komponent a public alias triedy
-    /// FINÁLNE RIEŠENIE CS0234 CHÝB
+    /// FINÁLNE RIEŠENIE CS1503 CHÝB s konverziami
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -74,7 +74,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         /// <summary>
         /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - PUBLIC API
-        /// FINÁLNE RIEŠENIE: Používa public alias triedy
+        /// FINÁLNE RIEŠENIE: Používa public alias triedy s OPRAVENÝMI KONVERZIAMI
         /// </summary>
         public async Task InitializeAsync(
             List<ColumnDefinition> columns,
@@ -84,10 +84,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         {
             try
             {
-                // KĽÚČOVÁ OPRAVA: Konverzia z public API na internal API
-                var internalColumns = columns.Select(c => c.ToInternal()).ToList();
-                var internalRules = validationRules?.Select(r => r.ToInternal()).ToList();
-                var internalThrottling = throttling?.ToInternal();
+                // KĽÚČOVÁ OPRAVA: Správne konverzie z public API na internal API
+                var internalColumns = ConvertColumnsToInternal(columns);
+                var internalRules = ConvertValidationRulesToInternal(validationRules);
+                var internalThrottling = ConvertThrottlingConfigToInternal(throttling);
 
                 await _internalView.InitializeAsync(internalColumns, internalRules, internalThrottling, initialRowCount);
                 _isInitialized = true;
@@ -119,6 +119,44 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
                 throw;
             }
         }
+
+        #endregion
+
+        #region KONVERZIE - FINÁLNE RIEŠENIE CS1503 CHÝB
+
+        /// <summary>
+        /// Konvertuje public ColumnDefinition na internal
+        /// </summary>
+        private List<InternalColumnDefinition> ConvertColumnsToInternal(List<ColumnDefinition> publicColumns)
+        {
+            if (publicColumns == null)
+                return new List<InternalColumnDefinition>();
+
+            return publicColumns.Select(c => c.ToInternal()).ToList();
+        }
+
+        /// <summary>
+        /// Konvertuje public ValidationRule na internal
+        /// </summary>
+        private List<InternalValidationRule>? ConvertValidationRulesToInternal(List<ValidationRule>? publicRules)
+        {
+            if (publicRules == null)
+                return null;
+
+            return publicRules.Select(r => r.ToInternal()).ToList();
+        }
+
+        /// <summary>
+        /// Konvertuje public ThrottlingConfig na internal
+        /// </summary>
+        private InternalThrottlingConfig? ConvertThrottlingConfigToInternal(ThrottlingConfig? publicConfig)
+        {
+            return publicConfig?.ToInternal();
+        }
+
+        #endregion
+
+        #region Resetovanie
 
         /// <summary>
         /// Resetuje komponent do pôvodného stavu
@@ -407,8 +445,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
                 if (_internalView.ViewModel != null)
                 {
                     // KĽÚČOVÁ OPRAVA: Konverzia z public API na internal API
-                    var internalRules = customRules.Select(r => r.ToInternal()).ToList();
-                    return await _internalView.ViewModel.RemoveRowsByValidationAsync(internalRules);
+                    var internalRules = ConvertValidationRulesToInternal(customRules);
+                    return await _internalView.ViewModel.RemoveRowsByValidationAsync(internalRules ?? new List<InternalValidationRule>());
                 }
                 return 0;
             }

@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA UI generovania
+﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA konverzií typov
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -26,7 +26,7 @@ using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.Th
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// KOMPLETNÁ OPRAVA - UI generovanie funguje správne
+    /// KOMPLETNÁ OPRAVA - Konverzie fungujú správne
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -226,7 +226,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     MinWidth = column.MinWidth,
                     BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                     BorderThickness = new Thickness(0, 0, 1, 1),
-                    Padding = new Thickness(8, 6,8,6),
+                    Padding = new Thickness(8, 6, 8, 6),
                     Background = new SolidColorBrush(Microsoft.UI.Colors.LightGray)
                 };
 
@@ -285,7 +285,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 MinWidth = column.MinWidth,
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                 BorderThickness = new Thickness(0, 0, 1, 1),
-                Padding = new Thickness(8, 4,8,4),
+                Padding = new Thickness(8, 4, 8, 4),
                 Background = cell?.HasValidationError == true
                     ? new SolidColorBrush(Microsoft.UI.Colors.MistyRose)
                     : new SolidColorBrush(Microsoft.UI.Colors.Transparent)
@@ -406,7 +406,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Public API Methods
+        #region Public API Methods - OPRAVENÉ KONVERZIE
 
         public async Task InitializeAsync(
             List<LocalColumnDefinition> columns,
@@ -427,6 +427,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     ViewModel = _viewModel;
                 }
 
+                // KĽÚČOVÁ OPRAVA: Konverzie už nie sú potrebné, používame internal typy priamo
                 await _viewModel.InitializeAsync(columns, validationRules ?? new List<LocalValidationRule>(), throttling, initialRowCount);
 
                 _isInitialized = true;

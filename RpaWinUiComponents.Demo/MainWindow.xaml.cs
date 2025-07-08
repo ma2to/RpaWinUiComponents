@@ -1,4 +1,4 @@
-﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA CS0234 - používame public API aliasy
+﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa opravené API
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// ✅ FINÁLNA OPRAVA: Používame public API aliasy - tieto teraz existujú!
+// ✅ FINÁLNA OPRAVA: Používame opravené public API
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
 namespace RpaWinUiComponents.Demo
@@ -40,18 +40,14 @@ namespace RpaWinUiComponents.Demo
                 UpdateLoadingState("Inicializuje sa komponent...", "Pripravuje sa DataGrid...");
                 await Task.Delay(200);
 
-                // KROK 1: Definícia stĺpcov s debug - POUŽÍVAME PUBLIC API
+                // KROK 1: Definícia stĺpcov - POUŽÍVAME OPRAVENÉ API
                 System.Diagnostics.Debug.WriteLine("📊 Vytváram definície stĺpcov...");
                 var columns = CreateColumnDefinitions();
                 System.Diagnostics.Debug.WriteLine($"✅ Vytvorených {columns.Count} stĺpcov");
-                foreach (var col in columns)
-                {
-                    System.Diagnostics.Debug.WriteLine($"   📏 {col.Name} - {col.Header} (Width: {col.Width})");
-                }
 
                 UpdateLoadingState("Nastavujú sa validačné pravidlá...", "Definujú sa validačné pravidlá...");
 
-                // KROK 2: Definícia validačných pravidiel s debug - POUŽÍVAME PUBLIC API
+                // KROK 2: Definícia validačných pravidiel - POUŽÍVAME OPRAVENÉ API
                 System.Diagnostics.Debug.WriteLine("✅ Vytváram validačné pravidlá...");
                 var validationRules = CreateValidationRules();
                 System.Diagnostics.Debug.WriteLine($"✅ Vytvorených {validationRules.Count} validačných pravidiel");
@@ -62,7 +58,7 @@ namespace RpaWinUiComponents.Demo
                 int customRowCount = 25;
                 System.Diagnostics.Debug.WriteLine($"🔧 Nastavujem počet riadkov na: {customRowCount}");
 
-                // Throttling config pre stabilitu - POUŽÍVAME PUBLIC API
+                // Throttling config pre stabilitu - POUŽÍVAME OPRAVENÉ API
                 var throttlingConfig = new ThrottlingConfig
                 {
                     TypingDelayMs = 500,
@@ -82,13 +78,10 @@ namespace RpaWinUiComponents.Demo
 
                 System.Diagnostics.Debug.WriteLine("🔧 Spúšťam InitializeAsync...");
 
-                // KĽÚČOVÁ OPRAVA: Explicit inicializácia s custom počtom riadkov - PUBLIC API
+                // KĽÚČOVÁ OPRAVA: Explicit inicializácia s custom počtom riadkov
                 await DataGridControl.InitializeAsync(columns, validationRules, throttlingConfig, customRowCount);
 
                 System.Diagnostics.Debug.WriteLine("✅ InitializeAsync dokončený");
-                System.Diagnostics.Debug.WriteLine("✅ Komponent je inicializovaný");
-                System.Diagnostics.Debug.WriteLine($"📊 Počet definovaných stĺpcov: {columns.Count}");
-                System.Diagnostics.Debug.WriteLine($"📊 Počet definovaných validačných pravidiel: {validationRules.Count}");
 
                 UpdateLoadingState("Načítavajú sa testové dáta...", "Vytváraju sa ukážkové záznamy...");
 
@@ -114,8 +107,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// NOVÁ FUNKCIONALITA: Konfigurovateľné vytvorenie stĺpcov - POUŽÍVA PUBLIC API
-        /// Môžete upraviť podľa potreby vašej aplikácie
+        /// Konfigurovateľné vytvorenie stĺpcov - POUŽÍVA OPRAVENÉ API
         /// </summary>
         private List<ColumnDefinition> CreateColumnDefinitions()
         {
@@ -192,8 +184,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// 🚀 ROZŠÍRENÉ VALIDAČNÉ PRAVIDLÁ s custom validáciami - POUŽÍVA PUBLIC API
-        /// Obsahuje príklady všetkých typov validácií vrátane async a podmienených
+        /// Rozšírené validačné pravidlá - POUŽÍVA OPRAVENÉ API
         /// </summary>
         private List<ValidationRule> CreateValidationRules()
         {
@@ -208,10 +199,9 @@ namespace RpaWinUiComponents.Demo
             rules.Add(ValidationRule.Length("Pozicia", 0, 50, "Pozícia môže mať max 50 znakov"));
 
             // 🎯 2. CUSTOM VALIDÁCIA - Kontrola dĺžky mena
-            var nameRule = new ValidationRule("Meno", value =>
+            var nameRule = new ValidationRule("Meno", (value, row) =>
             {
                 var meno = value?.ToString() ?? "";
-                // Meno musí mať aspoň 2 slová (meno a priezvisko)
                 var slova = meno.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 return slova.Length >= 2 && slova.All(s => s.Length >= 2);
             }, "Meno musí obsahovať aspoň meno a priezvisko (min 2 znaky každé)")
@@ -222,12 +212,11 @@ namespace RpaWinUiComponents.Demo
             rules.Add(nameRule);
 
             // 🎯 3. CUSTOM VALIDÁCIA - Kontrola formátu ID
-            var idRule = new ValidationRule("ID", value =>
+            var idRule = new ValidationRule("ID", (value, row) =>
             {
                 if (int.TryParse(value?.ToString(), out int id))
                 {
-                    // ID musí byť kladné a nepárne (biznis pravidlo)
-                    return id > 0 && id % 2 == 1;
+                    return id > 0 && id % 2 == 1; // ID musí byť kladné nepárne
                 }
                 return false;
             }, "ID musí byť kladné nepárne číslo")
@@ -247,15 +236,15 @@ namespace RpaWinUiComponents.Demo
                 ValidationTimeout = TimeSpan.FromSeconds(5)
             };
 
-            asyncEmailRule.SetAsyncValidationFunction(async (value, cancellationToken) =>
+            // Nastavenie async function cez property
+            asyncEmailRule.AsyncValidationFunction = async (value, row, cancellationToken) =>
             {
                 var email = value?.ToString() ?? "";
                 if (string.IsNullOrEmpty(email)) return true;
 
-                // Simulácia async kontroly v databáze
+                // Simulácia async kontroly
                 await Task.Delay(500, cancellationToken);
 
-                // Simulované "zakázané" emaily
                 var forbiddenEmails = new[]
                 {
                     "admin@example.com",
@@ -264,11 +253,11 @@ namespace RpaWinUiComponents.Demo
                 };
 
                 return !forbiddenEmails.Contains(email.ToLower());
-            });
+            };
             rules.Add(asyncEmailRule);
 
-            // 🎯 5. CUSTOM DÁTUM VALIDÁCIA - Dátum nástupu
-            var dateRule = new ValidationRule("DatumNastupu", value =>
+            // 🎯 5. CUSTOM DÁTUM VALIDÁCIA
+            var dateRule = new ValidationRule("DatumNastupu", (value, row) =>
             {
                 if (value == null) return true;
 
@@ -277,8 +266,6 @@ namespace RpaWinUiComponents.Demo
                     var dnes = DateTime.Now.Date;
                     var pred5Rokmi = dnes.AddYears(-5);
                     var za1Rok = dnes.AddYears(1);
-
-                    // Dátum nástupu môže byť max 5 rokov v minulosti alebo 1 rok v budúcnosti
                     return datum >= pred5Rokmi && datum <= za1Rok;
                 }
                 return false;
@@ -299,7 +286,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// ROZŠÍRENÉ testové dáta s novými stĺpcami a rôznymi validačnými scenármi
+        /// Rozšírené testové dáta s validačnými scenármi
         /// </summary>
         private async Task LoadTestDataAsync()
         {
@@ -317,7 +304,7 @@ namespace RpaWinUiComponents.Demo
                 dataTable.Columns.Add("Oddelenie", typeof(string));
                 dataTable.Columns.Add("DatumNastupu", typeof(DateTime));
 
-                // ROZŠÍRENÉ testové dáta s validačnými scenármi
+                // Testové dáta s validačnými scenármi
                 var testData = new object[][]
                 {
                     // ✅ VALIDNÉ ZÁZNAMY
@@ -328,11 +315,11 @@ namespace RpaWinUiComponents.Demo
                     new object[] { 9, "Tomáš Varga", "tomas.varga@test.com", 24, 2000.00m, "Junior Programátor", "IT", DateTime.Now.AddMonths(-6) },
 
                     // ❌ NEVALIDNÉ ZÁZNAMY - na testovanie validácií
-                    new object[] { 2, "Lucia", "lucia@gmail.com", 15, 200.00m, "X", "Unknown", DateTime.Now.AddYears(-10) }, // Párne ID, krátke meno, mladý, nízky plat
-                    new object[] { 4, "Michal Novotný", "admin@example.com", 22, 5000.00m, "Senior Architekt", "IT", DateTime.Now.AddYears(2) }, // Párne ID, forbidden email, mladý senior
-                    new object[] { 6, "", "invalid-email", 150, 50000.00m, "HR Manažér", "IT", DateTime.Now.AddYears(-20) }, // Párne ID, prázdne meno, nevalidný email
-                    new object[] { 8, "Test User Name", "test@example.com", 55, 1500.00m, "Programátor", "Finance", DateTime.Now.AddMonths(18) }, // Párne ID, starý s nízkym platom
-                    new object[] { 11, "Junior Developer", "duplicate@company.sk", 30, 1800.00m, "Senior Lead", "Sales", DateTime.Now.AddDays(-1) } // Zakázaný email
+                    new object[] { 2, "Lucia", "lucia@gmail.com", 15, 200.00m, "X", "Unknown", DateTime.Now.AddYears(-10) },
+                    new object[] { 4, "Michal Novotný", "admin@example.com", 22, 5000.00m, "Senior Architekt", "IT", DateTime.Now.AddYears(2) },
+                    new object[] { 6, "", "invalid-email", 150, 50000.00m, "HR Manažér", "IT", DateTime.Now.AddYears(-20) },
+                    new object[] { 8, "Test User Name", "test@example.com", 55, 1500.00m, "Programátor", "Finance", DateTime.Now.AddMonths(18) },
+                    new object[] { 11, "Junior Developer", "duplicate@company.sk", 30, 1800.00m, "Senior Lead", "Sales", DateTime.Now.AddDays(-1) }
                 };
 
                 foreach (var rowData in testData)
@@ -343,7 +330,6 @@ namespace RpaWinUiComponents.Demo
                 }
 
                 System.Diagnostics.Debug.WriteLine($"📊 Vytvorený DataTable s {dataTable.Rows.Count} riadkami a {dataTable.Columns.Count} stĺpcami");
-                System.Diagnostics.Debug.WriteLine($"✅ Validné záznamy: 5, ❌ Nevalidné záznamy: 5 (na testovanie)");
 
                 // Načítanie do DataGrid
                 await DataGridControl.LoadDataAsync(dataTable);
