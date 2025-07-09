@@ -18,7 +18,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers;
 
-// KĽÚČOVÁ OPRAVA: Používanie INTERNAL typov v internal súboroch
+// KĽÚČOVÁ OPRAVA: V internal views používame iba INTERNAL typy
 using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
@@ -26,7 +26,7 @@ using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.Th
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// FINÁLNA OPRAVA - Používa internal typy správne
+    /// FINÁLNA OPRAVA - Internal view používa internal API bez konverzií
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -36,7 +36,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private bool _isKeyboardShortcutsVisible = false;
         private bool _isInitialized = false;
 
-        // UI tracking - OPRAVA: Správne typy
+        // UI tracking
         private readonly Dictionary<DataGridRow, StackPanel> _rowElements = new();
         private readonly List<Border> _headerElements = new();
 
@@ -406,10 +406,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Public API Methods - OPRAVENÉ TYPY
+        #region Public API Methods - FINÁLNA OPRAVA: INTERNAL TYPY + INTERNAL API
 
         /// <summary>
-        /// KĽÚČOVÁ OPRAVA: Používanie INTERNAL typov v internal súbore
+        /// FINÁLNA OPRAVA: Internal view používa INTERNAL API s internal typmi
         /// </summary>
         public async Task InitializeAsync(
             List<LocalColumnDefinition> columns,
@@ -430,12 +430,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     ViewModel = _viewModel;
                 }
 
-                // FINÁLNA OPRAVA: Používanie internal typov priamo - žiadne konverzie
+                // KĽÚČOVÁ OPRAVA: Volanie INTERNAL API metódy ViewModel s internal typmi
+                // Žiadne konverzie, priama kompatibilita
                 await _viewModel.InitializeAsync(columns, validationRules ?? new List<LocalValidationRule>(), throttling, initialRowCount);
 
                 _isInitialized = true;
 
-                // KĽÚČOVÁ OPRAVA: Manuálne vytvorenie UI
+                // UI update
                 await UpdateUIManuallyAsync();
 
                 _logger.LogInformation("✅ AdvancedDataGrid initialized successfully");
@@ -467,7 +468,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _logger.LogInformation("📊 Loading data from DataTable with {RowCount} rows", dataTable?.Rows.Count ?? 0);
                 await _viewModel.LoadDataAsync(dataTable);
 
-                // KĽÚČOVÁ OPRAVA: Aktualizovanie UI po načítaní dát
+                // UI update
                 await UpdateUIManuallyAsync();
 
                 _logger.LogInformation("✅ Data loaded successfully");
