@@ -1,4 +1,4 @@
-﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa opravené API
+﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa PUBLIC API
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// ✅ FINÁLNA OPRAVA: Používame opravené public API
+// ✅ FINÁLNA OPRAVA: Používame PUBLIC API triedy
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
 namespace RpaWinUiComponents.Demo
@@ -40,14 +40,14 @@ namespace RpaWinUiComponents.Demo
                 UpdateLoadingState("Inicializuje sa komponent...", "Pripravuje sa DataGrid...");
                 await Task.Delay(200);
 
-                // KROK 1: Definícia stĺpcov - POUŽÍVAME OPRAVENÉ API
+                // KROK 1: Definícia stĺpcov - POUŽÍVAME PUBLIC API
                 System.Diagnostics.Debug.WriteLine("📊 Vytváram definície stĺpcov...");
                 var columns = CreateColumnDefinitions();
                 System.Diagnostics.Debug.WriteLine($"✅ Vytvorených {columns.Count} stĺpcov");
 
                 UpdateLoadingState("Nastavujú sa validačné pravidlá...", "Definujú sa validačné pravidlá...");
 
-                // KROK 2: Definícia validačných pravidiel - POUŽÍVAME OPRAVENÉ API
+                // KROK 2: Definícia validačných pravidiel - POUŽÍVAME PUBLIC API
                 System.Diagnostics.Debug.WriteLine("✅ Vytváram validačné pravidlá...");
                 var validationRules = CreateValidationRules();
                 System.Diagnostics.Debug.WriteLine($"✅ Vytvorených {validationRules.Count} validačných pravidiel");
@@ -58,7 +58,7 @@ namespace RpaWinUiComponents.Demo
                 int customRowCount = 25;
                 System.Diagnostics.Debug.WriteLine($"🔧 Nastavujem počet riadkov na: {customRowCount}");
 
-                // Throttling config pre stabilitu - POUŽÍVAME OPRAVENÉ API
+                // Throttling config pre stabilitu - POUŽÍVAME PUBLIC API
                 var throttlingConfig = new ThrottlingConfig
                 {
                     TypingDelayMs = 500,
@@ -78,7 +78,7 @@ namespace RpaWinUiComponents.Demo
 
                 System.Diagnostics.Debug.WriteLine("🔧 Spúšťam InitializeAsync...");
 
-                // KĽÚČOVÁ OPRAVA: Explicit inicializácia s custom počtom riadkov
+                // KĽÚČOVÁ OPRAVA: Používanie PUBLIC API s custom počtom riadkov
                 await DataGridControl.InitializeAsync(columns, validationRules, throttlingConfig, customRowCount);
 
                 System.Diagnostics.Debug.WriteLine("✅ InitializeAsync dokončený");
@@ -107,7 +107,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Konfigurovateľné vytvorenie stĺpcov - POUŽÍVA OPRAVENÉ API
+        /// Konfigurovateľné vytvorenie stĺpcov - POUŽÍVA PUBLIC API
         /// </summary>
         private List<ColumnDefinition> CreateColumnDefinitions()
         {
@@ -184,13 +184,13 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Rozšírené validačné pravidlá - POUŽÍVA OPRAVENÉ API
+        /// Rozšírené validačné pravidlá - POUŽÍVA PUBLIC API
         /// </summary>
         private List<ValidationRule> CreateValidationRules()
         {
             var rules = new List<ValidationRule>();
 
-            // ✅ 1. ZÁKLADNÉ POMOCNÉ VALIDÁCIE - používame static helper metódy
+            // ✅ 1. ZÁKLADNÉ POMOCNÉ VALIDÁCIE - používame static helper metódy z PUBLIC API
             rules.Add(ValidationRule.Required("ID", "ID je povinné pole"));
             rules.Add(ValidationRule.Required("Meno", "Meno je povinné pole"));
             rules.Add(ValidationRule.Email("Email", "Email musí mať platný formát"));
@@ -198,7 +198,7 @@ namespace RpaWinUiComponents.Demo
             rules.Add(ValidationRule.Range("Plat", 500, 15000, "Plat musí byť medzi 500-15000 €"));
             rules.Add(ValidationRule.Length("Pozicia", 0, 50, "Pozícia môže mať max 50 znakov"));
 
-            // 🎯 2. CUSTOM VALIDÁCIA - Kontrola dĺžky mena
+            // 🎯 2. CUSTOM VALIDÁCIA - Kontrola dĺžky mena s PUBLIC API
             var nameRule = new ValidationRule("Meno", (value, row) =>
             {
                 var meno = value?.ToString() ?? "";
@@ -211,7 +211,7 @@ namespace RpaWinUiComponents.Demo
             };
             rules.Add(nameRule);
 
-            // 🎯 3. CUSTOM VALIDÁCIA - Kontrola formátu ID
+            // 🎯 3. CUSTOM VALIDÁCIA - Kontrola formátu ID s PUBLIC API
             var idRule = new ValidationRule("ID", (value, row) =>
             {
                 if (int.TryParse(value?.ToString(), out int id))
@@ -226,7 +226,7 @@ namespace RpaWinUiComponents.Demo
             };
             rules.Add(idRule);
 
-            // 🎯 4. ASYNC VALIDÁCIA - Simulácia kontroly duplicitného emailu
+            // 🎯 4. ASYNC VALIDÁCIA - Simulácia kontroly duplicitného emailu s PUBLIC API
             var asyncEmailRule = new ValidationRule()
             {
                 ColumnName = "Email",
@@ -256,7 +256,7 @@ namespace RpaWinUiComponents.Demo
             };
             rules.Add(asyncEmailRule);
 
-            // 🎯 5. CUSTOM DÁTUM VALIDÁCIA
+            // 🎯 5. CUSTOM DÁTUM VALIDÁCIA s PUBLIC API
             var dateRule = new ValidationRule("DatumNastupu", (value, row) =>
             {
                 if (value == null) return true;

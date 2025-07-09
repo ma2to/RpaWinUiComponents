@@ -54,7 +54,7 @@
     </Page>
   </ItemGroup>
 
-  <!-- EXPLICITNE definované C# súbory - všetky manuálne aby sa zabránilo duplikátom -->
+  <!-- EXPLICITNE definované C# súbory - FINÁLNA OPRAVA bez duplicitných súborov -->
   <ItemGroup>
     <!-- Root level súbory -->
     <Compile Include="GlobalUsings.cs" />
@@ -145,17 +145,17 @@
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.8 - Vyriešené všetky CS0101, CS0111, CS0121, CS1503, CS0234, CS1729, NETSDK1022 chyby. Explicitne definované súbory, odstránené duplicity.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.5 - Vyriešené všetky CS1503, CS1061, CS0104 chyby. Odstránené duplicitné súbory, používanie správnych internal/public typov.</Description>
     <Authors>RPA Solutions</Authors>
     <Company>RPA Solutions</Company>
     <Product>RpaWinUiComponents</Product>
     <Copyright>Copyright © RPA Solutions 2024</Copyright>
-    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;PublicAPI;NoConflicts;NoDuplicates</PackageTags>
+    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;PublicAPI;NoConflicts;NoDuplicates;TypeSafety</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.8: FINÁLNE RIEŠENIE všetkých build chýb - Odstránené duplicitné súbory, vytvorené skutočné PublicApiTypes, explicitne definované všetky compile items, potlačené všetky problematické warnings. Komponent je teraz plne funkčný.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.5: FINÁLNE RIEŠENIE typov - Odstránené duplicitné PublicApiAliases.cs súbory, opravené CS1503/CS1061 chyby, používanie správnych internal vs public typov, opravené ValidateAsync metódy. Komponent je teraz plne funkčný bez build chýb.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

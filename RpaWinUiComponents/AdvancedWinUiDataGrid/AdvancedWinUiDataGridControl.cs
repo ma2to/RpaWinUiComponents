@@ -1,4 +1,4 @@
-﻿//AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - OPRAVENÝ API s public aliases
+﻿//AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - FINÁLNA OPRAVA KONVERZIÍ
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -19,9 +19,8 @@ using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÝ API s public aliases
+    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - FINÁLNA OPRAVA KONVERZIÍ
     /// Demo aplikácie vidia len tento komponent a public alias triedy
-    /// FINÁLNE RIEŠENIE CS1503 CHÝB s konverziami
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -74,7 +73,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         /// <summary>
         /// Inicializuje komponent s konfiguráciou stĺpcov a validáciami - PUBLIC API
-        /// FINÁLNE RIEŠENIE: Používa public alias triedy s OPRAVENÝMI KONVERZIAMI
+        /// FINÁLNA OPRAVA: Používa public alias triedy s OPRAVENÝMI KONVERZIAMI
         /// </summary>
         public async Task InitializeAsync(
             List<ColumnDefinition> columns,
@@ -122,7 +121,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region KONVERZIE - FINÁLNE RIEŠENIE CS1503 CHÝB
+        #region FINÁLNA OPRAVA KONVERZIÍ
 
         /// <summary>
         /// Konvertuje public ColumnDefinition na internal
@@ -434,6 +433,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         /// <summary>
         /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - PUBLIC API
+        /// FINÁLNA OPRAVA: Správna konverzia z public na internal API
         /// </summary>
         public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
         {

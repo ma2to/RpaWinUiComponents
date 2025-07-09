@@ -1,4 +1,4 @@
-﻿// GlobalUsings.cs - FINÁLNA OPRAVA CS0104 konfliktov
+﻿// GlobalUsings.cs - FINÁLNA OPRAVA bez konfliktov
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
@@ -17,7 +17,7 @@ global using Microsoft.UI.Xaml.Data;
 global using Microsoft.UI.Xaml.Media;
 global using Microsoft.UI.Xaml.Input;
 
-// KRITICKÁ OPRAVA: Explicitné aliasy pre WinUI komponenty
+// KRITICKÁ OPRAVA: Explicitné aliasy pre WinUI komponenty aby sa predišlo konfliktom
 global using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;
 global using WinUIRowDefinition = Microsoft.UI.Xaml.Controls.RowDefinition;
 global using WinUIColumnDefinition = Microsoft.UI.Xaml.Controls.ColumnDefinition;
@@ -31,7 +31,7 @@ global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
 global using WinUIItemsRepeater = Microsoft.UI.Xaml.Controls.ItemsRepeater;
 global using WinUIProgressBar = Microsoft.UI.Xaml.Controls.ProgressBar;
 
-// HLAVNÉ ALIASY pre naše modely - KĽÚČOVÁ OPRAVA
+// HLAVNÉ ALIASY pre naše INTERNAL modely - KĽÚČOVÁ OPRAVA
 global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;

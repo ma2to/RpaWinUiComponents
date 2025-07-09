@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA konverzií typov
+﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA TYPOV
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -18,7 +18,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers;
 
-// LOKÁLNE ALIASY pre zamedzenie CS0104 chýb
+// KĽÚČOVÁ OPRAVA: Používanie INTERNAL typov v internal súboroch
 using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
@@ -26,7 +26,7 @@ using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.Th
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// KOMPLETNÁ OPRAVA - Konverzie fungujú správne
+    /// FINÁLNA OPRAVA - Používa internal typy správne
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -406,8 +406,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Public API Methods - OPRAVENÉ KONVERZIE
+        #region Public API Methods - OPRAVENÉ TYPY
 
+        /// <summary>
+        /// KĽÚČOVÁ OPRAVA: Používanie INTERNAL typov v internal súbore
+        /// </summary>
         public async Task InitializeAsync(
             List<LocalColumnDefinition> columns,
             List<LocalValidationRule>? validationRules = null,
@@ -427,7 +430,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     ViewModel = _viewModel;
                 }
 
-                // KĽÚČOVÁ OPRAVA: Konverzie už nie sú potrebné, používame internal typy priamo
+                // FINÁLNA OPRAVA: Používanie internal typov priamo - žiadne konverzie
                 await _viewModel.InitializeAsync(columns, validationRules ?? new List<LocalValidationRule>(), throttling, initialRowCount);
 
                 _isInitialized = true;

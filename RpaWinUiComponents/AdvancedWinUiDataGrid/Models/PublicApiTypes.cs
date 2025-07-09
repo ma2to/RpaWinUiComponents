@@ -1,4 +1,4 @@
-﻿// Models/PublicApiTypes.cs - KOMPLETNÁ OPRAVA - Vytvárané sú SKUTOČNÉ PUBLIC API TRIEDY
+﻿// Models/PublicApiTypes.cs - FINÁLNA OPRAVA s ValidateAsync metódami
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +52,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
     }
 
     /// <summary>
-    /// Public API trieda pre ValidationRule - SKUTOČNÁ implementácia
+    /// Public API trieda pre ValidationRule - SKUTOČNÁ implementácia s ValidateAsync
     /// </summary>
     public class PublicValidationRule
     {
@@ -86,6 +86,36 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             ValidationFunction = (value, row) => simpleValidationFunction(value);
             ErrorMessage = errorMessage;
             RuleName = $"{columnName}_{Guid.NewGuid().ToString("N")[..8]}";
+        }
+
+        /// <summary>
+        /// KĽÚČOVÁ OPRAVA: Pridanie ValidateAsync metódy do public API
+        /// </summary>
+        public async Task<bool> ValidateAsync(object? value, DataGridRow row, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!ShouldApply(row))
+                    return true;
+
+                if (IsAsync && AsyncValidationFunction != null)
+                {
+                    using var timeoutCts = new CancellationTokenSource(ValidationTimeout);
+                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+                    return await AsyncValidationFunction(value, row, combinedCts.Token);
+                }
+
+                return Validate(value, row);
+            }
+            catch (OperationCanceledException)
+            {
+                return false; // Timeout alebo zrušenie = nevalidné
+            }
+            catch
+            {
+                return false; // Akákoľvek chyba = nevalidné
+            }
         }
 
         /// <summary>

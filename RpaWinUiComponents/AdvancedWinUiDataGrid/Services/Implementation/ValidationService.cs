@@ -1,4 +1,4 @@
-﻿//Services/Implementation/ValidationService.cs
+﻿//Services/Implementation/ValidationService.cs - FINÁLNA OPRAVA TYPOV
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,6 +13,9 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
+    /// <summary>
+    /// FINÁLNA OPRAVA: Používa internal ValidationRule s ValidateAsync metódou
+    /// </summary>
     public class ValidationService : IValidationService
     {
         private readonly ILogger<ValidationService> _logger;
@@ -66,6 +69,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                             if (rule.IsAsync)
                             {
                                 hasAsyncValidation = true;
+                                // KĽÚČOVÁ OPRAVA: Používanie ValidateAsync z internal ValidationRule
                                 isValid = await rule.ValidateAsync(cell.Value, row, cancellationToken);
                             }
                             else

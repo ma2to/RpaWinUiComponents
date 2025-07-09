@@ -1,5 +1,6 @@
-﻿// PublicApiAliases.cs - FINÁLNA OPRAVA - nahrádzané sú OBA duplicitné súbory
+// PublicApiAliases.cs - FINÁLNY SÚBOR (nahradí oba duplicitné súbory)
 // Umiestnite do: RpaWinUiComponents/PublicApiAliases.cs (root level)
+// ODSTRÁŇTE: RpaWinUiComponents/AdvancedWinUiDataGrid/PublicApiAliases.cs
 
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using System;
@@ -14,7 +15,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
     /// Public API alias pre ColumnDefinition - FINÁLNE RIEŠENIE
     /// Dedí z skutočnej PublicColumnDefinition triedy
     /// </summary>
-    public class ColumnDefinition : Models.PublicColumnDefinition
+    public class ColumnDefinition : PublicColumnDefinition
     {
         public ColumnDefinition() : base() { }
 
@@ -23,9 +24,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
     /// <summary>
     /// Public API alias pre ValidationRule - FINÁLNE RIEŠENIE
-    /// Dedí z skutočnej PublicValidationRule triedy
+    /// Dedí z skutočnej PublicValidationRule triedy s ValidateAsync metódou
     /// </summary>
-    public class ValidationRule : Models.PublicValidationRule
+    public class ValidationRule : PublicValidationRule
     {
         public ValidationRule() : base() { }
 
@@ -40,51 +41,71 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         public new static ValidationRule Required(string columnName, string? errorMessage = null)
         {
-            var baseRule = Models.PublicValidationRule.Required(columnName, errorMessage);
+            var baseRule = PublicValidationRule.Required(columnName, errorMessage);
             return new ValidationRule(baseRule.ColumnName, baseRule.ValidationFunction, baseRule.ErrorMessage)
             {
                 RuleName = baseRule.RuleName,
-                Priority = baseRule.Priority
+                Priority = baseRule.Priority,
+                IsAsync = baseRule.IsAsync,
+                AsyncValidationFunction = baseRule.AsyncValidationFunction,
+                ValidationTimeout = baseRule.ValidationTimeout,
+                ApplyCondition = baseRule.ApplyCondition
             };
         }
 
         public new static ValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
         {
-            var baseRule = Models.PublicValidationRule.Length(columnName, minLength, maxLength, errorMessage);
+            var baseRule = PublicValidationRule.Length(columnName, minLength, maxLength, errorMessage);
             return new ValidationRule(baseRule.ColumnName, baseRule.ValidationFunction, baseRule.ErrorMessage)
             {
                 RuleName = baseRule.RuleName,
-                Priority = baseRule.Priority
+                Priority = baseRule.Priority,
+                IsAsync = baseRule.IsAsync,
+                AsyncValidationFunction = baseRule.AsyncValidationFunction,
+                ValidationTimeout = baseRule.ValidationTimeout,
+                ApplyCondition = baseRule.ApplyCondition
             };
         }
 
         public new static ValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
         {
-            var baseRule = Models.PublicValidationRule.Range(columnName, min, max, errorMessage);
+            var baseRule = PublicValidationRule.Range(columnName, min, max, errorMessage);
             return new ValidationRule(baseRule.ColumnName, baseRule.ValidationFunction, baseRule.ErrorMessage)
             {
                 RuleName = baseRule.RuleName,
-                Priority = baseRule.Priority
+                Priority = baseRule.Priority,
+                IsAsync = baseRule.IsAsync,
+                AsyncValidationFunction = baseRule.AsyncValidationFunction,
+                ValidationTimeout = baseRule.ValidationTimeout,
+                ApplyCondition = baseRule.ApplyCondition
             };
         }
 
         public new static ValidationRule Email(string columnName, string? errorMessage = null)
         {
-            var baseRule = Models.PublicValidationRule.Email(columnName, errorMessage);
+            var baseRule = PublicValidationRule.Email(columnName, errorMessage);
             return new ValidationRule(baseRule.ColumnName, baseRule.ValidationFunction, baseRule.ErrorMessage)
             {
                 RuleName = baseRule.RuleName,
-                Priority = baseRule.Priority
+                Priority = baseRule.Priority,
+                IsAsync = baseRule.IsAsync,
+                AsyncValidationFunction = baseRule.AsyncValidationFunction,
+                ValidationTimeout = baseRule.ValidationTimeout,
+                ApplyCondition = baseRule.ApplyCondition
             };
         }
 
         public new static ValidationRule Numeric(string columnName, string? errorMessage = null)
         {
-            var baseRule = Models.PublicValidationRule.Numeric(columnName, errorMessage);
+            var baseRule = PublicValidationRule.Numeric(columnName, errorMessage);
             return new ValidationRule(baseRule.ColumnName, baseRule.ValidationFunction, baseRule.ErrorMessage)
             {
                 RuleName = baseRule.RuleName,
-                Priority = baseRule.Priority
+                Priority = baseRule.Priority,
+                IsAsync = baseRule.IsAsync,
+                AsyncValidationFunction = baseRule.AsyncValidationFunction,
+                ValidationTimeout = baseRule.ValidationTimeout,
+                ApplyCondition = baseRule.ApplyCondition
             };
         }
 
@@ -95,7 +116,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
     /// Public API alias pre ThrottlingConfig - FINÁLNE RIEŠENIE
     /// Dedí z skutočnej PublicThrottlingConfig triedy
     /// </summary>
-    public class ThrottlingConfig : Models.PublicThrottlingConfig
+    public class ThrottlingConfig : PublicThrottlingConfig
     {
         #region Static Factory Methods - delegované na base triedu
 
