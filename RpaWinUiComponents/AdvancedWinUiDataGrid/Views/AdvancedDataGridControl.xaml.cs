@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA TYPOV s CUSTOM ROW COUNT
+﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA TYPOV s CUSTOM ROW COUNT - KOMPLETNÝ SÚBOR
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -453,3 +453,469 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 throw;
             }
         }
+
+        public async Task LoadDataAsync(DataTable dataTable)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (_viewModel == null)
+                    throw new InvalidOperationException("Component must be initialized first!");
+
+                if (!_viewModel.IsInitialized)
+                    throw new InvalidOperationException("Component not properly initialized!");
+
+                _logger.LogInformation("📊 Loading data from DataTable with {RowCount} rows", dataTable?.Rows.Count ?? 0);
+                await _viewModel.LoadDataAsync(dataTable);
+
+                // UI update
+                await UpdateUIManuallyAsync();
+
+                _logger.LogInformation("✅ Data loaded successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error loading data from DataTable");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
+                throw;
+            }
+        }
+
+        public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (_viewModel == null)
+                    throw new InvalidOperationException("Component must be initialized first!");
+
+                var dataTable = ConvertToDataTable(data);
+                await LoadDataAsync(dataTable);
+                _logger.LogInformation("✅ Data loaded from dictionary list successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error loading data from dictionary list");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
+                throw;
+            }
+        }
+
+        public async Task<DataTable> ExportToDataTableAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (_viewModel == null)
+                    return new DataTable();
+
+                var result = await _viewModel.ExportDataAsync();
+                _logger.LogInformation("Data exported to DataTable with {RowCount} rows", result.Rows.Count);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting data");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ExportToDataTableAsync"));
+                return new DataTable();
+            }
+        }
+
+        public async Task<bool> ValidateAllRowsAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (_viewModel == null)
+                    return false;
+
+                var result = await _viewModel.ValidateAllRowsAsync();
+                _logger.LogInformation("Validation completed, all valid: {AllValid}", result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating all rows");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
+                return false;
+            }
+        }
+
+        public async Task ClearAllDataAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (_viewModel?.ClearAllDataCommand != null && _viewModel.ClearAllDataCommand.CanExecute(null))
+                {
+                    if (_viewModel.ClearAllDataCommand is AsyncRelayCommand asyncCommand)
+                    {
+                        await asyncCommand.ExecuteAsync();
+                    }
+                    else
+                    {
+                        _viewModel.ClearAllDataCommand.Execute(null);
+                        await Task.CompletedTask;
+                    }
+
+                    await UpdateUIManuallyAsync();
+                    _logger.LogInformation("All data cleared");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error clearing all data");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ClearAllDataAsync"));
+            }
+        }
+
+        public async Task RemoveEmptyRowsAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (_viewModel?.RemoveEmptyRowsCommand != null && _viewModel.RemoveEmptyRowsCommand.CanExecute(null))
+                {
+                    if (_viewModel.RemoveEmptyRowsCommand is AsyncRelayCommand asyncCommand)
+                    {
+                        await asyncCommand.ExecuteAsync();
+                    }
+                    else
+                    {
+                        _viewModel.RemoveEmptyRowsCommand.Execute(null);
+                        await Task.CompletedTask;
+                    }
+
+                    await UpdateUIManuallyAsync();
+                    _logger.LogInformation("Empty rows removed");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing empty rows");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
+            }
+        }
+
+        #endregion
+
+        #region ViewModel Event Handling
+
+        private void SubscribeToViewModel(AdvancedDataGridViewModel viewModel)
+        {
+            try
+            {
+                viewModel.ErrorOccurred += OnViewModelError;
+                viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+                if (viewModel.Columns is INotifyCollectionChanged columnsCollection)
+                {
+                    columnsCollection.CollectionChanged += OnColumnsChanged;
+                }
+
+                if (viewModel.Rows is INotifyCollectionChanged rowsCollection)
+                {
+                    rowsCollection.CollectionChanged += OnRowsChanged;
+                }
+
+                _logger.LogDebug("✅ Subscribed to ViewModel events");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error subscribing to ViewModel");
+            }
+        }
+
+        private void UnsubscribeFromViewModel(AdvancedDataGridViewModel viewModel)
+        {
+            try
+            {
+                viewModel.ErrorOccurred -= OnViewModelError;
+                viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+
+                if (viewModel.Columns is INotifyCollectionChanged columnsCollection)
+                {
+                    columnsCollection.CollectionChanged -= OnColumnsChanged;
+                }
+
+                if (viewModel.Rows is INotifyCollectionChanged rowsCollection)
+                {
+                    rowsCollection.CollectionChanged -= OnRowsChanged;
+                }
+
+                _logger.LogDebug("✅ Unsubscribed from ViewModel events");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error unsubscribing from ViewModel");
+            }
+        }
+
+        private void OnColumnsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (!_disposed && _isInitialized)
+            {
+                _logger.LogDebug("🔄 Columns changed, updating UI");
+                _ = UpdateUIManuallyAsync();
+            }
+        }
+
+        private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (!_disposed && _isInitialized)
+            {
+                _logger.LogDebug("🔄 Rows changed, updating UI");
+                _ = UpdateUIManuallyAsync();
+            }
+        }
+
+        private void OnViewModelError(object? sender, ComponentErrorEventArgs e)
+        {
+            OnErrorOccurred(e);
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AdvancedDataGridViewModel.IsKeyboardShortcutsVisible))
+            {
+                _isKeyboardShortcutsVisible = _viewModel?.IsKeyboardShortcutsVisible ?? false;
+                UpdateKeyboardShortcutsVisibility();
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private AdvancedDataGridViewModel CreateViewModel()
+        {
+            try
+            {
+                return DependencyInjectionConfig.GetService<AdvancedDataGridViewModel>()
+                       ?? DependencyInjectionConfig.CreateViewModelWithoutDI();
+            }
+            catch
+            {
+                return DependencyInjectionConfig.CreateViewModelWithoutDI();
+            }
+        }
+
+        private IDataGridLoggerProvider GetLoggerProvider()
+        {
+            try
+            {
+                return DependencyInjectionConfig.GetService<IDataGridLoggerProvider>()
+                       ?? NullDataGridLoggerProvider.Instance;
+            }
+            catch
+            {
+                return NullDataGridLoggerProvider.Instance;
+            }
+        }
+
+        private void SetupEventHandlers()
+        {
+            try
+            {
+                this.KeyDown += OnMainControlKeyDown;
+                _logger.LogDebug("Event handlers set up");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting up event handlers");
+            }
+        }
+
+        private void UpdateKeyboardShortcutsVisibility()
+        {
+            // Implementácia pre keyboard shortcuts visibility
+            // Môže byť prázdna ak nie je potrebná
+            try
+            {
+                _logger.LogTrace("Keyboard shortcuts visibility: {IsVisible}", _isKeyboardShortcutsVisible);
+                // Tu by mohla byť implementácia pre zobrazenie/skrytie keyboard shortcuts
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating keyboard shortcuts visibility");
+            }
+        }
+
+        private void UnsubscribeAllEvents()
+        {
+            try
+            {
+                this.KeyDown -= OnMainControlKeyDown;
+                this.Loaded -= OnControlLoaded;
+                this.Unloaded -= OnControlUnloaded;
+
+                _logger.LogDebug("All events unsubscribed");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unsubscribing events");
+            }
+        }
+
+        private DataTable ConvertToDataTable(List<Dictionary<string, object?>> data)
+        {
+            var dataTable = new DataTable();
+
+            if (data?.Count > 0)
+            {
+                foreach (var key in data[0].Keys)
+                {
+                    dataTable.Columns.Add(key, typeof(object));
+                }
+
+                foreach (var row in data)
+                {
+                    var dataRow = dataTable.NewRow();
+                    foreach (var kvp in row)
+                    {
+                        dataRow[kvp.Key] = kvp.Value ?? DBNull.Value;
+                    }
+                    dataTable.Rows.Add(dataRow);
+                }
+            }
+
+            return dataTable;
+        }
+
+        private void OnMainControlKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            try
+            {
+                // Základné keyboard handling
+                switch (e.Key)
+                {
+                    case VirtualKey.F1:
+                        _isKeyboardShortcutsVisible = !_isKeyboardShortcutsVisible;
+                        UpdateKeyboardShortcutsVisibility();
+                        e.Handled = true;
+                        break;
+
+                    case VirtualKey.Escape:
+                        // ESC handling
+                        if (_viewModel != null)
+                        {
+                            _logger.LogDebug("ESC key pressed");
+                        }
+                        break;
+
+                    case VirtualKey.F5:
+                        // Refresh handling
+                        if (_viewModel != null)
+                        {
+                            _logger.LogDebug("F5 refresh key pressed");
+                            _ = UpdateUIManuallyAsync();
+                        }
+                        e.Handled = true;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling keyboard input");
+            }
+        }
+
+        public void OnToggleKeyboardShortcuts_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _isKeyboardShortcutsVisible = !_isKeyboardShortcutsVisible;
+                UpdateKeyboardShortcutsVisibility();
+                _logger.LogDebug("Keyboard shortcuts toggled: {IsVisible}", _isKeyboardShortcutsVisible);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling keyboard shortcuts");
+            }
+        }
+
+        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+        }
+
+        public void Reset()
+        {
+            try
+            {
+                _logger.LogDebug("Resetting AdvancedDataGridControl");
+
+                _isInitialized = false;
+                _isKeyboardShortcutsVisible = false;
+
+                if (_viewModel != null)
+                {
+                    _viewModel.Reset();
+                }
+
+                _rowElements.Clear();
+                _headerElements.Clear();
+
+                // Clear UI container
+                var container = this.FindName("DataGridContainer") as StackPanel;
+                container?.Children.Clear();
+
+                _logger.LogInformation("AdvancedDataGridControl reset completed");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during reset");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "Reset"));
+            }
+        }
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+
+            try
+            {
+                _logger?.LogDebug("Disposing AdvancedDataGridControl...");
+
+                UnsubscribeAllEvents();
+
+                if (_viewModel != null)
+                {
+                    UnsubscribeFromViewModel(_viewModel);
+                    _viewModel.Dispose();
+                    _viewModel = null;
+                }
+
+                _rowElements.Clear();
+                _headerElements.Clear();
+                this.DataContext = null;
+
+                _disposed = true;
+                _logger?.LogInformation("AdvancedDataGridControl disposed successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error during disposal");
+            }
+        }
+
+        private void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(AdvancedDataGridControl));
+        }
+
+        protected void OnErrorOccurred(ComponentErrorEventArgs e)
+        {
+            ErrorOccurred?.Invoke(this, e);
+        }
+
+        #endregion
+    }
+}
