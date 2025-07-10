@@ -1,4 +1,4 @@
-﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa PUBLIC API
+﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa PUBLIC API s custom row count
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -54,8 +54,8 @@ namespace RpaWinUiComponents.Demo
 
                 UpdateLoadingState("Inicializuje sa DataGrid komponent...", "Pripájajú sa služby...");
 
-                // KROK 3: Konfigurovateľný počet riadkov
-                int customRowCount = 25;
+                // KROK 3: OPRAVA - Konfigurovateľný počet riadkov s DEFAULT 15
+                int customRowCount = 25; // Môžeme zmeniť na ľubovoľné číslo
                 System.Diagnostics.Debug.WriteLine($"🔧 Nastavujem počet riadkov na: {customRowCount}");
 
                 // Throttling config pre stabilitu - POUŽÍVAME PUBLIC API

@@ -1,4 +1,4 @@
-﻿//Services/Implementation/ColumnService.cs - OPRAVENÝ na internal typy
+﻿//Services/Implementation/ColumnService.cs - OPRAVENÝ na internal typy s MISSING METHODS
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,14 +32,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 foreach (var column in columns ?? new List<ColumnDefinition>())
                 {
-                    if (!column.IsValid(out var errorMessage))
+                    // OPRAVA CS1061: Používame vlastnú validáciu namiesto .IsValid()
+                    if (!IsColumnValid(column, out var errorMessage))
                     {
                         _logger.LogWarning("Invalid column definition: {ErrorMessage}", errorMessage);
                         continue;
                     }
 
                     var uniqueName = GenerateUniqueColumnName(column.Name, existingNames);
-                    var processedColumn = column.Clone();
+
+                    // OPRAVA CS1061: Používame vlastný Clone namiesto .Clone()
+                    var processedColumn = CloneColumn(column);
                     processedColumn.Name = uniqueName;
 
                     processedColumns.Add(processedColumn);
@@ -55,6 +58,58 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "ProcessColumnDefinitions"));
                 return columns ?? new List<ColumnDefinition>();
             }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Vlastná validácia ColumnDefinition
+        /// </summary>
+        private bool IsColumnValid(ColumnDefinition column, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(column.Name))
+            {
+                errorMessage = "Názov stĺpca je povinný";
+                return false;
+            }
+
+            if (column.MinWidth <= 0 || column.MaxWidth <= 0)
+            {
+                errorMessage = "Šírka stĺpcov musí byť kladná";
+                return false;
+            }
+
+            if (column.MinWidth > column.MaxWidth)
+            {
+                errorMessage = "Minimálna šírka nemôže byť väčšia ako maximálna";
+                return false;
+            }
+
+            if (column.Width < column.MinWidth || column.Width > column.MaxWidth)
+            {
+                errorMessage = "Šírka musí byť medzi minimálnou a maximálnou hodnotou";
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Vlastný Clone pre ColumnDefinition
+        /// </summary>
+        private ColumnDefinition CloneColumn(ColumnDefinition original)
+        {
+            return new ColumnDefinition(original.Name, original.DataType)
+            {
+                MinWidth = original.MinWidth,
+                MaxWidth = original.MaxWidth,
+                Width = original.Width,
+                AllowResize = original.AllowResize,
+                AllowSort = original.AllowSort,
+                IsReadOnly = original.IsReadOnly,
+                Header = original.Header,
+                ToolTip = original.ToolTip
+            };
         }
 
         public string GenerateUniqueColumnName(string baseName, List<string> existingNames)
@@ -179,7 +234,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                     foreach (var column in columns)
                     {
-                        if (!column.IsValid(out var columnError))
+                        // OPRAVA CS1061: Používame našu vlastnú validáciu
+                        if (!IsColumnValid(column, out var columnError))
                         {
                             errors.Add($"Stĺpec '{column.Name}': {columnError}");
                         }

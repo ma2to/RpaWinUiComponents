@@ -71,22 +71,34 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         #region Inicializácia a Konfigurácia - PUBLIC API s OPRAVENOU KONVERZIOU
 
         /// <summary>
-        /// KĽÚČOVÁ OPRAVA: Public API s automatickou konverziou typov
+        /// KĽÚČOVÁ OPRAVA: Public API s automatickou konverziou typov + custom row count
         /// </summary>
         public async Task InitializeAsync(
             List<ColumnDefinition> columns,
             List<ValidationRule>? validationRules = null,
             ThrottlingConfig? throttling = null,
-            int initialRowCount = 100)
+            int initialRowCount = 15)  // OPRAVA: Default je 15 namiesto 100
         {
             try
             {
                 // OPRAVA: Konverzia public API typov na internal API typy
                 var internalColumns = columns?.Select(c => c.ToInternal()).ToList() ?? new List<InternalColumnDefinition>();
-                var internalRules = validationRules?.Select(r => r.ToInternal()).ToList();
-                var internalThrottling = throttling?.ToInternal();
 
-                // Volanie internal API s internal typmi
+                // KĽÚČOVÁ OPRAVA CS1503: Správna konverzia ValidationRule typov
+                List<InternalValidationRule>? internalRules = null;
+                if (validationRules != null)
+                {
+                    internalRules = validationRules.Select(r => r.ToInternal()).ToList();
+                }
+
+                // KĽÚČOVÁ OPRAVA CS1503: Správna konverzia ThrottlingConfig typu
+                InternalThrottlingConfig? internalThrottling = null;
+                if (throttling != null)
+                {
+                    internalThrottling = throttling.ToInternal();
+                }
+
+                // Volanie internal API s internal typmi a custom row count
                 await _internalView.InitializeAsync(internalColumns, internalRules, internalThrottling, initialRowCount);
                 _isInitialized = true;
             }
