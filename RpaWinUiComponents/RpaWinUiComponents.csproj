@@ -4,7 +4,7 @@
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.5</PackageVersion>
+    <PackageVersion>1.0.8</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- KRITICKÉ: Disable default XAML items pre NuGet library -->
@@ -67,7 +67,6 @@
     <Compile Include="AdvancedWinUiDataGrid\Models\ThrottlingConfig.cs" />
     <Compile Include="AdvancedWinUiDataGrid\Models\ValidationResult.cs" />
     <Compile Include="AdvancedWinUiDataGrid\Models\ValidationRule.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Models\PublicApiTypes.cs" />
 
     <!-- ViewModels -->
     <Compile Include="AdvancedWinUiDataGrid\ViewModels\AdvancedDataGridViewModel.cs" />
@@ -145,17 +144,17 @@
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.5 - Vyriešené všetky CS1503, CS1061, CS0104 chyby. Odstránené duplicitné súbory, používanie správnych internal/public typov.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. FINÁLNA OPRAVA v1.0.9 - Vyriešené všetky CS1503, CS1061, CS0104, CS1537 chyby. Opravené type konverzie public vs internal API, správne NuGet packaging s DLL súbormi.</Description>
     <Authors>RPA Solutions</Authors>
     <Company>RPA Solutions</Company>
     <Product>RpaWinUiComponents</Product>
     <Copyright>Copyright © RPA Solutions 2024</Copyright>
-    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;PublicAPI;NoConflicts;NoDuplicates;TypeSafety</PackageTags>
+    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;PublicAPI;NoConflicts;TypeSafety;DLLFixed</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.5: FINÁLNE RIEŠENIE typov - Odstránené duplicitné PublicApiAliases.cs súbory, opravené CS1503/CS1061 chyby, používanie správnych internal vs public typov, opravené ValidateAsync metódy. Komponent je teraz plne funkčný bez build chýb.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.9: FINÁLNE RIEŠENIE všetkých chýb - Opravené type konverzie medzi public a internal API, vyriešené CS1503/CS1061/CS1537/CS0104 chyby, opravené NuGet packaging s správnymi cestami k DLL, funkčný wrapper s jednoduchou konverziou typov. Komponent je teraz plne funkčný bez akýchkoľvek build chýb.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

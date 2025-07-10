@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
+// KĽÚČOVÁ OPRAVA: Používame internal typ
+using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {

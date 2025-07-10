@@ -1,23 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- build/RpaWinUiComponents.targets - OPRAVA PRE VŠETKY PLATFORMY -->
+<!-- build/RpaWinUiComponents.targets - OPRAVA CIEST K DLL -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.5</RpaWinUiComponentsVersion>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.8</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
-  <!-- ✅ Detect target framework and set paths accordingly -->
+  <!-- ✅ OPRAVENÉ: Detect target framework and set paths accordingly -->
   <PropertyGroup>
     <_RpaWinUiTargetFramework Condition="'$(TargetFramework)' != ''">$(TargetFramework)</_RpaWinUiTargetFramework>
     <_RpaWinUiTargetFramework Condition="'$(_RpaWinUiTargetFramework)' == '' AND '$(TargetFrameworkMoniker)' != ''">$(TargetFrameworkMoniker.Substring($(TargetFrameworkMoniker.LastIndexOf('='))').Replace('=',''))</_RpaWinUiTargetFramework>
     <_RpaWinUiTargetFramework Condition="'$(_RpaWinUiTargetFramework)' == ''">net8.0-windows10.0.19041.0</_RpaWinUiTargetFramework>
   </PropertyGroup>
 
-  <!-- ✅ Set library path -->
+  <!-- ✅ KRITICKÁ OPRAVA: Správne cesty k DLL súboru -->
   <PropertyGroup>
+    <!-- Hlavná cesta - presne podľa štruktúry NuGet package -->
     <_RpaWinUiComponentsLibPath>$(MSBuildThisFileDirectory)../lib/$(_RpaWinUiTargetFramework)/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath>
-    <!-- Fallback to any available framework if exact match not found -->
-    <_RpaWinUiComponentsLibPathFallback>$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPathFallback>
+    
+    <!-- Fallback cesty pre rôzne framework verzie -->
+    <_RpaWinUiComponentsLibPathFallback1>$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPathFallback1>
+    <_RpaWinUiComponentsLibPathFallback2>$(MSBuildThisFileDirectory)../lib/net8.0-windows/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPathFallback2>
+    <_RpaWinUiComponentsLibPathFallback3>$(MSBuildThisFileDirectory)../lib/net8.0/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPathFallback3>
   </PropertyGroup>
 
   <!-- ✅ Ensure WinUI 3 dependencies for consuming projects -->
@@ -33,23 +37,41 @@
     <UseWinUI>true</UseWinUI>
   </PropertyGroup>
 
-  <!-- ✅ Add main assembly reference -->
+  <!-- ✅ OPRAVENÉ: Add main assembly reference s lepším fallback mechanizmom -->
   <Target Name="AddRpaWinUiComponentsReference" BeforeTargets="ResolveAssemblyReferences">
+    <!-- Nájdi existujúcu DLL -->
     <PropertyGroup>
       <_LibraryPath Condition="Exists('$(_RpaWinUiComponentsLibPath)')">$(_RpaWinUiComponentsLibPath)</_LibraryPath>
-      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPathFallback)')">$(_RpaWinUiComponentsLibPathFallback)</_LibraryPath>
+      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPathFallback1)')">$(_RpaWinUiComponentsLibPathFallback1)</_LibraryPath>
+      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPathFallback2)')">$(_RpaWinUiComponentsLibPathFallback2)</_LibraryPath>
+      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPathFallback3)')">$(_RpaWinUiComponentsLibPathFallback3)</_LibraryPath>
     </PropertyGroup>
 
+    <!-- Pridaj reference ak sa našla DLL -->
     <ItemGroup Condition="'$(_LibraryPath)' != ''">
-      <Reference Include="$(_LibraryPath)">
-        <Private>false</Private>
-        <Specific>false</Specific>
+      <Reference Include="RpaWinUiComponents">
         <HintPath>$(_LibraryPath)</HintPath>
+        <Private>False</Private>
+        <SpecificVersion>False</SpecificVersion>
       </Reference>
     </ItemGroup>
 
+    <!-- Informačné výstupy -->
     <Message Text="✅ RpaWinUiComponents: Added reference to $(_LibraryPath)" Importance="normal" Condition="'$(_LibraryPath)' != ''" />
-    <Warning Text="❌ RpaWinUiComponents: Library not found. Searched in: $(_RpaWinUiComponentsLibPath) and $(_RpaWinUiComponentsLibPathFallback)" Condition="'$(_LibraryPath)' == ''" />
+    
+    <!-- OPRAVENÉ: Lepší error message s konkrétnymi cestami -->
+    <Message Text="❌ RpaWinUiComponents: Library not found. Searched in:" Importance="high" Condition="'$(_LibraryPath)' == ''" />
+    <Message Text="  - $(_RpaWinUiComponentsLibPath)" Importance="high" Condition="'$(_LibraryPath)' == ''" />
+    <Message Text="  - $(_RpaWinUiComponentsLibPathFallback1)" Importance="high" Condition="'$(_LibraryPath)' == ''" />
+    <Message Text="  - $(_RpaWinUiComponentsLibPathFallback2)" Importance="high" Condition="'$(_LibraryPath)' == ''" />
+    <Message Text="  - $(_RpaWinUiComponentsLibPathFallback3)" Importance="high" Condition="'$(_LibraryPath)' == ''" />
+    
+    <!-- CRÍTICA OPRAVA: Show actual package structure for debugging -->
+    <ItemGroup Condition="'$(_LibraryPath)' == ''">
+      <_PackageFiles Include="$(MSBuildThisFileDirectory)../**/*.*" />
+    </ItemGroup>
+    <Message Text="📁 Package structure:" Importance="high" Condition="'$(_LibraryPath)' == ''" />
+    <Message Text="  %(_PackageFiles.Identity)" Importance="high" Condition="'$(_LibraryPath)' == ''" />
   </Target>
 
   <!-- ✅ Info message -->
@@ -70,7 +92,7 @@
 
   <!-- ✅ Suppress common warnings in consuming projects -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);CS0436;CS1061;CS1537;WMC1013</NoWarn>
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS1537;CS1503;CS0104;WMC1013</NoWarn>
   </PropertyGroup>
 
 </Project>

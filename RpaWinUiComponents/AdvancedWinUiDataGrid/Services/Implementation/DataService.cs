@@ -1,4 +1,4 @@
-﻿//Services/Implementation/DataService.cs - KOMPLETNÝ OPRAVENÝ
+﻿//Services/Implementation/DataService.cs - OPRAVENÝ na internal typy
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
-// ALIAS pre riešenie konfliktu
-//using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+// KĽÚČOVÁ OPRAVA: Explicitný typ pre ColumnDefinition
+using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
@@ -17,7 +17,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
     {
         private readonly ILogger<DataService> _logger;
         private List<DataGridRow> _rows = new();
-        private List<DataGridColumnDefinition> _columns = new();
+        private List<ColumnDefinition> _columns = new();
         private bool _isInitialized = false;
 
         public event EventHandler<DataChangeEventArgs>? DataChanged;
@@ -28,7 +28,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             _logger = logger;
         }
 
-        public async Task InitializeAsync(List<DataGridColumnDefinition> columns, int initialRowCount = 100)
+        public async Task InitializeAsync(List<ColumnDefinition> columns, int initialRowCount = 100)
         {
             try
             {
