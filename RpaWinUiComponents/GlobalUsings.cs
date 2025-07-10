@@ -31,7 +31,8 @@ global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
 global using WinUIItemsRepeater = Microsoft.UI.Xaml.Controls.ItemsRepeater;
 global using WinUIProgressBar = Microsoft.UI.Xaml.Controls.ProgressBar;
 
-// HLAVNÉ ALIASY pre naše INTERNAL modely - KĽÚČOVÁ OPRAVA
-global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+// ODSTRÁNENÉ KONFLIKTY - tieto aliasy spôsobovali CS0246 a CS1503 chyby
+// Namiesto globálnych aliasov používame lokálne aliasy v jednotlivých súboroch
+// global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+// global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+// global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;

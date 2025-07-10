@@ -20,6 +20,24 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         public ColumnDefinition() : base() { }
 
         public ColumnDefinition(string name, Type dataType) : base(name, dataType) { }
+
+        /// <summary>
+        /// EXPLICITNÁ konverzia na internal typ
+        /// </summary>
+        public new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition ToInternal()
+        {
+            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition(Name, DataType)
+            {
+                MinWidth = MinWidth,
+                MaxWidth = MaxWidth,
+                Width = Width,
+                AllowResize = AllowResize,
+                AllowSort = AllowSort,
+                IsReadOnly = IsReadOnly,
+                Header = Header,
+                ToolTip = ToolTip
+            };
+        }
     }
 
     /// <summary>
@@ -36,6 +54,22 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         // Convenience constructor s jednoduchým Func<object?, bool>
         public ValidationRule(string columnName, Func<object?, bool> simpleValidationFunction, string errorMessage)
             : base(columnName, simpleValidationFunction, errorMessage) { }
+
+        /// <summary>
+        /// EXPLICITNÁ konverzia na internal typ
+        /// </summary>
+        public new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule ToInternal()
+        {
+            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule(ColumnName, ValidationFunction, ErrorMessage)
+            {
+                Priority = Priority,
+                RuleName = RuleName,
+                IsAsync = IsAsync,
+                AsyncValidationFunction = AsyncValidationFunction,
+                ValidationTimeout = ValidationTimeout,
+                ApplyCondition = ApplyCondition
+            };
+        }
 
         #region Static Helper Methods - delegované na base triedu
 
@@ -118,6 +152,23 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
     /// </summary>
     public class ThrottlingConfig : PublicThrottlingConfig
     {
+        /// <summary>
+        /// EXPLICITNÁ konverzia na internal typ
+        /// </summary>
+        public new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig ToInternal()
+        {
+            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig
+            {
+                TypingDelayMs = TypingDelayMs,
+                PasteDelayMs = PasteDelayMs,
+                BatchValidationDelayMs = BatchValidationDelayMs,
+                MaxConcurrentValidations = MaxConcurrentValidations,
+                IsEnabled = IsEnabled,
+                ValidationTimeout = ValidationTimeout,
+                MinValidationIntervalMs = MinValidationIntervalMs
+            };
+        }
+
         #region Static Factory Methods - delegované na base triedu
 
         public new static ThrottlingConfig Default =>

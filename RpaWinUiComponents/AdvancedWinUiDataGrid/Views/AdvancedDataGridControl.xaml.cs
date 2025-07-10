@@ -410,6 +410,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         /// <summary>
         /// FINÁLNA OPRAVA: Internal view používa INTERNAL API s internal typmi
+        /// ŽIADNE KONVERZIE, priama kompatibilita
         /// </summary>
         public async Task InitializeAsync(
             List<LocalColumnDefinition> columns,

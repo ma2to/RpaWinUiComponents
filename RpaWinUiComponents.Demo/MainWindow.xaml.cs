@@ -7,7 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// ✅ FINÁLNA OPRAVA: Používame PUBLIC API triedy
+// ✅ FINÁLNA OPRAVA: Demo projekt používa PUBLIC API triedy
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
 namespace RpaWinUiComponents.Demo

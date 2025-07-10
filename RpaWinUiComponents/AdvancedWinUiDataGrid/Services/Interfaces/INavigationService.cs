@@ -1,15 +1,14 @@
-﻿//Services/Interfaces/INavigationService.cs
+﻿//Services/Interfaces/INavigationService.cs - OPRAVA TYPOV
 using System;
 using System.Collections.Generic;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-//using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     public interface INavigationService
     {
-        void Initialize(List<DataGridRow> rows, List<DataGridColumnDefinition> columns);
+        void Initialize(List<DataGridRow> rows, List<ColumnDefinition> columns);
 
         void MoveToNextCell();
         void MoveToPreviousCell();

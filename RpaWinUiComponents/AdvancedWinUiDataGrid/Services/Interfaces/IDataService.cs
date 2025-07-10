@@ -1,17 +1,16 @@
-﻿//Services/Interfaces/IDataService.cs
+﻿//Services/Interfaces/IDataService.cs - OPRAVA TYPOV
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-//using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     public interface IDataService
     {
-        Task InitializeAsync(List<DataGridColumnDefinition> columns, int initialRowCount = 100);
+        Task InitializeAsync(List<ColumnDefinition> columns, int initialRowCount = 100);
 
         Task LoadDataAsync(DataTable dataTable);
         Task LoadDataAsync(List<Dictionary<string, object?>> data);

@@ -1,4 +1,4 @@
-﻿// Models/PublicApiTypes.cs - FINÁLNA OPRAVA s ValidateAsync metódami
+﻿// Models/PublicApiTypes.cs - FINÁLNA OPRAVA s explicitnými typmi
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,11 +33,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         }
 
         /// <summary>
-        /// Konvertuje na internú verziu
+        /// Konvertuje na internú verziu - EXPLICITNÝ TYP
         /// </summary>
-        public ColumnDefinition ToInternal()
+        public RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition ToInternal()
         {
-            return new ColumnDefinition(Name, DataType)
+            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition(Name, DataType)
             {
                 MinWidth = MinWidth,
                 MaxWidth = MaxWidth,
@@ -152,11 +152,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         }
 
         /// <summary>
-        /// Konvertuje na internú verziu
+        /// Konvertuje na internú verziu - EXPLICITNÝ TYP
         /// </summary>
-        public ValidationRule ToInternal()
+        public RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule ToInternal()
         {
-            return new ValidationRule(ColumnName, ValidationFunction, ErrorMessage)
+            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule(ColumnName, ValidationFunction, ErrorMessage)
             {
                 Priority = Priority,
                 RuleName = RuleName,
@@ -274,11 +274,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         public int MinValidationIntervalMs { get; set; } = 50;
 
         /// <summary>
-        /// Konvertuje na internú verziu
+        /// Konvertuje na internú verziu - EXPLICITNÝ TYP
         /// </summary>
-        public ThrottlingConfig ToInternal()
+        public RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig ToInternal()
         {
-            return new ThrottlingConfig
+            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig
             {
                 TypingDelayMs = TypingDelayMs,
                 PasteDelayMs = PasteDelayMs,
