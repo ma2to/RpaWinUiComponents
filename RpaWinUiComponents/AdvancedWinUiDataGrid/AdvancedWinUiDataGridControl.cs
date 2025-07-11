@@ -1,4 +1,4 @@
-﻿//AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs - OPRAVENÉ KONVERZIE TYPOV
+﻿// AdvancedWinUiDataGridControl.cs - FINÁLNA OPRAVA CS1503 chýb
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// LOKÁLNE ALIASY pre rozlíšenie internal vs public API - KĽÚČOVÁ OPRAVA
+// KĽÚČOVÁ OPRAVA: Explicitné aliasy pre zamedzenie konfliktov
 using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
@@ -71,17 +71,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         #region Inicializácia a Konfigurácia - PUBLIC API s OPRAVENOU KONVERZIOU
 
         /// <summary>
-        /// KĽÚČOVÁ OPRAVA: Public API s automatickou konverziou typov + custom row count
+        /// KĽÚČOVÁ OPRAVA CS1503: Public API s automatickou konverziou typov + custom row count
         /// </summary>
         public async Task InitializeAsync(
             List<ColumnDefinition> columns,
             List<ValidationRule>? validationRules = null,
             ThrottlingConfig? throttling = null,
-            int initialRowCount = 15)  // OPRAVA: Default je 15 namiesto 100
+            int initialRowCount = 15)
         {
             try
             {
-                // OPRAVA: Konverzia public API typov na internal API typy
+                // OPRAVA CS1503: Konverzia public API typov na internal API typy
                 var internalColumns = columns?.Select(c => c.ToInternal()).ToList() ?? new List<InternalColumnDefinition>();
 
                 // KĽÚČOVÁ OPRAVA CS1503: Správna konverzia ValidationRule typov
@@ -367,7 +367,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
-        /// OPRAVA: Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - PUBLIC API
+        /// OPRAVA CS1503: Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - PUBLIC API
         /// </summary>
         public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
         {
@@ -378,7 +378,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
                 if (_internalView.ViewModel != null)
                 {
-                    // KĽÚČOVÁ OPRAVA: Konverzia z public API na internal API
+                    // KĽÚČOVÁ OPRAVA CS1503: Konverzia z public API na internal API
                     var internalRules = customRules?.Select(r => r.ToInternal()).ToList() ?? new List<InternalValidationRule>();
                     return await _internalView.ViewModel.RemoveRowsByValidationAsync(internalRules);
                 }

@@ -1,4 +1,4 @@
-﻿//ViewModels/AdvancedDataGridViewModel.cs - KOMPLETNÁ OPRAVA ZACYKLENIA VALIDÁCIE
+﻿//ViewModels/AdvancedDataGridViewModel.cs - OPRAVA CS1503 CHÝB v kľúčových riadkoch
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,15 +16,15 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 
-// LOKÁLNE ALIASY pre zamedzenie CS0104 chýb
-using ColumnDef = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-using ThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+// KĽÚČOVÁ OPRAVA CS1503: Explicitné aliasy pre zamedzenie konfliktov
+using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// ViewModel pre AdvancedWinUiDataGrid komponent - KOMPLETNÁ OPRAVA ZACYKLENIA
+    /// ViewModel pre AdvancedWinUiDataGrid komponent - OPRAVA CS1503 CHÝB
     /// </summary>
     public class AdvancedDataGridViewModel : INotifyPropertyChanged, IDisposable
     {
@@ -37,26 +37,26 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private readonly ILogger<AdvancedDataGridViewModel> _logger;
 
         private ObservableRangeCollection<DataGridRow> _rows = new();
-        private ObservableCollection<ColumnDef> _columns = new();
+        private ObservableCollection<InternalColumnDefinition> _columns = new(); // OPRAVA CS1503: internal typ
         private bool _isValidating = false;
         private double _validationProgress = 0;
         private string _validationStatus = "Pripravené";
         private bool _isInitialized = false;
-        private ThrottlingConfig _throttlingConfig = ThrottlingConfig.Default;
+        private InternalThrottlingConfig _throttlingConfig = InternalThrottlingConfig.Default; // OPRAVA CS1503: internal typ
         private bool _isKeyboardShortcutsVisible = false;
 
         private int _initialRowCount = 100;
         private bool _disposed = false;
 
         // KOMPLETNÁ OPRAVA ZACYKLENIA: Vylepšené sledovanie eventov a validácií
-        private readonly object _eventSubscriptionLock = new object(); // Lock pre event subscription
-        private readonly HashSet<string> _subscribedCellKeys = new(); // Sleduje ktoré bunky už majú event handler
-        private readonly Dictionary<string, WeakReference> _cellReferences = new(); // Weak references na bunky
+        private readonly object _eventSubscriptionLock = new object();
+        private readonly HashSet<string> _subscribedCellKeys = new();
+        private readonly Dictionary<string, WeakReference> _cellReferences = new();
 
         // Validačné ochrany
         private readonly Dictionary<string, CancellationTokenSource> _pendingValidations = new();
-        private readonly HashSet<string> _currentlyValidating = new(); // Ktoré bunky sa práve validujú
-        private readonly object _validationStateLock = new object(); // Thread-safe prístup k validačnému stavu
+        private readonly HashSet<string> _currentlyValidating = new();
+        private readonly object _validationStateLock = new object();
         private SemaphoreSlim? _validationSemaphore;
 
         // PropertyChanged ochrany
@@ -106,7 +106,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             set => SetProperty(ref _rows, value);
         }
 
-        public ObservableCollection<ColumnDef> Columns
+        public ObservableCollection<InternalColumnDefinition> Columns // OPRAVA CS1503: internal typ
         {
             get
             {
@@ -144,7 +144,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             private set => SetProperty(ref _isInitialized, value);
         }
 
-        public ThrottlingConfig ThrottlingConfig
+        public InternalThrottlingConfig ThrottlingConfig // OPRAVA CS1503: internal typ
         {
             get
             {
@@ -196,12 +196,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         #region Public Methods
 
         /// <summary>
-        /// Inicializuje ViewModel s konfiguráciou stĺpcov a validáciami
+        /// OPRAVA CS1503: Inicializuje ViewModel s konfiguráciou stĺpcov a validáciami - internal typy
         /// </summary>
         public async Task InitializeAsync(
-            List<ColumnDef> columnDefinitions,
-            List<ValidationRule>? validationRules = null,
-            ThrottlingConfig? throttling = null,
+            List<InternalColumnDefinition> columnDefinitions, // OPRAVA CS1503: internal typ
+            List<InternalValidationRule>? validationRules = null, // OPRAVA CS1503: internal typ
+            InternalThrottlingConfig? throttling = null, // OPRAVA CS1503: internal typ
             int initialRowCount = 100)
         {
             ThrowIfDisposed();
@@ -221,7 +221,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 }
 
                 _initialRowCount = Math.Max(1, Math.Min(initialRowCount, 10000));
-                ThrottlingConfig = throttling ?? ThrottlingConfig.Default;
+                ThrottlingConfig = throttling ?? InternalThrottlingConfig.Default; // OPRAVA CS1503: internal typ
 
                 if (!ThrottlingConfig.IsValidConfig(out var configError))
                 {
@@ -239,7 +239,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 await ClearAllTrackingDataSafely();
 
                 // Process and validate columns
-                var processedColumns = _columnService.ProcessColumnDefinitions(columnDefinitions ?? new List<ColumnDef>());
+                var processedColumns = _columnService.ProcessColumnDefinitions(columnDefinitions ?? new List<InternalColumnDefinition>());
                 _columnService.ValidateColumnDefinitions(processedColumns);
 
                 // Reorder special columns to the end
@@ -297,179 +297,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        /// <summary>
-        /// Načíta dáta z DataTable s automatickou validáciou
-        /// </summary>
-        public async Task LoadDataAsync(DataTable dataTable)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (!IsInitialized)
-                    throw new InvalidOperationException("Component must be initialized first!");
-
-                _logger.LogInformation("Loading data from DataTable with {RowCount} rows", dataTable?.Rows.Count ?? 0);
-
-                // OPRAVA ZACYKLENIA: Nastavenie loading state
-                lock (_loadingStateLock)
-                {
-                    _isLoadingData = true;
-                }
-
-                IsValidating = true;
-                ValidationStatus = "Načítavajú sa dáta...";
-                ValidationProgress = 0;
-
-                // KĽÚČOVÁ OPRAVA: Vyčistiť všetko pred načítaním nových dát
-                await ClearAllTrackingDataSafely();
-
-                var newRows = new List<DataGridRow>();
-                var rowIndex = 0;
-                var totalRows = dataTable?.Rows.Count ?? 0;
-
-                if (dataTable != null)
-                {
-                    foreach (DataRow dataRow in dataTable.Rows)
-                    {
-                        var gridRow = CreateRowForLoadingWithSafeValidation(rowIndex);
-
-                        _logger.LogTrace("Loading row {RowIndex}/{TotalRows}", rowIndex + 1, totalRows);
-
-                        foreach (var column in Columns.Where(c => !IsSpecialColumn(c.Name)))
-                        {
-                            if (dataTable.Columns.Contains(column.Name))
-                            {
-                                var value = dataRow[column.Name];
-                                var cell = gridRow.GetCell(column.Name);
-                                if (cell != null)
-                                {
-                                    // OPRAVA ZACYKLENIA: Set value bez spustenia validácie počas načítavania
-                                    cell.SetValueWithoutValidation(value == DBNull.Value ? null : value);
-                                }
-                            }
-                        }
-
-                        // OPRAVA ZACYKLENIA: Validácia až po kompletnom nastavení riadku
-                        await ValidateRowAfterLoadingSafely(gridRow);
-
-                        newRows.Add(gridRow);
-                        rowIndex++;
-                        ValidationProgress = (double)rowIndex / totalRows * 90;
-                    }
-                }
-
-                var minEmptyRows = Math.Min(10, _initialRowCount / 5);
-                var finalRowCount = Math.Max(_initialRowCount, totalRows + minEmptyRows);
-
-                while (newRows.Count < finalRowCount)
-                {
-                    newRows.Add(CreateEmptyRowWithSafeValidation(newRows.Count));
-                }
-
-                // OPRAVA ZACYKLENIA: Reset rows collection bezpečne
-                Rows.Clear();
-                Rows.AddRange(newRows);
-
-                ValidationStatus = "Validácia dokončená";
-                ValidationProgress = 100;
-
-                var validRows = newRows.Count(r => !r.IsEmpty && !r.HasValidationErrors);
-                var invalidRows = newRows.Count(r => !r.IsEmpty && r.HasValidationErrors);
-                var emptyRows = newRows.Count - totalRows;
-
-                _logger.LogInformation("Data loaded with auto-expansion: {TotalRows} total rows ({DataRows} data, {EmptyRows} empty), {ValidRows} valid, {InvalidRows} invalid",
-                    newRows.Count, totalRows, emptyRows, validRows, invalidRows);
-
-                await Task.Delay(2000);
-                IsValidating = false;
-                ValidationStatus = "Pripravené";
-
-                // OPRAVA ZACYKLENIA: Loading state ukončený
-                lock (_loadingStateLock)
-                {
-                    _isLoadingData = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                // OPRAVA: Reset loading state aj pri chybe
-                lock (_loadingStateLock)
-                {
-                    _isLoadingData = false;
-                }
-
-                IsValidating = false;
-                ValidationStatus = "Chyba pri načítavaní";
-                _logger.LogError(ex, "Error loading data from DataTable");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Načíta dáta zo zoznamu dictionary objektov
-        /// </summary>
-        public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (!IsInitialized)
-                    throw new InvalidOperationException("Component must be initialized first!");
-
-                var dataTable = ConvertToDataTable(data);
-                await LoadDataAsync(dataTable);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading data from dictionary list");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Validuje všetky riadky a vráti true ak sú všetky validné
-        /// </summary>
-        public async Task<bool> ValidateAllRowsAsync()
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                _logger.LogDebug("Starting validation of all rows");
-                IsValidating = true;
-                ValidationProgress = 0;
-                ValidationStatus = "Validujú sa riadky...";
-
-                var progress = new Progress<double>(p => ValidationProgress = p);
-                var dataRows = Rows.Where(r => !r.IsEmpty).ToList();
-                var results = await _validationService.ValidateAllRowsAsync(dataRows, progress);
-
-                var allValid = results.All(r => r.IsValid);
-                ValidationStatus = allValid ? "Všetky riadky sú validné" : "Nájdené validačné chyby";
-
-                _logger.LogInformation("Validation completed: all valid = {AllValid}", allValid);
-
-                await Task.Delay(2000);
-                ValidationStatus = "Pripravené";
-                IsValidating = false;
-
-                return allValid;
-            }
-            catch (Exception ex)
-            {
-                IsValidating = false;
-                ValidationStatus = "Chyba pri validácii";
-                _logger.LogError(ex, "Error validating all rows");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
-                return false;
-            }
-        }
-
-        // ... (zvyšok metód zostáva rovnaký ako v pôvodnom súbore, len sa pridajú nové pomocné metódy)
+        // ... Zvyšok metód zostáva rovnaký ako v originále, ale s opravenými typmi kde treba
 
         #endregion
 
@@ -744,58 +572,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
-        /// OPRAVA ZACYKLENIA: Bezpečné vytvorenie riadku pre loading
-        /// </summary>
-        private DataGridRow CreateRowForLoadingWithSafeValidation(int rowIndex)
-        {
-            var row = new DataGridRow(rowIndex);
-
-            foreach (var column in Columns)
-            {
-                var cell = new DataGridCell(column.Name, column.DataType, rowIndex, Columns.IndexOf(column))
-                {
-                    IsReadOnly = column.IsReadOnly
-                };
-
-                row.AddCell(column.Name, cell);
-                // OPRAVA: Event handlers sa pridajú až po načítaní všetkých dát
-            }
-
-            return row;
-        }
-
-        /// <summary>
-        /// OPRAVA ZACYKLENIA: Bezpečná validácia riadku po načítaní
-        /// </summary>
-        private async Task ValidateRowAfterLoadingSafely(DataGridRow row)
-        {
-            try
-            {
-                row.UpdateEmptyStatus();
-
-                if (!row.IsEmpty)
-                {
-                    foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
-                    {
-                        await _validationService.ValidateCellAsync(cell, row);
-                    }
-
-                    row.UpdateValidationStatus();
-                }
-
-                // KĽÚČOVÁ OPRAVA: Subscribe to validation events AŽ PO NAČÍTANÍ dát
-                foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
-                {
-                    SubscribeToCellValidationSafely(row, cell);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating row after loading");
-            }
-        }
-
-        /// <summary>
         /// OPRAVA ZACYKLENIA: Bezpečné vyčistenie všetkých tracking dát
         /// </summary>
         private async Task ClearAllTrackingDataSafely()
@@ -860,30 +636,179 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Zvyšok implementácie (Commands, Events, atď.)
+        #region Additional Public Methods - OPRAVA CS1503
 
-        private void InitializeCommands()
+        /// <summary>
+        /// Načíta dáta z DataTable s automatickou validáciou
+        /// </summary>
+        public async Task LoadDataAsync(DataTable dataTable)
         {
-            ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync);
-            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync);
-            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync);
-            CopyCommand = new AsyncRelayCommand(CopySelectedCellsInternalAsync);
-            PasteCommand = new AsyncRelayCommand(PasteFromClipboardInternalAsync);
-            DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRowInternal);
-            ExportToDataTableCommand = new AsyncRelayCommand(async () => await ExportDataAsync());
-            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcuts);
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized)
+                    throw new InvalidOperationException("Component must be initialized first!");
+
+                _logger.LogInformation("Loading data from DataTable with {RowCount} rows", dataTable?.Rows.Count ?? 0);
+
+                // OPRAVA ZACYKLENIA: Nastavenie loading state
+                lock (_loadingStateLock)
+                {
+                    _isLoadingData = true;
+                }
+
+                IsValidating = true;
+                ValidationStatus = "Načítavajú sa dáta...";
+                ValidationProgress = 0;
+
+                // KĽÚČOVÁ OPRAVA: Vyčistiť všetko pred načítaním nových dát
+                await ClearAllTrackingDataSafely();
+
+                var newRows = new List<DataGridRow>();
+                var rowIndex = 0;
+                var totalRows = dataTable?.Rows.Count ?? 0;
+
+                if (dataTable != null)
+                {
+                    foreach (System.Data.DataRow dataRow in dataTable.Rows)
+                    {
+                        var gridRow = CreateRowForLoadingWithSafeValidation(rowIndex);
+
+                        _logger.LogTrace("Loading row {RowIndex}/{TotalRows}", rowIndex + 1, totalRows);
+
+                        foreach (var column in Columns.Where(c => !IsSpecialColumn(c.Name)))
+                        {
+                            if (dataTable.Columns.Contains(column.Name))
+                            {
+                                var value = dataRow[column.Name];
+                                var cell = gridRow.GetCell(column.Name);
+                                if (cell != null)
+                                {
+                                    // OPRAVA ZACYKLENIA: Set value bez spustenia validácie počas načítavania
+                                    cell.SetValueWithoutValidation(value == DBNull.Value ? null : value);
+                                }
+                            }
+                        }
+
+                        // OPRAVA ZACYKLENIA: Validácia až po kompletnom nastavení riadku
+                        await ValidateRowAfterLoadingSafely(gridRow);
+
+                        newRows.Add(gridRow);
+                        rowIndex++;
+                        ValidationProgress = (double)rowIndex / totalRows * 90;
+                    }
+                }
+
+                var minEmptyRows = Math.Min(10, _initialRowCount / 5);
+                var finalRowCount = Math.Max(_initialRowCount, totalRows + minEmptyRows);
+
+                while (newRows.Count < finalRowCount)
+                {
+                    newRows.Add(CreateEmptyRowWithSafeValidation(newRows.Count));
+                }
+
+                // OPRAVA ZACYKLENIA: Reset rows collection bezpečne
+                Rows.Clear();
+                Rows.AddRange(newRows);
+
+                ValidationStatus = "Validácia dokončená";
+                ValidationProgress = 100;
+
+                var validRows = newRows.Count(r => !r.IsEmpty && !r.HasValidationErrors);
+                var invalidRows = newRows.Count(r => !r.IsEmpty && r.HasValidationErrors);
+                var emptyRows = newRows.Count - totalRows;
+
+                _logger.LogInformation("Data loaded with auto-expansion: {TotalRows} total rows ({DataRows} data, {EmptyRows} empty), {ValidRows} valid, {InvalidRows} invalid",
+                    newRows.Count, totalRows, emptyRows, validRows, invalidRows);
+
+                await Task.Delay(2000);
+                IsValidating = false;
+                ValidationStatus = "Pripravené";
+
+                // OPRAVA ZACYKLENIA: Loading state ukončený
+                lock (_loadingStateLock)
+                {
+                    _isLoadingData = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                // OPRAVA: Reset loading state aj pri chybe
+                lock (_loadingStateLock)
+                {
+                    _isLoadingData = false;
+                }
+
+                IsValidating = false;
+                ValidationStatus = "Chyba pri načítavaní";
+                _logger.LogError(ex, "Error loading data from DataTable");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
+                throw;
+            }
         }
 
-        private void SubscribeToEvents()
+        /// <summary>
+        /// Načíta dáta zo zoznamu dictionary objektov
+        /// </summary>
+        public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
         {
-            _dataService.DataChanged += OnDataChanged;
-            _dataService.ErrorOccurred += OnDataServiceErrorOccurred;
-            _validationService.ValidationCompleted += OnValidationCompleted;
-            _validationService.ValidationErrorOccurred += OnValidationServiceErrorOccurred;
-            _navigationService.ErrorOccurred += OnNavigationServiceErrorOccurred;
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized)
+                    throw new InvalidOperationException("Component must be initialized first!");
+
+                var dataTable = ConvertToDataTable(data);
+                await LoadDataAsync(dataTable);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading data from dictionary list");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
+                throw;
+            }
         }
 
-        // ... (zvyšok metód ostáva rovnaký)
+        /// <summary>
+        /// Validuje všetky riadky a vráti true ak sú všetky validné
+        /// </summary>
+        public async Task<bool> ValidateAllRowsAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                _logger.LogDebug("Starting validation of all rows");
+                IsValidating = true;
+                ValidationProgress = 0;
+                ValidationStatus = "Validujú sa riadky...";
+
+                var progress = new Progress<double>(p => ValidationProgress = p);
+                var dataRows = Rows.Where(r => !r.IsEmpty).ToList();
+                var results = await _validationService.ValidateAllRowsAsync(dataRows, progress);
+
+                var allValid = results.All(r => r.IsValid);
+                ValidationStatus = allValid ? "Všetky riadky sú validné" : "Nájdené validačné chyby";
+
+                _logger.LogInformation("Validation completed: all valid = {AllValid}", allValid);
+
+                await Task.Delay(2000);
+                ValidationStatus = "Pripravené";
+                IsValidating = false;
+
+                return allValid;
+            }
+            catch (Exception ex)
+            {
+                IsValidating = false;
+                ValidationStatus = "Chyba pri validácii";
+                _logger.LogError(ex, "Error validating all rows");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
+                return false;
+            }
+        }
 
         public async Task<DataTable> ExportDataAsync(bool includeValidAlerts = false)
         {
@@ -974,6 +899,130 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 _logger.LogError(ex, "Error removing empty rows");
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
             }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1503: Odstráni riadky ktoré spĺňajú zadanú podmienku
+        /// </summary>
+        public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized) return;
+
+                _logger.LogDebug("Removing rows by condition for column: {ColumnName}", columnName);
+                await _dataService.RemoveRowsByConditionAsync(columnName, condition);
+                _logger.LogInformation("Rows removed by condition for column: {ColumnName}", columnName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing rows by condition for column: {ColumnName}", columnName);
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1503: Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - internal typ
+        /// </summary>
+        public async Task<int> RemoveRowsByValidationAsync(List<InternalValidationRule> customRules) // OPRAVA CS1503: internal typ
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized) return 0;
+
+                _logger.LogDebug("Removing rows by custom validation with {RuleCount} rules", customRules?.Count ?? 0);
+                var result = await _dataService.RemoveRowsByValidationAsync(customRules ?? new List<InternalValidationRule>());
+                _logger.LogInformation("Removed {RowCount} rows by custom validation", result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing rows by custom validation");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
+                return 0;
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// OPRAVA ZACYKLENIA: Bezpečné vytvorenie riadku pre loading
+        /// </summary>
+        private DataGridRow CreateRowForLoadingWithSafeValidation(int rowIndex)
+        {
+            var row = new DataGridRow(rowIndex);
+
+            foreach (var column in Columns)
+            {
+                var cell = new DataGridCell(column.Name, column.DataType, rowIndex, Columns.IndexOf(column))
+                {
+                    IsReadOnly = column.IsReadOnly
+                };
+
+                row.AddCell(column.Name, cell);
+                // OPRAVA: Event handlers sa pridajú až po načítaní všetkých dát
+            }
+
+            return row;
+        }
+
+        /// <summary>
+        /// OPRAVA ZACYKLENIA: Bezpečná validácia riadku po načítaní
+        /// </summary>
+        private async Task ValidateRowAfterLoadingSafely(DataGridRow row)
+        {
+            try
+            {
+                row.UpdateEmptyStatus();
+
+                if (!row.IsEmpty)
+                {
+                    foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
+                    {
+                        await _validationService.ValidateCellAsync(cell, row);
+                    }
+
+                    row.UpdateValidationStatus();
+                }
+
+                // KĽÚČOVÁ OPRAVA: Subscribe to validation events AŽ PO NAČÍTANÍ dát
+                foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
+                {
+                    SubscribeToCellValidationSafely(row, cell);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating row after loading");
+            }
+        }
+
+        private void InitializeCommands()
+        {
+            ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync);
+            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync);
+            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync);
+            CopyCommand = new AsyncRelayCommand(CopySelectedCellsInternalAsync);
+            PasteCommand = new AsyncRelayCommand(PasteFromClipboardInternalAsync);
+            DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRowInternal);
+            ExportToDataTableCommand = new AsyncRelayCommand(async () => await ExportDataAsync());
+            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcuts);
+        }
+
+        private void SubscribeToEvents()
+        {
+            _dataService.DataChanged += OnDataChanged;
+            _dataService.ErrorOccurred += OnDataServiceErrorOccurred;
+            _validationService.ValidationCompleted += OnValidationCompleted;
+            _validationService.ValidationErrorOccurred += OnValidationServiceErrorOccurred;
+            _navigationService.ErrorOccurred += OnNavigationServiceErrorOccurred;
         }
 
         private async Task CopySelectedCellsInternalAsync()
@@ -1246,53 +1295,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error unsubscribing from service events");
-            }
-        }
-
-        /// <summary>
-        /// Odstráni riadky ktoré spĺňajú zadanú podmienku - OPRAVA CS1061
-        /// </summary>
-        public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (!IsInitialized) return;
-
-                _logger.LogDebug("Removing rows by condition for column: {ColumnName}", columnName);
-                await _dataService.RemoveRowsByConditionAsync(columnName, condition);
-                _logger.LogInformation("Rows removed by condition for column: {ColumnName}", columnName);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing rows by condition for column: {ColumnName}", columnName);
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - OPRAVA CS1061
-        /// </summary>
-        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (!IsInitialized) return 0;
-
-                _logger.LogDebug("Removing rows by custom validation with {RuleCount} rules", customRules?.Count ?? 0);
-                var result = await _dataService.RemoveRowsByValidationAsync(customRules ?? new List<ValidationRule>());
-                _logger.LogInformation("Removed {RowCount} rows by custom validation", result);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing rows by custom validation");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
-                return 0;
             }
         }
 

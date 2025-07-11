@@ -1,4 +1,4 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA TYPOV s CUSTOM ROW COUNT - KOMPLETNÝ SÚBOR
+﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA CS1503 chýb
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -18,15 +18,15 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Commands;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers;
 
-// KĽÚČOVÁ OPRAVA: V internal views používame iba INTERNAL typy
-using LocalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-using LocalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-using LocalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+// KĽÚČOVÁ OPRAVA CS1503: V internal views používame iba INTERNAL typy
+using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// FINÁLNA OPRAVA - Internal view používa internal API bez konverzií
+    /// FINÁLNA OPRAVA CS1503 - Internal view používa internal API bez konverzií
     /// </summary>
     public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
     {
@@ -277,7 +277,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         /// <summary>
         /// Vytvorenie border pre bunku
         /// </summary>
-        private Border CreateCellBorder(DataGridCell? cell, LocalColumnDefinition column, int rowIndex)
+        private Border CreateCellBorder(DataGridCell? cell, InternalColumnDefinition column, int rowIndex)
         {
             var cellBorder = new Border
             {
@@ -371,7 +371,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         /// <summary>
         /// Vytvorenie editovateľného TextBox
         /// </summary>
-        private TextBox CreateEditableTextBox(DataGridCell? cell, LocalColumnDefinition column)
+        private TextBox CreateEditableTextBox(DataGridCell? cell, InternalColumnDefinition column)
         {
             var textBox = new TextBox
             {
@@ -406,16 +406,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Public API Methods - FINÁLNA OPRAVA: INTERNAL TYPY + INTERNAL API + CUSTOM ROW COUNT
+        #region Public API Methods - FINÁLNA OPRAVA CS1503: INTERNAL TYPY + INTERNAL API + CUSTOM ROW COUNT
 
         /// <summary>
-        /// FINÁLNA OPRAVA: Internal view používa INTERNAL API s internal typmi + CUSTOM ROW COUNT
+        /// FINÁLNA OPRAVA CS1503: Internal view používa INTERNAL API s internal typmi + CUSTOM ROW COUNT
         /// ŽIADNE KONVERZIE, priama kompatibilita
         /// </summary>
         public async Task InitializeAsync(
-            List<LocalColumnDefinition> columns,
-            List<LocalValidationRule>? validationRules = null,
-            LocalThrottlingConfig? throttling = null,
+            List<InternalColumnDefinition> columns, // OPRAVA CS1503: internal typ
+            List<InternalValidationRule>? validationRules = null, // OPRAVA CS1503: internal typ
+            InternalThrottlingConfig? throttling = null, // OPRAVA CS1503: internal typ
             int initialRowCount = 15)  // OPRAVA: Default je 15 namiesto 100
         {
             ThrowIfDisposed();
@@ -433,7 +433,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 // KĽÚČOVÁ OPRAVA CS1503: Volanie INTERNAL API metódy ViewModel s internal typmi + custom row count
                 // Žiadne konverzie, priama kompatibilita
-                await _viewModel.InitializeAsync(columns, validationRules ?? new List<LocalValidationRule>(), throttling, initialRowCount);
+                await _viewModel.InitializeAsync(columns, validationRules ?? new List<InternalValidationRule>(), throttling, initialRowCount);
 
                 _isInitialized = true;
 
