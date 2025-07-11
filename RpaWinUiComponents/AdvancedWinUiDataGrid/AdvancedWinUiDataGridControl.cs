@@ -1,4 +1,4 @@
-﻿// AdvancedWinUiDataGridControl.cs - FINÁLNA OPRAVA CS1503 chýb
+﻿// AdvancedWinUiDataGridControl.cs - FINÁLNA OPRAVA všetkých CS chýb
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -10,7 +10,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// KĽÚČOVÁ OPRAVA: Explicitné aliasy pre zamedzenie konfliktov
+// KRITICKÁ OPRAVA: Používame JASNE ODDELENÉ namespace pre public API
+using PublicColumnDefinition = RpaWinUiComponents.PublicApi.ColumnDefinition;
+using PublicValidationRule = RpaWinUiComponents.PublicApi.ValidationRule;
+using PublicThrottlingConfig = RpaWinUiComponents.PublicApi.ThrottlingConfig;
+
+// Internal typy s explicitnými aliasmi
 using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
 using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
 using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
@@ -18,8 +23,7 @@ using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - OPRAVENÉ KONVERZIE TYPOV
-    /// Demo aplikácie vidia len tento komponent a public alias triedy
+    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - RIEŠENIE VŠETKÝCH CS CHÝB
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -35,19 +39,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         #region Events
-
-        /// <summary>
-        /// Event ktorý sa spustí pri chybe v komponente
-        /// </summary>
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
-
         #endregion
 
         #region Static Configuration Methods
-
-        /// <summary>
-        /// Konfiguruje dependency injection pre AdvancedWinUiDataGrid
-        /// </summary>
         public static class Configuration
         {
             public static void ConfigureServices(IServiceProvider serviceProvider)
@@ -65,40 +60,37 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
                 RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers.DebugHelper.IsDebugEnabled = enabled;
             }
         }
-
         #endregion
 
-        #region Inicializácia a Konfigurácia - PUBLIC API s OPRAVENOU KONVERZIOU
+        #region Inicializácia a Konfigurácia - OPRAVA CS1503
 
         /// <summary>
-        /// KĽÚČOVÁ OPRAVA CS1503: Public API s automatickou konverziou typov + custom row count
+        /// KĽÚČOVÁ OPRAVA CS1503: Public API s automatickou konverziou typov
         /// </summary>
         public async Task InitializeAsync(
-            List<ColumnDefinition> columns,
-            List<ValidationRule>? validationRules = null,
-            ThrottlingConfig? throttling = null,
+            List<PublicColumnDefinition> columns,
+            List<PublicValidationRule>? validationRules = null,
+            PublicThrottlingConfig? throttling = null,
             int initialRowCount = 15)
         {
             try
             {
-                // OPRAVA CS1503: Konverzia public API typov na internal API typy
-                var internalColumns = columns?.Select(c => c.ToInternal()).ToList() ?? new List<InternalColumnDefinition>();
+                // RIEŠENIE CS1503: Explicitná konverzia public API typov na internal API typy
+                var internalColumns = columns?.ToInternal() ?? new List<InternalColumnDefinition>();
 
-                // KĽÚČOVÁ OPRAVA CS1503: Správna konverzia ValidationRule typov
                 List<InternalValidationRule>? internalRules = null;
                 if (validationRules != null)
                 {
-                    internalRules = validationRules.Select(r => r.ToInternal()).ToList();
+                    internalRules = validationRules.ToInternal();
                 }
 
-                // KĽÚČOVÁ OPRAVA CS1503: Správna konverzia ThrottlingConfig typu
                 InternalThrottlingConfig? internalThrottling = null;
                 if (throttling != null)
                 {
                     internalThrottling = throttling.ToInternal();
                 }
 
-                // Volanie internal API s internal typmi a custom row count
+                // Volanie internal API s internal typmi
                 await _internalView.InitializeAsync(internalColumns, internalRules, internalThrottling, initialRowCount);
                 _isInitialized = true;
             }
@@ -111,11 +103,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region Resetovanie
+        #region Public Methods
 
-        /// <summary>
-        /// Resetuje komponent do pôvodného stavu
-        /// </summary>
         public void Reset()
         {
             try
@@ -129,40 +118,24 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             }
         }
 
-        #endregion
-
-        #region Public Info Methods
-
-        /// <summary>
-        /// Kontroluje či je komponent inicializovaný
-        /// </summary>
         public bool IsInitialized()
         {
             ThrowIfDisposed();
             return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
         }
 
-        /// <summary>
-        /// Získa počet stĺpcov v DataGrid
-        /// </summary>
         public int GetColumnCount()
         {
             ThrowIfDisposed();
             return _internalView?.ViewModel?.Columns?.Count ?? 0;
         }
 
-        /// <summary>
-        /// Získa počet riadkov v DataGrid
-        /// </summary>
         public int GetRowCount()
         {
             ThrowIfDisposed();
             return _internalView?.ViewModel?.Rows?.Count ?? 0;
         }
 
-        /// <summary>
-        /// Získa názvy všetkých stĺpcov
-        /// </summary>
         public List<string> GetColumnNames()
         {
             ThrowIfDisposed();
@@ -173,9 +146,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             return _internalView.ViewModel.Columns.Select(c => c.Name).ToList();
         }
 
-        /// <summary>
-        /// Získa počet neprázdnych riadkov
-        /// </summary>
         public int GetDataRowCount()
         {
             ThrowIfDisposed();
@@ -186,9 +156,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             return _internalView.ViewModel.Rows.Count(r => !r.IsEmpty);
         }
 
-        /// <summary>
-        /// Získa debug informácie o stave komponenta
-        /// </summary>
         public string GetDebugInfo()
         {
             ThrowIfDisposed();
@@ -218,9 +185,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #region Načítanie Dát
 
-        /// <summary>
-        /// Načíta dáta z DataTable s automatickou validáciou
-        /// </summary>
         public async Task LoadDataAsync(DataTable dataTable)
         {
             try
@@ -237,9 +201,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             }
         }
 
-        /// <summary>
-        /// Načíta dáta zo zoznamu dictionary objektov
-        /// </summary>
         public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
         {
             try
@@ -260,9 +221,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #region Export Dát
 
-        /// <summary>
-        /// Exportuje validné dáta do DataTable
-        /// </summary>
         public async Task<DataTable> ExportToDataTableAsync()
         {
             try
@@ -283,9 +241,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #region Validácia
 
-        /// <summary>
-        /// Validuje všetky riadky a vráti true ak sú všetky validné
-        /// </summary>
         public async Task<bool> ValidateAllRowsAsync()
         {
             try
@@ -306,9 +261,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #region Manipulácia s Riadkami
 
-        /// <summary>
-        /// Vymaže všetky dáta zo všetkých buniek
-        /// </summary>
         public async Task ClearAllDataAsync()
         {
             try
@@ -325,9 +277,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             }
         }
 
-        /// <summary>
-        /// Odstráni všetky prázdne riadky
-        /// </summary>
         public async Task RemoveEmptyRowsAsync()
         {
             try
@@ -344,9 +293,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             }
         }
 
-        /// <summary>
-        /// Odstráni riadky ktoré spĺňajú zadanú podmienku
-        /// </summary>
         public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
         {
             try
@@ -367,9 +313,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
-        /// OPRAVA CS1503: Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - PUBLIC API
+        /// RIEŠENIE CS1503: Odstráni riadky ktoré nevyhovujú vlastným validačným pravidlám - public API
         /// </summary>
-        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
+        public async Task<int> RemoveRowsByValidationAsync(List<PublicValidationRule> customRules)
         {
             try
             {
@@ -379,7 +325,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
                 if (_internalView.ViewModel != null)
                 {
                     // KĽÚČOVÁ OPRAVA CS1503: Konverzia z public API na internal API
-                    var internalRules = customRules?.Select(r => r.ToInternal()).ToList() ?? new List<InternalValidationRule>();
+                    var internalRules = customRules?.ToInternal() ?? new List<InternalValidationRule>();
                     return await _internalView.ViewModel.RemoveRowsByValidationAsync(internalRules);
                 }
                 return 0;

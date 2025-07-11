@@ -1,4 +1,4 @@
-﻿// GlobalUsings.cs - FINÁLNA OPRAVA bez konfliktov
+﻿// GlobalUsings.cs - OPRAVENÝ bez konfliktov
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
@@ -28,11 +28,3 @@ global using WinUITextBlock = Microsoft.UI.Xaml.Controls.TextBlock;
 global using WinUIButton = Microsoft.UI.Xaml.Controls.Button;
 global using WinUITextBox = Microsoft.UI.Xaml.Controls.TextBox;
 global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
-global using WinUIItemsRepeater = Microsoft.UI.Xaml.Controls.ItemsRepeater;
-global using WinUIProgressBar = Microsoft.UI.Xaml.Controls.ProgressBar;
-
-// ODSTRÁNENÉ KONFLIKTY - tieto aliasy spôsobovali CS0246 a CS1503 chyby
-// Namiesto globálnych aliasov používame lokálne aliasy v jednotlivých súboroch
-// global using DataGridColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-// global using DataGridValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-// global using DataGridThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;

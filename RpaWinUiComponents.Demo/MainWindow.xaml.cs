@@ -1,4 +1,4 @@
-﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa PUBLIC API s custom row count
+﻿// MainWindow.xaml.cs - FINÁLNA OPRAVA - používa PUBLIC API s novým namespace
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
@@ -7,8 +7,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// ✅ FINÁLNA OPRAVA: Demo projekt používa PUBLIC API triedy
+// ✅ FINÁLNA OPRAVA: Demo projekt používa PUBLIC API triedy s novým namespace
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
+using PublicColumnDefinition = RpaWinUiComponents.PublicApi.ColumnDefinition;
+using PublicValidationRule = RpaWinUiComponents.PublicApi.ValidationRule;
+using PublicThrottlingConfig = RpaWinUiComponents.PublicApi.ThrottlingConfig;
 
 namespace RpaWinUiComponents.Demo
 {
@@ -40,26 +43,26 @@ namespace RpaWinUiComponents.Demo
                 UpdateLoadingState("Inicializuje sa komponent...", "Pripravuje sa DataGrid...");
                 await Task.Delay(200);
 
-                // KROK 1: Definícia stĺpcov - POUŽÍVAME PUBLIC API
+                // KROK 1: Definícia stĺpcov - POUŽÍVAME PUBLIC API s novým namespace
                 System.Diagnostics.Debug.WriteLine("📊 Vytváram definície stĺpcov...");
                 var columns = CreateColumnDefinitions();
                 System.Diagnostics.Debug.WriteLine($"✅ Vytvorených {columns.Count} stĺpcov");
 
                 UpdateLoadingState("Nastavujú sa validačné pravidlá...", "Definujú sa validačné pravidlá...");
 
-                // KROK 2: Definícia validačných pravidiel - POUŽÍVAME PUBLIC API
+                // KROK 2: Definícia validačných pravidiel - POUŽÍVAME PUBLIC API s novým namespace
                 System.Diagnostics.Debug.WriteLine("✅ Vytváram validačné pravidlá...");
                 var validationRules = CreateValidationRules();
                 System.Diagnostics.Debug.WriteLine($"✅ Vytvorených {validationRules.Count} validačných pravidiel");
 
                 UpdateLoadingState("Inicializuje sa DataGrid komponent...", "Pripájajú sa služby...");
 
-                // KROK 3: OPRAVA - Konfigurovateľný počet riadkov s DEFAULT 15
-                int customRowCount = 25; // Môžeme zmeniť na ľubovoľné číslo
+                // KROK 3: OPRAVA - Konfigurovateľný počet riadkov s DEFAULT 25
+                int customRowCount = 25;
                 System.Diagnostics.Debug.WriteLine($"🔧 Nastavujem počet riadkov na: {customRowCount}");
 
-                // Throttling config pre stabilitu - POUŽÍVAME PUBLIC API
-                var throttlingConfig = new ThrottlingConfig
+                // Throttling config pre stabilitu - POUŽÍVAME PUBLIC API s novým namespace
+                var throttlingConfig = new PublicThrottlingConfig
                 {
                     TypingDelayMs = 500,
                     PasteDelayMs = 200,
@@ -78,7 +81,7 @@ namespace RpaWinUiComponents.Demo
 
                 System.Diagnostics.Debug.WriteLine("🔧 Spúšťam InitializeAsync...");
 
-                // KĽÚČOVÁ OPRAVA: Používanie PUBLIC API s custom počtom riadkov
+                // KĽÚČOVÁ OPRAVA: Používanie PUBLIC API s novým namespace
                 await DataGridControl.InitializeAsync(columns, validationRules, throttlingConfig, customRowCount);
 
                 System.Diagnostics.Debug.WriteLine("✅ InitializeAsync dokončený");
@@ -107,13 +110,13 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Konfigurovateľné vytvorenie stĺpcov - POUŽÍVA PUBLIC API
+        /// Konfigurovateľné vytvorenie stĺpcov - POUŽÍVA PUBLIC API s novým namespace
         /// </summary>
-        private List<ColumnDefinition> CreateColumnDefinitions()
+        private List<PublicColumnDefinition> CreateColumnDefinitions()
         {
-            var columns = new List<ColumnDefinition>
+            var columns = new List<PublicColumnDefinition>
             {
-                new ColumnDefinition("ID", typeof(int))
+                new PublicColumnDefinition("ID", typeof(int))
                 {
                     MinWidth = 60,
                     MaxWidth = 100,
@@ -122,7 +125,7 @@ namespace RpaWinUiComponents.Demo
                     ToolTip = "Jedinečný identifikátor záznamu",
                     IsReadOnly = true
                 },
-                new ColumnDefinition("Meno", typeof(string))
+                new PublicColumnDefinition("Meno", typeof(string))
                 {
                     MinWidth = 120,
                     MaxWidth = 250,
@@ -130,7 +133,7 @@ namespace RpaWinUiComponents.Demo
                     Header = "👤 Meno a Priezvisko",
                     ToolTip = "Zadajte celé meno osoby"
                 },
-                new ColumnDefinition("Email", typeof(string))
+                new PublicColumnDefinition("Email", typeof(string))
                 {
                     MinWidth = 180,
                     MaxWidth = 350,
@@ -138,7 +141,7 @@ namespace RpaWinUiComponents.Demo
                     Header = "📧 Email adresa",
                     ToolTip = "Platná email adresa v správnom formáte"
                 },
-                new ColumnDefinition("Vek", typeof(int))
+                new PublicColumnDefinition("Vek", typeof(int))
                 {
                     MinWidth = 60,
                     MaxWidth = 100,
@@ -146,7 +149,7 @@ namespace RpaWinUiComponents.Demo
                     Header = "🎂 Vek",
                     ToolTip = "Vek v rokoch (18-100)"
                 },
-                new ColumnDefinition("Plat", typeof(decimal))
+                new PublicColumnDefinition("Plat", typeof(decimal))
                 {
                     MinWidth = 100,
                     MaxWidth = 180,
@@ -154,7 +157,7 @@ namespace RpaWinUiComponents.Demo
                     Header = "💰 Plat (€)",
                     ToolTip = "Mesačný plat v eurách"
                 },
-                new ColumnDefinition("Pozicia", typeof(string))
+                new PublicColumnDefinition("Pozicia", typeof(string))
                 {
                     MinWidth = 120,
                     MaxWidth = 200,
@@ -162,7 +165,7 @@ namespace RpaWinUiComponents.Demo
                     Header = "💼 Pracovná pozícia",
                     ToolTip = "Aktuálna pracovná pozícia"
                 },
-                new ColumnDefinition("Oddelenie", typeof(string))
+                new PublicColumnDefinition("Oddelenie", typeof(string))
                 {
                     MinWidth = 100,
                     MaxWidth = 180,
@@ -170,7 +173,7 @@ namespace RpaWinUiComponents.Demo
                     Header = "🏢 Oddelenie",
                     ToolTip = "Oddelenie v spoločnosti"
                 },
-                new ColumnDefinition("DatumNastupu", typeof(DateTime))
+                new PublicColumnDefinition("DatumNastupu", typeof(DateTime))
                 {
                     MinWidth = 120,
                     MaxWidth = 160,
@@ -184,22 +187,22 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Rozšírené validačné pravidlá - POUŽÍVA PUBLIC API
+        /// Rozšírené validačné pravidlá - POUŽÍVA PUBLIC API s novým namespace
         /// </summary>
-        private List<ValidationRule> CreateValidationRules()
+        private List<PublicValidationRule> CreateValidationRules()
         {
-            var rules = new List<ValidationRule>();
+            var rules = new List<PublicValidationRule>();
 
             // ✅ 1. ZÁKLADNÉ POMOCNÉ VALIDÁCIE - používame static helper metódy z PUBLIC API
-            rules.Add(ValidationRule.Required("ID", "ID je povinné pole"));
-            rules.Add(ValidationRule.Required("Meno", "Meno je povinné pole"));
-            rules.Add(ValidationRule.Email("Email", "Email musí mať platný formát"));
-            rules.Add(ValidationRule.Range("Vek", 18, 100, "Vek musí byť medzi 18-100 rokmi"));
-            rules.Add(ValidationRule.Range("Plat", 500, 15000, "Plat musí byť medzi 500-15000 €"));
-            rules.Add(ValidationRule.Length("Pozicia", 0, 50, "Pozícia môže mať max 50 znakov"));
+            rules.Add(PublicValidationRule.Required("ID", "ID je povinné pole"));
+            rules.Add(PublicValidationRule.Required("Meno", "Meno je povinné pole"));
+            rules.Add(PublicValidationRule.Email("Email", "Email musí mať platný formát"));
+            rules.Add(PublicValidationRule.Range("Vek", 18, 100, "Vek musí byť medzi 18-100 rokmi"));
+            rules.Add(PublicValidationRule.Range("Plat", 500, 15000, "Plat musí byť medzi 500-15000 €"));
+            rules.Add(PublicValidationRule.Length("Pozicia", 0, 50, "Pozícia môže mať max 50 znakov"));
 
             // 🎯 2. CUSTOM VALIDÁCIA - Kontrola dĺžky mena s PUBLIC API
-            var nameRule = new ValidationRule("Meno", (value, row) =>
+            var nameRule = new PublicValidationRule("Meno", (value, row) =>
             {
                 var meno = value?.ToString() ?? "";
                 var slova = meno.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -212,7 +215,7 @@ namespace RpaWinUiComponents.Demo
             rules.Add(nameRule);
 
             // 🎯 3. CUSTOM VALIDÁCIA - Kontrola formátu ID s PUBLIC API
-            var idRule = new ValidationRule("ID", (value, row) =>
+            var idRule = new PublicValidationRule("ID", (value, row) =>
             {
                 if (int.TryParse(value?.ToString(), out int id))
                 {
@@ -227,7 +230,7 @@ namespace RpaWinUiComponents.Demo
             rules.Add(idRule);
 
             // 🎯 4. ASYNC VALIDÁCIA - Simulácia kontroly duplicitného emailu s PUBLIC API
-            var asyncEmailRule = new ValidationRule()
+            var asyncEmailRule = new PublicValidationRule()
             {
                 ColumnName = "Email",
                 RuleName = "Email_DuplicateCheckAsync",
@@ -257,7 +260,7 @@ namespace RpaWinUiComponents.Demo
             rules.Add(asyncEmailRule);
 
             // 🎯 5. CUSTOM DÁTUM VALIDÁCIA s PUBLIC API
-            var dateRule = new ValidationRule("DatumNastupu", (value, row) =>
+            var dateRule = new PublicValidationRule("DatumNastupu", (value, row) =>
             {
                 if (value == null) return true;
 

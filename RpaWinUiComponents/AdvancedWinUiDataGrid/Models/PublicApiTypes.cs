@@ -1,16 +1,22 @@
-﻿// Models/PublicApiTypes.cs - FINÁLNA OPRAVA s explicitnými typmi
+﻿// PublicApi.cs - KOMPLETNÉ RIEŠENIE všetkých CS chýb s novým namespace
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
+// Import internal typov s explicitnými aliasmi - zabráni konfliktom
+using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
+using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
+using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
+
+namespace RpaWinUiComponents.PublicApi
 {
     /// <summary>
-    /// Public API trieda pre ColumnDefinition - SKUTOČNÁ implementácia
+    /// OPRAVENÝ Public API pre ColumnDefinition - jasne oddelený namespace
     /// </summary>
-    public class PublicColumnDefinition
+    public sealed class ColumnDefinition
     {
         public string Name { get; set; } = string.Empty;
         public Type DataType { get; set; } = typeof(string);
@@ -23,9 +29,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         public string? Header { get; set; }
         public string? ToolTip { get; set; }
 
-        public PublicColumnDefinition() { }
+        public ColumnDefinition() { }
 
-        public PublicColumnDefinition(string name, Type dataType)
+        public ColumnDefinition(string name, Type dataType)
         {
             Name = name;
             DataType = dataType;
@@ -33,11 +39,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         }
 
         /// <summary>
-        /// Konvertuje na internú verziu - EXPLICITNÝ TYP
+        /// EXPLICITNÁ konverzia na internal typ - odstráni ambiguity
         /// </summary>
-        public RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition ToInternal()
+        internal InternalColumnDefinition ToInternal()
         {
-            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition(Name, DataType)
+            return new InternalColumnDefinition(Name, DataType)
             {
                 MinWidth = MinWidth,
                 MaxWidth = MaxWidth,
@@ -52,9 +58,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
     }
 
     /// <summary>
-    /// Public API trieda pre ValidationRule - SKUTOČNÁ implementácia s ValidateAsync
+    /// OPRAVENÝ Public API pre ValidationRule - jasne oddelený namespace
     /// </summary>
-    public class PublicValidationRule
+    public sealed class ValidationRule
     {
         public string ColumnName { get; set; } = string.Empty;
         public Func<object?, DataGridRow, bool> ValidationFunction { get; set; } = (_, _) => true;
@@ -66,12 +72,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         public Func<object?, DataGridRow, CancellationToken, Task<bool>>? AsyncValidationFunction { get; set; }
         public TimeSpan ValidationTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
-        public PublicValidationRule()
+        public ValidationRule()
         {
             RuleName = Guid.NewGuid().ToString("N")[..8];
         }
 
-        public PublicValidationRule(string columnName, Func<object?, DataGridRow, bool> validationFunction, string errorMessage)
+        public ValidationRule(string columnName, Func<object?, DataGridRow, bool> validationFunction, string errorMessage)
         {
             ColumnName = columnName;
             ValidationFunction = validationFunction;
@@ -79,8 +85,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             RuleName = $"{columnName}_{Guid.NewGuid().ToString("N")[..8]}";
         }
 
-        // Convenience constructor s jednoduchým Func<object?, bool>
-        public PublicValidationRule(string columnName, Func<object?, bool> simpleValidationFunction, string errorMessage)
+        public ValidationRule(string columnName, Func<object?, bool> simpleValidationFunction, string errorMessage)
         {
             ColumnName = columnName;
             ValidationFunction = (value, row) => simpleValidationFunction(value);
@@ -89,74 +94,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         }
 
         /// <summary>
-        /// KĽÚČOVÁ OPRAVA: Pridanie ValidateAsync metódy do public API
+        /// EXPLICITNÁ konverzia na internal typ
         /// </summary>
-        public async Task<bool> ValidateAsync(object? value, DataGridRow row, CancellationToken cancellationToken = default)
+        internal InternalValidationRule ToInternal()
         {
-            try
-            {
-                if (!ShouldApply(row))
-                    return true;
-
-                if (IsAsync && AsyncValidationFunction != null)
-                {
-                    using var timeoutCts = new CancellationTokenSource(ValidationTimeout);
-                    using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-
-                    return await AsyncValidationFunction(value, row, combinedCts.Token);
-                }
-
-                return Validate(value, row);
-            }
-            catch (OperationCanceledException)
-            {
-                return false; // Timeout alebo zrušenie = nevalidné
-            }
-            catch
-            {
-                return false; // Akákoľvek chyba = nevalidné
-            }
-        }
-
-        /// <summary>
-        /// Kontroluje či sa má validácia aplikovať na daný riadok
-        /// </summary>
-        public bool ShouldApply(DataGridRow row)
-        {
-            try
-            {
-                return ApplyCondition?.Invoke(row) ?? true;
-            }
-            catch
-            {
-                return true;
-            }
-        }
-
-        /// <summary>
-        /// Synchronne validuje hodnotu
-        /// </summary>
-        public bool Validate(object? value, DataGridRow row)
-        {
-            try
-            {
-                if (!ShouldApply(row))
-                    return true;
-
-                return ValidationFunction?.Invoke(value, row) ?? true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Konvertuje na internú verziu - EXPLICITNÝ TYP
-        /// </summary>
-        public RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule ToInternal()
-        {
-            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule(ColumnName, ValidationFunction, ErrorMessage)
+            return new InternalValidationRule(ColumnName, ValidationFunction, ErrorMessage)
             {
                 Priority = Priority,
                 RuleName = RuleName,
@@ -168,10 +110,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         }
 
         #region Static Helper Methods
-
-        public static PublicValidationRule Required(string columnName, string? errorMessage = null)
+        public static ValidationRule Required(string columnName, string? errorMessage = null)
         {
-            return new PublicValidationRule(
+            return new ValidationRule(
                 columnName,
                 (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
                 errorMessage ?? $"{columnName} je povinné pole"
@@ -181,9 +122,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             };
         }
 
-        public static PublicValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
+        public static ValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
         {
-            return new PublicValidationRule(
+            return new ValidationRule(
                 columnName,
                 (value, row) =>
                 {
@@ -197,9 +138,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             };
         }
 
-        public static PublicValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
+        public static ValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
         {
-            return new PublicValidationRule(
+            return new ValidationRule(
                 columnName,
                 (value, row) =>
                 {
@@ -220,9 +161,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             };
         }
 
-        public static PublicValidationRule Email(string columnName, string? errorMessage = null)
+        public static ValidationRule Email(string columnName, string? errorMessage = null)
         {
-            return new PublicValidationRule(
+            return new ValidationRule(
                 columnName,
                 (value, row) =>
                 {
@@ -239,9 +180,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             };
         }
 
-        public static PublicValidationRule Numeric(string columnName, string? errorMessage = null)
+        public static ValidationRule Numeric(string columnName, string? errorMessage = null)
         {
-            return new PublicValidationRule(
+            return new ValidationRule(
                 columnName,
                 (value, row) =>
                 {
@@ -256,14 +197,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
                 RuleName = $"{columnName}_Numeric"
             };
         }
-
         #endregion
     }
 
     /// <summary>
-    /// Public API trieda pre ThrottlingConfig - SKUTOČNÁ implementácia
+    /// OPRAVENÝ Public API pre ThrottlingConfig - jasne oddelený namespace
     /// </summary>
-    public class PublicThrottlingConfig
+    public sealed class ThrottlingConfig
     {
         public int TypingDelayMs { get; set; } = 300;
         public int PasteDelayMs { get; set; } = 100;
@@ -274,11 +214,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         public int MinValidationIntervalMs { get; set; } = 50;
 
         /// <summary>
-        /// Konvertuje na internú verziu - EXPLICITNÝ TYP
+        /// EXPLICITNÁ konverzia na internal typ
         /// </summary>
-        public RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig ToInternal()
+        internal InternalThrottlingConfig ToInternal()
         {
-            return new RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig
+            return new InternalThrottlingConfig
             {
                 TypingDelayMs = TypingDelayMs,
                 PasteDelayMs = PasteDelayMs,
@@ -290,45 +230,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             };
         }
 
-        /// <summary>
-        /// Validácia konfigurácie
-        /// </summary>
-        public bool IsValidConfig(out string? errorMessage)
-        {
-            errorMessage = null;
-
-            if (TypingDelayMs < 0)
-            {
-                errorMessage = "TypingDelayMs musí byť >= 0";
-                return false;
-            }
-
-            if (PasteDelayMs < 0)
-            {
-                errorMessage = "PasteDelayMs musí byť >= 0";
-                return false;
-            }
-
-            if (MaxConcurrentValidations < 1)
-            {
-                errorMessage = "MaxConcurrentValidations musí byť >= 1";
-                return false;
-            }
-
-            if (ValidationTimeout <= TimeSpan.Zero)
-            {
-                errorMessage = "ValidationTimeout musí byť kladný";
-                return false;
-            }
-
-            return true;
-        }
-
         #region Static Factory Methods
+        public static ThrottlingConfig Default => new();
 
-        public static PublicThrottlingConfig Default => new();
-
-        public static PublicThrottlingConfig Fast => new()
+        public static ThrottlingConfig Fast => new()
         {
             TypingDelayMs = 150,
             PasteDelayMs = 50,
@@ -337,7 +242,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             MinValidationIntervalMs = 25
         };
 
-        public static PublicThrottlingConfig Slow => new()
+        public static ThrottlingConfig Slow => new()
         {
             TypingDelayMs = 500,
             PasteDelayMs = 200,
@@ -346,7 +251,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             MinValidationIntervalMs = 100
         };
 
-        public static PublicThrottlingConfig Disabled => new()
+        public static ThrottlingConfig Disabled => new()
         {
             IsEnabled = false,
             TypingDelayMs = 0,
@@ -354,19 +259,22 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
             BatchValidationDelayMs = 0,
             MinValidationIntervalMs = 0
         };
-
-        public static PublicThrottlingConfig Custom(int typingDelayMs, int maxConcurrentValidations = 5)
-        {
-            return new PublicThrottlingConfig
-            {
-                TypingDelayMs = typingDelayMs,
-                PasteDelayMs = Math.Max(10, typingDelayMs / 3),
-                BatchValidationDelayMs = typingDelayMs * 2,
-                MaxConcurrentValidations = maxConcurrentValidations,
-                MinValidationIntervalMs = Math.Max(10, typingDelayMs / 6)
-            };
-        }
-
         #endregion
+    }
+}
+
+/// <summary>
+/// Extension metódy pre konverziu typov - RIEŠENIE CS1503
+/// </summary>
+public static class PublicApiExtensions
+{
+    public static List<InternalColumnDefinition> ToInternal(this List<RpaWinUiComponents.PublicApi.ColumnDefinition> publicColumns)
+    {
+        return publicColumns?.Select(c => c.ToInternal()).ToList() ?? new List<InternalColumnDefinition>();
+    }
+
+    public static List<InternalValidationRule> ToInternal(this List<RpaWinUiComponents.PublicApi.ValidationRule> publicRules)
+    {
+        return publicRules?.Select(r => r.ToInternal()).ToList() ?? new List<InternalValidationRule>();
     }
 }
