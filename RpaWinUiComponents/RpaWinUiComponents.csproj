@@ -59,7 +59,6 @@
     <!-- Root level súbory -->
     <Compile Include="AdvancedWinUiDataGrid\Models\PublicApiTypes.cs" />
     <Compile Include="GlobalUsings.cs" />
-    <Compile Include="PublicApi.cs" />
 
     <!-- Models -->
     <Compile Include="AdvancedWinUiDataGrid\Models\ColumnDefinition.cs" />
