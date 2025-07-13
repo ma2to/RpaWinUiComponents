@@ -7,7 +7,7 @@ using System;
 using System.Threading.Tasks;
 
 // ✅ OPRAVA: Import z NuGet balíčka
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Collections. Configuration;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 
 namespace RpaWinUiComponents.Demo
 {
