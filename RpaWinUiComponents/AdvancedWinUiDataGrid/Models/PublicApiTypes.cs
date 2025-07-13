@@ -1,4 +1,5 @@
 ﻿// PublicApi.cs - KOMPLETNÉ RIEŠENIE všetkých CS chýb s novým namespace
+// OPRAVENÉ: Odstránené extension metódy (sú v PublicApiAliases.cs)
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -263,18 +264,5 @@ namespace RpaWinUiComponents.PublicApi
     }
 }
 
-/// <summary>
-/// Extension metódy pre konverziu typov - RIEŠENIE CS1503
-/// </summary>
-public static class PublicApiExtensions
-{
-    public static List<InternalColumnDefinition> ToInternal(this List<RpaWinUiComponents.PublicApi.ColumnDefinition> publicColumns)
-    {
-        return publicColumns?.Select(c => c.ToInternal()).ToList() ?? new List<InternalColumnDefinition>();
-    }
-
-    public static List<InternalValidationRule> ToInternal(this List<RpaWinUiComponents.PublicApi.ValidationRule> publicRules)
-    {
-        return publicRules?.Select(r => r.ToInternal()).ToList() ?? new List<InternalValidationRule>();
-    }
-}
+// OPRAVENÉ: Extension metódy ODSTRÁNENÉ z tohto súboru
+// Sú teraz iba v PublicApiAliases.cs

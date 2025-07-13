@@ -1,16 +1,18 @@
-﻿// App.xaml.cs - KOMPLETNÁ OPRAVA DI konfigurácie
+﻿// App.xaml.cs - OPRAVA pre použitie NuGet balíčka
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using System;
 using System.Threading.Tasks;
+
+// ✅ OPRAVA: Import z NuGet balíčka
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 
 namespace RpaWinUiComponents.Demo
 {
     /// <summary>
-    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA
+    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA pre NuGet
     /// </summary>
     public partial class App : Application
     {
@@ -26,7 +28,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Inicializuje služby a DI kontajner pre demo aplikáciu - KOMPLETNÁ OPRAVA
+        /// Inicializuje služby a DI kontajner pre demo aplikáciu - OPRAVA pre NuGet
         /// </summary>
         private void InitializeServices()
         {
@@ -49,7 +51,7 @@ namespace RpaWinUiComponents.Demo
                         {
                             System.Diagnostics.Debug.WriteLine("📦 Registrujú sa služby...");
 
-                            // KĽÚČOVÁ OPRAVA: Registrácia služieb pre AdvancedWinUiDataGrid
+                            // ✅ KĽÚČOVÁ OPRAVA: Registrácia služieb pre AdvancedWinUiDataGrid z NuGet
                             services.AddAdvancedWinUiDataGrid();
 
                             // Registrácia demo aplikácie služieb
@@ -70,7 +72,7 @@ namespace RpaWinUiComponents.Demo
                 // Build host
                 _host = hostBuilder.Build();
 
-                // KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom
+                // ✅ KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom z NuGet
                 RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
                     .Configuration.ConfigureServices(_host.Services);
 
@@ -96,7 +98,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Vytvorí zjednodušenú konfiguráciu ak zlyhá hlavná inicializácia - VYLEPŠENÝ FALLBACK
+        /// Vytvorí zjednodušenú konfiguráciu ak zlyhá hlavná inicializácia - FALLBACK
         /// </summary>
         private void CreateFallbackConfiguration()
         {
@@ -114,7 +116,7 @@ namespace RpaWinUiComponents.Demo
                     builder.SetMinimumLevel(LogLevel.Information);
                 });
 
-                // KĽÚČOVÁ OPRAVA: Registrácia AdvancedWinUiDataGrid služieb
+                // ✅ OPRAVA: Registrácia AdvancedWinUiDataGrid služieb z NuGet
                 services.AddAdvancedWinUiDataGrid();
 
                 // Demo služby
@@ -223,7 +225,7 @@ namespace RpaWinUiComponents.Demo
     }
 
     /// <summary>
-    /// Demo služba pre testovanie DI - OPRAVENÁ
+    /// Demo služba pre testovanie DI
     /// </summary>
     public interface IDemoDataService
     {
