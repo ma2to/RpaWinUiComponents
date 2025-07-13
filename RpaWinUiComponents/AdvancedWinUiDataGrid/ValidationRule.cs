@@ -1,12 +1,15 @@
-﻿//Models/ValidationRule.cs
+﻿// KROK 2: PRESUN Models/ValidationRule.cs do hlavného namespace
+// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ValidationRule.cs (NOVÝ SÚBOR)
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
-namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
+namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Validačné pravidlo pre bunky v DataGrid
+    /// Validačné pravidlo pre bunky v DataGrid - HLAVNÝ TYP (bez duplikátov)
     /// </summary>
     public class ValidationRule
     {
@@ -63,6 +66,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
         {
             ColumnName = columnName;
             ValidationFunction = validationFunction;
+            ErrorMessage = errorMessage;
+            RuleName = $"{columnName}_{Guid.NewGuid().ToString("N")[..8]}";
+        }
+
+        public ValidationRule(string columnName, Func<object?, bool> simpleValidationFunction, string errorMessage)
+        {
+            ColumnName = columnName;
+            ValidationFunction = (value, row) => simpleValidationFunction(value);
             ErrorMessage = errorMessage;
             RuleName = $"{columnName}_{Guid.NewGuid().ToString("N")[..8]}";
         }
@@ -129,6 +140,96 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
                 return false; // Akákoľvek chyba = nevalidné
             }
         }
+
+        #region Static Helper Methods - ČISTÉ PUBLIC API
+        public static ValidationRule Required(string columnName, string? errorMessage = null)
+        {
+            return new ValidationRule(
+                columnName,
+                (value, row) => !string.IsNullOrWhiteSpace(value?.ToString()),
+                errorMessage ?? $"{columnName} je povinné pole"
+            )
+            {
+                RuleName = $"{columnName}_Required"
+            };
+        }
+
+        public static ValidationRule Length(string columnName, int minLength, int maxLength = int.MaxValue, string? errorMessage = null)
+        {
+            return new ValidationRule(
+                columnName,
+                (value, row) =>
+                {
+                    var text = value?.ToString() ?? "";
+                    return text.Length >= minLength && text.Length <= maxLength;
+                },
+                errorMessage ?? $"{columnName} musí mať dĺžku medzi {minLength} a {maxLength} znakmi"
+            )
+            {
+                RuleName = $"{columnName}_Length"
+            };
+        }
+
+        public static ValidationRule Range(string columnName, double min, double max, string? errorMessage = null)
+        {
+            return new ValidationRule(
+                columnName,
+                (value, row) =>
+                {
+                    if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                        return true;
+
+                    if (double.TryParse(value.ToString(), out double numValue))
+                    {
+                        return numValue >= min && numValue <= max;
+                    }
+
+                    return false;
+                },
+                errorMessage ?? $"{columnName} musí byť medzi {min} a {max}"
+            )
+            {
+                RuleName = $"{columnName}_Range"
+            };
+        }
+
+        public static ValidationRule Email(string columnName, string? errorMessage = null)
+        {
+            return new ValidationRule(
+                columnName,
+                (value, row) =>
+                {
+                    if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                        return true;
+
+                    var email = value.ToString();
+                    return email?.Contains("@") == true && email.Contains(".") && email.Length > 5;
+                },
+                errorMessage ?? $"{columnName} musí mať platný formát emailu"
+            )
+            {
+                RuleName = $"{columnName}_Email"
+            };
+        }
+
+        public static ValidationRule Numeric(string columnName, string? errorMessage = null)
+        {
+            return new ValidationRule(
+                columnName,
+                (value, row) =>
+                {
+                    if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
+                        return true;
+
+                    return double.TryParse(value.ToString(), out _);
+                },
+                errorMessage ?? $"{columnName} musí byť číslo"
+            )
+            {
+                RuleName = $"{columnName}_Numeric"
+            };
+        }
+        #endregion
 
         public override string ToString()
         {

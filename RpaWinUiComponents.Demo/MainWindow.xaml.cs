@@ -1,11 +1,11 @@
-﻿// MainWindow.xaml.cs - JEDNODUCHÁ OPRAVA - používa iba základné public API
+﻿// OPRAVA: MainWindow.xaml.cs - Aktualizované namespace
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-// ✅ RIEŠENIE CS0234: Používame iba ZÁKLADNÝ namespace z NuGet balíčka
+// ✅ OPRAVENÉ: Používame nové, čisté namespace
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
 namespace RpaWinUiComponents.Demo
@@ -18,10 +18,10 @@ namespace RpaWinUiComponents.Demo
         {
             this.InitializeComponent();
 
-            // Inicializácia cez DispatcherQueue na bezpečné načasovanie
+            // OPRAVA: Inicializácia cez DispatcherQueue na bezpečné načasovanie
             this.DispatcherQueue.TryEnqueue(async () =>
             {
-                await Task.Delay(100);
+                await Task.Delay(500); // Počkáme aby sa UI úplne načítalo
                 await InitializeComponentAsync();
             });
         }
@@ -38,10 +38,46 @@ namespace RpaWinUiComponents.Demo
                 UpdateLoadingState("Inicializuje sa komponent...", "Pripravuje sa DataGrid...");
                 await Task.Delay(200);
 
-                // ✅ RIEŠENIE: Použijeme iba Dictionary pre stĺpce (jednoduchšie)
-                System.Diagnostics.Debug.WriteLine("📊 Vytváram testové dáta...");
+                // KROK 1: NAJPRV inicializácia komponentu s konfiguráciou
+                System.Diagnostics.Debug.WriteLine("🔧 Spúšťam inicializáciu komponentu...");
 
-                // Testové dáta - najjednoduchší spôsob
+                if (DataGridControl == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ CHYBA: DataGridControl je NULL!");
+                    ShowError("DataGridControl nie je dostupný");
+                    return;
+                }
+
+                // KROK 2: Definícia stĺpcov a validácií s NOVÝM NAMESPACE
+                var columns = new List<ColumnDefinition>  // ✅ Teraz: RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition
+                {
+                    new("ID", typeof(int)) { MinWidth = 60, Width = 80, Header = "🔢 ID" },
+                    new("Meno", typeof(string)) { MinWidth = 120, Width = 150, Header = "👤 Meno" },
+                    new("Email", typeof(string)) { MinWidth = 200, Width = 200, Header = "📧 Email" },
+                    new("Vek", typeof(int)) { MinWidth = 80, Width = 100, Header = "🎂 Vek" },
+                    new("Plat", typeof(decimal)) { MinWidth = 100, Width = 120, Header = "💰 Plat" }
+                };
+
+                var validationRules = new List<ValidationRule>  // ✅ Teraz: RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule
+                {
+                    ValidationRule.Required("Meno", "Meno je povinné"),  // ✅ Static helper metódy
+                    ValidationRule.Email("Email", "Neplatný email formát"),
+                    ValidationRule.Range("Vek", 18, 100, "Vek musí byť 18-100"),
+                    ValidationRule.Range("Plat", 500, 50000, "Plat musí byť 500-50000")
+                };
+
+                // KROK 3: KĽÚČOVÁ OPRAVA - NAJPRV inicializácia, potom dáta
+                UpdateLoadingState("Inicializuje sa DataGrid komponent...", "Pripájajú sa služby...");
+                await Task.Delay(300);
+
+                System.Diagnostics.Debug.WriteLine("🔧 Volám InitializeAsync...");
+                await DataGridControl.InitializeAsync(columns, validationRules, null, 15);
+                System.Diagnostics.Debug.WriteLine("✅ InitializeAsync dokončené");
+
+                // KROK 4: Teraz môžeme načítať dáta
+                UpdateLoadingState("Načítavajú sa testové dáta...", "Pripravujú sa ukážkové záznamy...");
+                await Task.Delay(200);
+
                 var testData = new List<Dictionary<string, object?>>
                 {
                     new() { ["ID"] = 1, ["Meno"] = "Ján Novák", ["Email"] = "jan@example.com", ["Vek"] = 30, ["Plat"] = 2500.00m },
@@ -51,37 +87,9 @@ namespace RpaWinUiComponents.Demo
                     new() { ["ID"] = 5, ["Meno"] = "Test User", ["Email"] = "test@example.com", ["Vek"] = 150, ["Plat"] = 50000.00m } // Nevalidný
                 };
 
-                UpdateLoadingState("Inicializuje sa DataGrid komponent...", "Pripájajú sa služby...");
-
-                // DEBUG: Kontrola DataGridControl pred inicializáciou
-                if (DataGridControl == null)
-                {
-                    System.Diagnostics.Debug.WriteLine("❌ CHYBA: DataGridControl je NULL!");
-                    ShowError("DataGridControl nie je dostupný");
-                    return;
-                }
-
-                System.Diagnostics.Debug.WriteLine("🔧 Spúšťam základnú inicializáciu...");
-
-                // ✅ FINÁLNE RIEŠENIE: Používame iba základný API bez Public API typov
-                // Komponent by mal mať rozumné defaulty
-                try
-                {
-                    // Pokús sa načítať dáta priamo - komponent by si mal vytvoriť vlastné stĺpce
-                    await DataGridControl.LoadDataAsync(testData);
-                    System.Diagnostics.Debug.WriteLine("✅ Dáta načítané pomocou základného API");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"❌ Základné API nefunguje: {ex.Message}");
-
-                    // Fallback - skúsime s DataTable
-                    var dataTable = ConvertToDataTable(testData);
-                    await DataGridControl.LoadDataAsync(dataTable);
-                    System.Diagnostics.Debug.WriteLine("✅ Dáta načítané pomocou DataTable");
-                }
-
-                System.Diagnostics.Debug.WriteLine("✅ Načítanie dokončené");
+                System.Diagnostics.Debug.WriteLine("📊 Načítavam testové dáta...");
+                await DataGridControl.LoadDataAsync(testData);
+                System.Diagnostics.Debug.WriteLine("✅ Dáta načítané");
 
                 // KROK 5: Dokončenie inicializácie
                 CompleteInitialization();
@@ -96,36 +104,6 @@ namespace RpaWinUiComponents.Demo
 
                 ShowError($"Chyba pri inicializácii: {ex.Message}");
             }
-        }
-
-        /// <summary>
-        /// Konverzia Dictionary na DataTable pre kompatibilitu
-        /// </summary>
-        private DataTable ConvertToDataTable(List<Dictionary<string, object?>> data)
-        {
-            var dataTable = new DataTable();
-
-            if (data?.Count > 0)
-            {
-                // Pridaj stĺpce na základe prvého záznamu
-                foreach (var key in data[0].Keys)
-                {
-                    dataTable.Columns.Add(key, typeof(object));
-                }
-
-                // Pridaj riadky
-                foreach (var row in data)
-                {
-                    var dataRow = dataTable.NewRow();
-                    foreach (var kvp in row)
-                    {
-                        dataRow[kvp.Key] = kvp.Value ?? DBNull.Value;
-                    }
-                    dataTable.Rows.Add(dataRow);
-                }
-            }
-
-            return dataTable;
         }
 
         #region UI Helper metódy
@@ -199,8 +177,8 @@ namespace RpaWinUiComponents.Demo
                 // Jednoduché testové dáta
                 var sampleData = new List<Dictionary<string, object?>>
                 {
-                    new() { ["Meno"] = "Test Osoba", ["Email"] = "test@test.com", ["Vek"] = 25 },
-                    new() { ["Meno"] = "Druhá Osoba", ["Email"] = "druha@test.com", ["Vek"] = 30 }
+                    new() { ["Meno"] = "Test Osoba", ["Email"] = "test@test.com", ["Vek"] = 25, ["Plat"] = 3000m },
+                    new() { ["Meno"] = "Druhá Osoba", ["Email"] = "druha@test.com", ["Vek"] = 30, ["Plat"] = 4000m }
                 };
 
                 await DataGridControl.LoadDataAsync(sampleData);

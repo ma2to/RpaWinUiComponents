@@ -1,10 +1,12 @@
-﻿//Models/ThrottlingConfig.cs
+﻿// KROK 3: PRESUN Models/ThrottlingConfig.cs do hlavného namespace
+// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ThrottlingConfig.cs (NOVÝ SÚBOR)
+
 using System;
 
-namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
+namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Konfigurácia pre throttling real-time validácie
+    /// Konfigurácia pre throttling real-time validácie - HLAVNÝ TYP (bez duplikátov)
     /// </summary>
     public class ThrottlingConfig
     {

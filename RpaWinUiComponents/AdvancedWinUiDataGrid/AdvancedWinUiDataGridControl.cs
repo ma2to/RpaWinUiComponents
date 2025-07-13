@@ -1,4 +1,6 @@
-﻿// AdvancedWinUiDataGridControl.cs - KOMPLETNÝ INTELIGENTNÝ komponent
+﻿// KROK 4: ČISTÁ VERZIA AdvancedWinUiDataGridControl.cs (BEZ DUPLIKÁTOV)
+// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs
+
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -10,27 +12,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-// KRITICKÁ OPRAVA: Používame JASNE ODDELENÉ namespace pre public API
-using PublicColumnDefinition = RpaWinUiComponents.PublicApi.ColumnDefinition;
-using PublicValidationRule = RpaWinUiComponents.PublicApi.ValidationRule;
-using PublicThrottlingConfig = RpaWinUiComponents.PublicApi.ThrottlingConfig;
-
-// Internal typy s explicitnými aliasmi
-using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
-
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Hlavný wrapper komponent pre AdvancedWinUiDataGrid - INTELIGENTNÁ VERZIA
-    /// Automaticky detekuje stĺpce a vytvára základné validácie
+    /// HLAVNÝ VSTUPNÝ BOD - Čistý wrapper pre AdvancedWinUiDataGrid komponent
+    /// AUTOMATICKÁ DETEKCIA stĺpcov a validácií + ŽIADNE DUPLIKÁTY TYPOV
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
         private readonly AdvancedDataGridControl _internalView;
         private bool _disposed = false;
         private bool _isInitialized = false;
+        private readonly object _initializationLock = new object();
 
         public AdvancedWinUiDataGridControl()
         {
@@ -43,7 +36,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
         #endregion
 
-        #region Static Configuration Methods
+        #region Static Configuration Methods (CLEAN PUBLIC API)
         public static class Configuration
         {
             public static void ConfigureServices(IServiceProvider serviceProvider)
@@ -63,65 +56,65 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
         #endregion
 
-        #region INTELIGENTNÉ PUBLIC API - Automatická detekcia
+        #region HLAVNÉ PUBLIC API - Automatic Detection (INTELIGENTNÉ METÓDY)
 
         /// <summary>
-        /// NOVÉ: Inteligentné načítanie dát s automatickou detekciou stĺpcov a validácií
+        /// JEDNODUCHÉ API: Inteligentné načítanie dát s automatickou detekciou stĺpcov a validácií
         /// </summary>
         public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"📊 LoadDataAsync: {data?.Count ?? 0} riadkov");
+
+                // KĽÚČOVÁ OPRAVA: Kontrola inicializácie
+                if (!_isInitialized)
+                {
+                    System.Diagnostics.Debug.WriteLine("⚠️ Komponent nie je inicializovaný, spúšťam automatickú inicializáciu...");
+                    await AutoInitializeFromDataAsync(data);
+                }
+
                 if (data == null || data.Count == 0)
                 {
                     await LoadDataAsync(new DataTable());
                     return;
                 }
 
-                // AUTOMATICKÁ DETEKCIA stĺpcov z dát
-                var detectedColumns = AutoDetectColumns(data);
-                var basicValidations = AutoCreateBasicValidations(detectedColumns);
-                var defaultThrottling = InternalThrottlingConfig.Default;
-
-                // Automatická inicializácia ak ešte nie je
-                if (!_isInitialized)
-                {
-                    await InitializeAsync(detectedColumns, basicValidations, defaultThrottling, 50);
-                }
-
-                // Načítanie dát
+                // Načítanie dát do už inicializovaného komponentu
                 await _internalView.LoadDataAsync(data);
+                System.Diagnostics.Debug.WriteLine("✅ LoadDataAsync úspešne dokončené");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ LoadDataAsync chyba: {ex.Message}");
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
                 throw;
             }
         }
 
         /// <summary>
-        /// NOVÉ: Inteligentné načítanie DataTable s automatickou detekciou
+        /// JEDNODUCHÉ API: Inteligentné načítanie DataTable s automatickou detekciou
         /// </summary>
         public async Task LoadDataAsync(DataTable dataTable)
         {
             try
             {
-                // AUTOMATICKÁ DETEKCIA stĺpcov z DataTable
-                var detectedColumns = AutoDetectColumns(dataTable);
-                var basicValidations = AutoCreateBasicValidations(detectedColumns);
-                var defaultThrottling = InternalThrottlingConfig.Default;
+                System.Diagnostics.Debug.WriteLine($"📊 LoadDataAsync DataTable: {dataTable?.Rows.Count ?? 0} riadkov");
 
-                // Automatická inicializácia ak ešte nie je
+                // KĽÚČOVÁ OPRAVA: Kontrola inicializácie
                 if (!_isInitialized)
                 {
-                    await InitializeAsync(detectedColumns, basicValidations, defaultThrottling, 50);
+                    System.Diagnostics.Debug.WriteLine("⚠️ Komponent nie je inicializovaný, spúšťam automatickú inicializáciu...");
+                    await AutoInitializeFromDataTableAsync(dataTable);
                 }
 
-                // Načítanie dát
+                // Načítanie dát do už inicializovaného komponentu
                 await _internalView.LoadDataAsync(dataTable);
+                System.Diagnostics.Debug.WriteLine("✅ LoadDataAsync DataTable úspešne dokončené");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ LoadDataAsync DataTable chyba: {ex.Message}");
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
                 throw;
             }
@@ -129,61 +122,139 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region Inicializácia a Konfigurácia s Public API
+        #region POKROČILÉ PUBLIC API s explicitnou konfiguráciou
 
         /// <summary>
-        /// PÔVODNÉ API: Public API s explicitnou konverziou typov
+        /// POKROČILÉ API: Explicitná inicializácia - ČISTÉ BEZ KONVERZIÍ
         /// </summary>
         public async Task InitializeAsync(
-            List<PublicColumnDefinition> columns,
-            List<PublicValidationRule>? validationRules = null,
-            PublicThrottlingConfig? throttling = null,
+            List<ColumnDefinition> columns,                    // ✅ PRIAMO hlavný typ
+            List<ValidationRule>? validationRules = null,      // ✅ PRIAMO hlavný typ
+            ThrottlingConfig? throttling = null,               // ✅ PRIAMO hlavný typ
             int initialRowCount = 15)
         {
             try
             {
-                // RIEŠENIE CS1503: Explicitná konverzia public API typov na internal API typy
-                var internalColumns = columns?.ToInternal() ?? new List<InternalColumnDefinition>();
-
-                List<InternalValidationRule>? internalRules = null;
-                if (validationRules != null)
+                lock (_initializationLock)
                 {
-                    internalRules = validationRules.ToInternal();
+                    if (_isInitialized)
+                    {
+                        System.Diagnostics.Debug.WriteLine("⚠️ Komponent už je inicializovaný");
+                        return;
+                    }
                 }
 
-                InternalThrottlingConfig? internalThrottling = null;
-                if (throttling != null)
+                System.Diagnostics.Debug.WriteLine($"🚀 InitializeAsync s {columns?.Count ?? 0} stĺpcami, {initialRowCount} riadkov");
+
+                // ✅ ŽIADNE KONVERZIE - používame priamo správne typy
+                var safeColumns = columns ?? new List<ColumnDefinition>();
+                var safeRules = validationRules ?? new List<ValidationRule>();
+                var safeThrottling = throttling ?? ThrottlingConfig.Default;
+
+                // Volanie internal view s rovnakými typmi
+                await _internalView.InitializeAsync(safeColumns, safeRules, safeThrottling, initialRowCount);
+
+                lock (_initializationLock)
                 {
-                    internalThrottling = throttling.ToInternal();
+                    _isInitialized = true;
                 }
 
-                // Volanie internal API s internal typmi
-                await InitializeAsync(internalColumns, internalRules, internalThrottling, initialRowCount);
+                System.Diagnostics.Debug.WriteLine("✅ InitializeAsync úspešne dokončené");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ InitializeAsync chyba: {ex.Message}");
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "InitializeAsync"));
                 throw;
             }
         }
 
+        #endregion
+
+        #region AUTOMATICKÁ INICIALIZÁCIA (internal metódy)
+
         /// <summary>
-        /// INTERNAL API: Používa internal typy priamo
+        /// INTERNAL: Automatická inicializácia z Dictionary dát
         /// </summary>
-        private async Task InitializeAsync(
-            List<InternalColumnDefinition> columns,
-            List<InternalValidationRule>? validationRules = null,
-            InternalThrottlingConfig? throttling = null,
-            int initialRowCount = 15)
+        private async Task AutoInitializeFromDataAsync(List<Dictionary<string, object?>>? data)
         {
             try
             {
-                await _internalView.InitializeAsync(columns, validationRules, throttling, initialRowCount);
-                _isInitialized = true;
+                System.Diagnostics.Debug.WriteLine("🤖 AutoInitializeFromDataAsync začína...");
+
+                var detectedColumns = new List<ColumnDefinition>();
+                var basicValidations = new List<ValidationRule>();
+
+                if (data?.Count > 0)
+                {
+                    // AUTOMATICKÁ DETEKCIA stĺpcov z dát
+                    detectedColumns = AutoDetectColumns(data);
+                    basicValidations = AutoCreateBasicValidations(detectedColumns);
+                }
+                else
+                {
+                    // Základné stĺpce ak nie sú dáta
+                    detectedColumns = CreateDefaultColumns();
+                }
+
+                var defaultThrottling = ThrottlingConfig.Default;
+
+                // Internal inicializácia - ŽIADNE KONVERZIE
+                await _internalView.InitializeAsync(detectedColumns, basicValidations, defaultThrottling, 15);
+
+                lock (_initializationLock)
+                {
+                    _isInitialized = true;
+                }
+
+                System.Diagnostics.Debug.WriteLine("✅ AutoInitializeFromDataAsync dokončené");
             }
             catch (Exception ex)
             {
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "InitializeAsync"));
+                System.Diagnostics.Debug.WriteLine($"❌ AutoInitializeFromDataAsync chyba: {ex.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// INTERNAL: Automatická inicializácia z DataTable
+        /// </summary>
+        private async Task AutoInitializeFromDataTableAsync(DataTable? dataTable)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("🤖 AutoInitializeFromDataTableAsync začína...");
+
+                var detectedColumns = new List<ColumnDefinition>();
+                var basicValidations = new List<ValidationRule>();
+
+                if (dataTable?.Columns.Count > 0)
+                {
+                    // AUTOMATICKÁ DETEKCIA stĺpcov z DataTable
+                    detectedColumns = AutoDetectColumns(dataTable);
+                    basicValidations = AutoCreateBasicValidations(detectedColumns);
+                }
+                else
+                {
+                    // Základné stĺpce ak nie sú dáta
+                    detectedColumns = CreateDefaultColumns();
+                }
+
+                var defaultThrottling = ThrottlingConfig.Default;
+
+                // Internal inicializácia - ŽIADNE KONVERZIE
+                await _internalView.InitializeAsync(detectedColumns, basicValidations, defaultThrottling, 15);
+
+                lock (_initializationLock)
+                {
+                    _isInitialized = true;
+                }
+
+                System.Diagnostics.Debug.WriteLine("✅ AutoInitializeFromDataTableAsync dokončené");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ AutoInitializeFromDataTableAsync chyba: {ex.Message}");
                 throw;
             }
         }
@@ -195,9 +266,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         /// <summary>
         /// Automaticky detekuje stĺpce z Dictionary dát
         /// </summary>
-        private List<InternalColumnDefinition> AutoDetectColumns(List<Dictionary<string, object?>> data)
+        private List<ColumnDefinition> AutoDetectColumns(List<Dictionary<string, object?>> data)
         {
-            var columns = new List<InternalColumnDefinition>();
+            var columns = new List<ColumnDefinition>();
 
             if (data?.Count > 0)
             {
@@ -210,7 +281,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
                     // Detekcia typu na základe hodnoty
                     var dataType = DetectDataType(value, data, columnName);
 
-                    var column = new InternalColumnDefinition(columnName, dataType)
+                    var column = new ColumnDefinition(columnName, dataType)
                     {
                         Header = FormatHeader(columnName),
                         MinWidth = GetMinWidthForType(dataType),
@@ -229,13 +300,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         /// <summary>
         /// Automaticky detekuje stĺpce z DataTable
         /// </summary>
-        private List<InternalColumnDefinition> AutoDetectColumns(DataTable dataTable)
+        private List<ColumnDefinition> AutoDetectColumns(DataTable dataTable)
         {
-            var columns = new List<InternalColumnDefinition>();
+            var columns = new List<ColumnDefinition>();
 
             foreach (DataColumn dataColumn in dataTable.Columns)
             {
-                var column = new InternalColumnDefinition(dataColumn.ColumnName, dataColumn.DataType)
+                var column = new ColumnDefinition(dataColumn.ColumnName, dataColumn.DataType)
                 {
                     Header = FormatHeader(dataColumn.ColumnName),
                     MinWidth = GetMinWidthForType(dataColumn.DataType),
@@ -251,11 +322,24 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         }
 
         /// <summary>
+        /// Vytvorí základné stĺpce ak nie sú dostupné dáta
+        /// </summary>
+        private List<ColumnDefinition> CreateDefaultColumns()
+        {
+            return new List<ColumnDefinition>
+            {
+                new ColumnDefinition("Stĺpec1", typeof(string)) { Header = "📝 Stĺpec 1", Width = 150 },
+                new ColumnDefinition("Stĺpec2", typeof(string)) { Header = "📝 Stĺpec 2", Width = 150 },
+                new ColumnDefinition("Stĺpec3", typeof(string)) { Header = "📝 Stĺpec 3", Width = 150 }
+            };
+        }
+
+        /// <summary>
         /// Automaticky vytvára základné validácie na základe typu stĺpca
         /// </summary>
-        private List<InternalValidationRule> AutoCreateBasicValidations(List<InternalColumnDefinition> columns)
+        private List<ValidationRule> AutoCreateBasicValidations(List<ColumnDefinition> columns)
         {
-            var rules = new List<InternalValidationRule>();
+            var rules = new List<ValidationRule>();
 
             foreach (var column in columns)
             {
@@ -357,9 +441,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #region Predefinované validácie
 
-        private InternalValidationRule CreateEmailValidation(string columnName)
+        private ValidationRule CreateEmailValidation(string columnName)
         {
-            return new InternalValidationRule(columnName, (value, row) =>
+            return new ValidationRule(columnName, (value, row) =>
             {
                 if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
                     return true;
@@ -372,9 +456,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             };
         }
 
-        private InternalValidationRule CreateAgeValidation(string columnName)
+        private ValidationRule CreateAgeValidation(string columnName)
         {
-            return new InternalValidationRule(columnName, (value, row) =>
+            return new ValidationRule(columnName, (value, row) =>
             {
                 if (value == null) return true;
 
@@ -388,9 +472,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             };
         }
 
-        private InternalValidationRule CreateNameValidation(string columnName)
+        private ValidationRule CreateNameValidation(string columnName)
         {
-            return new InternalValidationRule(columnName, (value, row) =>
+            return new ValidationRule(columnName, (value, row) =>
             {
                 var name = value?.ToString() ?? "";
                 return name.Length >= 2;
@@ -400,9 +484,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             };
         }
 
-        private InternalValidationRule CreateSalaryValidation(string columnName)
+        private ValidationRule CreateSalaryValidation(string columnName)
         {
-            return new InternalValidationRule(columnName, (value, row) =>
+            return new ValidationRule(columnName, (value, row) =>
             {
                 if (value == null) return true;
 
@@ -416,9 +500,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             };
         }
 
-        private InternalValidationRule CreateNumericValidation(string columnName, string errorMessage)
+        private ValidationRule CreateNumericValidation(string columnName, string errorMessage)
         {
-            return new InternalValidationRule(columnName, (value, row) =>
+            return new ValidationRule(columnName, (value, row) =>
             {
                 if (value == null || string.IsNullOrWhiteSpace(value.ToString()))
                     return true;
@@ -439,7 +523,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             try
             {
                 _internalView.Reset();
-                _isInitialized = false;
+                lock (_initializationLock)
+                {
+                    _isInitialized = false;
+                }
             }
             catch (Exception ex)
             {
@@ -450,58 +537,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         public bool IsInitialized()
         {
             ThrowIfDisposed();
-            return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
-        }
-
-        public int GetColumnCount()
-        {
-            ThrowIfDisposed();
-            return _internalView?.ViewModel?.Columns?.Count ?? 0;
-        }
-
-        public int GetRowCount()
-        {
-            ThrowIfDisposed();
-            return _internalView?.ViewModel?.Rows?.Count ?? 0;
-        }
-
-        public List<string> GetColumnNames()
-        {
-            ThrowIfDisposed();
-
-            if (_internalView?.ViewModel?.Columns == null)
-                return new List<string>();
-
-            return _internalView.ViewModel.Columns.Select(c => c.Name).ToList();
-        }
-
-        public int GetDataRowCount()
-        {
-            ThrowIfDisposed();
-
-            if (_internalView?.ViewModel?.Rows == null)
-                return 0;
-
-            return _internalView.ViewModel.Rows.Count(r => !r.IsEmpty);
-        }
-
-        public string GetDebugInfo()
-        {
-            ThrowIfDisposed();
-
-            var info = new System.Text.StringBuilder();
-            info.AppendLine($"Komponent inicializovaný: {IsInitialized()}");
-            info.AppendLine($"Počet stĺpcov: {GetColumnCount()}");
-            info.AppendLine($"Počet riadkov: {GetRowCount()}");
-            info.AppendLine($"Počet dátových riadkov: {GetDataRowCount()}");
-
-            if (_internalView?.ViewModel != null)
+            lock (_initializationLock)
             {
-                info.AppendLine($"Validácia prebieha: {_internalView.ViewModel.IsValidating}");
-                info.AppendLine($"Validačný status: {_internalView.ViewModel.ValidationStatus}");
+                return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
             }
-
-            return info.ToString();
         }
 
         public async Task<DataTable> ExportToDataTableAsync()
@@ -573,42 +612,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             {
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
                 throw;
-            }
-        }
-
-        public async Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (_internalView?.ViewModel == null)
-                    return;
-
-                await _internalView.ViewModel.RemoveRowsByConditionAsync(columnName, condition);
-            }
-            catch (Exception ex)
-            {
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
-                throw;
-            }
-        }
-
-        public async Task<int> RemoveRowsByValidationAsync(List<InternalValidationRule> customRules)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (_internalView?.ViewModel == null)
-                    return 0;
-
-                return await _internalView.ViewModel.RemoveRowsByValidationAsync(customRules);
-            }
-            catch (Exception ex)
-            {
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
-                return 0;
             }
         }
 

@@ -1,5 +1,6 @@
-﻿// PublicApi.cs - KOMPLETNÉ RIEŠENIE všetkých CS chýb s novým namespace
-// OPRAVENÉ: Odstránené extension metódy (sú v PublicApiAliases.cs)
+﻿// OPRAVA: PublicApiTypes.cs - UPRAVIŤ EXISTUJÚCI SÚBOR RpaWinUiComponents/Models/PublicApiTypes.cs
+// Pridané extension metódy pre oba smery konverzie
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,10 +13,10 @@ using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.V
 using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
-namespace RpaWinUiComponents.PublicApi
+namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// OPRAVENÝ Public API pre ColumnDefinition - jasne oddelený namespace
+    /// ČISTÝ Public API pre ColumnDefinition - dostupný ako RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition
     /// </summary>
     public sealed class ColumnDefinition
     {
@@ -40,7 +41,7 @@ namespace RpaWinUiComponents.PublicApi
         }
 
         /// <summary>
-        /// EXPLICITNÁ konverzia na internal typ - odstráni ambiguity
+        /// INTERNAL konverzia na internal typ - skrytá pred external používateľmi
         /// </summary>
         internal InternalColumnDefinition ToInternal()
         {
@@ -56,10 +57,28 @@ namespace RpaWinUiComponents.PublicApi
                 ToolTip = ToolTip
             };
         }
+
+        /// <summary>
+        /// INTERNAL konverzia z internal typu
+        /// </summary>
+        internal static ColumnDefinition FromInternal(InternalColumnDefinition internalCol)
+        {
+            return new ColumnDefinition(internalCol.Name, internalCol.DataType)
+            {
+                MinWidth = internalCol.MinWidth,
+                MaxWidth = internalCol.MaxWidth,
+                Width = internalCol.Width,
+                AllowResize = internalCol.AllowResize,
+                AllowSort = internalCol.AllowSort,
+                IsReadOnly = internalCol.IsReadOnly,
+                Header = internalCol.Header,
+                ToolTip = internalCol.ToolTip
+            };
+        }
     }
 
     /// <summary>
-    /// OPRAVENÝ Public API pre ValidationRule - jasne oddelený namespace
+    /// ČISTÝ Public API pre ValidationRule - dostupný ako RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule
     /// </summary>
     public sealed class ValidationRule
     {
@@ -95,7 +114,7 @@ namespace RpaWinUiComponents.PublicApi
         }
 
         /// <summary>
-        /// EXPLICITNÁ konverzia na internal typ
+        /// INTERNAL konverzia na internal typ - skrytá pred external používateľmi
         /// </summary>
         internal InternalValidationRule ToInternal()
         {
@@ -110,7 +129,23 @@ namespace RpaWinUiComponents.PublicApi
             };
         }
 
-        #region Static Helper Methods
+        /// <summary>
+        /// INTERNAL konverzia z internal typu
+        /// </summary>
+        internal static ValidationRule FromInternal(InternalValidationRule internalRule)
+        {
+            return new ValidationRule(internalRule.ColumnName, internalRule.ValidationFunction, internalRule.ErrorMessage)
+            {
+                Priority = internalRule.Priority,
+                RuleName = internalRule.RuleName,
+                IsAsync = internalRule.IsAsync,
+                AsyncValidationFunction = internalRule.AsyncValidationFunction,
+                ValidationTimeout = internalRule.ValidationTimeout,
+                ApplyCondition = internalRule.ApplyCondition
+            };
+        }
+
+        #region Static Helper Methods - ČISTÉ PUBLIC API
         public static ValidationRule Required(string columnName, string? errorMessage = null)
         {
             return new ValidationRule(
@@ -202,7 +237,7 @@ namespace RpaWinUiComponents.PublicApi
     }
 
     /// <summary>
-    /// OPRAVENÝ Public API pre ThrottlingConfig - jasne oddelený namespace
+    /// ČISTÝ Public API pre ThrottlingConfig - dostupný ako RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig
     /// </summary>
     public sealed class ThrottlingConfig
     {
@@ -215,7 +250,7 @@ namespace RpaWinUiComponents.PublicApi
         public int MinValidationIntervalMs { get; set; } = 50;
 
         /// <summary>
-        /// EXPLICITNÁ konverzia na internal typ
+        /// INTERNAL konverzia na internal typ - skrytá pred external používateľmi
         /// </summary>
         internal InternalThrottlingConfig ToInternal()
         {
@@ -231,7 +266,24 @@ namespace RpaWinUiComponents.PublicApi
             };
         }
 
-        #region Static Factory Methods
+        /// <summary>
+        /// INTERNAL konverzia z internal typu
+        /// </summary>
+        internal static ThrottlingConfig FromInternal(InternalThrottlingConfig internalConfig)
+        {
+            return new ThrottlingConfig
+            {
+                TypingDelayMs = internalConfig.TypingDelayMs,
+                PasteDelayMs = internalConfig.PasteDelayMs,
+                BatchValidationDelayMs = internalConfig.BatchValidationDelayMs,
+                MaxConcurrentValidations = internalConfig.MaxConcurrentValidations,
+                IsEnabled = internalConfig.IsEnabled,
+                ValidationTimeout = internalConfig.ValidationTimeout,
+                MinValidationIntervalMs = internalConfig.MinValidationIntervalMs
+            };
+        }
+
+        #region Static Factory Methods - ČISTÉ PUBLIC API
         public static ThrottlingConfig Default => new();
 
         public static ThrottlingConfig Fast => new()
@@ -264,5 +316,69 @@ namespace RpaWinUiComponents.PublicApi
     }
 }
 
-// OPRAVENÉ: Extension metódy ODSTRÁNENÉ z tohto súboru
-// Sú teraz iba v PublicApiAliases.cs
+/// <summary>
+/// Extension metódy pre konverziu typov - RIEŠENIE CS1503
+/// Oba smery konverzie: Public ↔ Internal
+/// </summary>
+public static class PublicApiExtensions
+{
+    #region ColumnDefinition Extensions
+
+    /// <summary>
+    /// Konvertuje zoznam public ColumnDefinition na internal typy
+    /// </summary>
+    public static List<InternalColumnDefinition> ToInternal(this List<RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition> publicColumns)
+    {
+        return publicColumns?.Select(c => c.ToInternal()).ToList() ?? new List<InternalColumnDefinition>();
+    }
+
+    /// <summary>
+    /// Konvertuje zoznam internal ColumnDefinition na public typy
+    /// </summary>
+    public static List<RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition> ToPublic(this List<InternalColumnDefinition> internalColumns)
+    {
+        return internalColumns?.Select(c => RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition.FromInternal(c)).ToList() ?? new List<RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition>();
+    }
+
+    #endregion
+
+    #region ValidationRule Extensions
+
+    /// <summary>
+    /// Konvertuje zoznam public ValidationRule na internal typy
+    /// </summary>
+    public static List<InternalValidationRule> ToInternal(this List<RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule> publicRules)
+    {
+        return publicRules?.Select(r => r.ToInternal()).ToList() ?? new List<InternalValidationRule>();
+    }
+
+    /// <summary>
+    /// Konvertuje zoznam internal ValidationRule na public typy
+    /// </summary>
+    public static List<RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule> ToPublic(this List<InternalValidationRule> internalRules)
+    {
+        return internalRules?.Select(r => RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule.FromInternal(r)).ToList() ?? new List<RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule>();
+    }
+
+    #endregion
+
+    #region ThrottlingConfig Extensions
+
+    /// <summary>
+    /// Konvertuje public ThrottlingConfig na internal typ
+    /// </summary>
+    public static InternalThrottlingConfig ToInternal(this RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig publicConfig)
+    {
+        return publicConfig.ToInternal();
+    }
+
+    /// <summary>
+    /// Konvertuje internal ThrottlingConfig na public typ
+    /// </summary>
+    public static RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig ToPublic(this InternalThrottlingConfig internalConfig)
+    {
+        return RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig.FromInternal(internalConfig);
+    }
+
+    #endregion
+}

@@ -1,13 +1,15 @@
-﻿//Models/ColumnDefinition.cs
+﻿// KROK 1: PRESUN Models/ColumnDefinition.cs do hlavného namespace
+// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ColumnDefinition.cs (NOVÝ SÚBOR)
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
+namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
-    /// Definícia stĺpca pre AdvancedWinUiDataGrid
+    /// Definícia stĺpca pre AdvancedWinUiDataGrid - HLAVNÝ TYP (bez duplikátov)
     /// </summary>
     public class ColumnDefinition : INotifyPropertyChanged
     {

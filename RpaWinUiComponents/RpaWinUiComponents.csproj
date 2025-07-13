@@ -24,6 +24,10 @@
     <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
     <DefaultPlatform>AnyCPU</DefaultPlatform>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="AdvancedWinUiDataGrid\Models\PublicApiTypes.cs" />
+    <Compile Remove="PublicApiAliases.cs" />
+  </ItemGroup>
 
   <!-- Závislosti -->
   <ItemGroup>
