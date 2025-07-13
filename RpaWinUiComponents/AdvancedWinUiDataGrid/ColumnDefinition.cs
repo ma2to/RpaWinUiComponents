@@ -10,6 +10,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// Definícia stĺpca pre AdvancedWinUiDataGrid - HLAVNÝ TYP (bez duplikátov)
+    /// OPRAVA: Explicitne PUBLIC pre NuGet package visibility
     /// </summary>
     public class ColumnDefinition : INotifyPropertyChanged
     {

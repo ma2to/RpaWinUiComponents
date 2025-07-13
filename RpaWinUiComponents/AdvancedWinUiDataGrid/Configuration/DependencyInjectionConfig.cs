@@ -90,12 +90,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
 
     /// <summary>
     /// Extension metódy pre IServiceCollection - KĽÚČOVÉ PRE DEMO
+    /// OPRAVA CA1416: Označené ako Windows-only
     /// </summary>
     public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// HLAVNÁ EXTENSION METÓDA: Registruje všetky služby potrebné pre AdvancedWinUiDataGrid
+        /// OPRAVA CA1416: Windows-only extension
         /// </summary>
+        [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
         public static IServiceCollection AddAdvancedWinUiDataGrid(this IServiceCollection services, ILoggerFactory? loggerFactory = null)
         {
             if (services == null)
@@ -131,7 +134,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
 
         /// <summary>
         /// Registruje služby pre testovanie (s null logger provider)
+        /// OPRAVA CA1416: Windows-only extension
         /// </summary>
+        [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
         public static IServiceCollection AddAdvancedWinUiDataGridForTesting(this IServiceCollection services)
         {
             if (services == null)
@@ -154,7 +159,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
 
         /// <summary>
         /// Minimálna registrácia pre základné fungovanie (fallback)
+        /// OPRAVA CA1416: Windows-only extension
         /// </summary>
+        [System.Runtime.Versioning.SupportedOSPlatform("windows10.0.17763.0")]
         public static IServiceCollection AddAdvancedWinUiDataGridMinimal(this IServiceCollection services)
         {
             if (services == null)

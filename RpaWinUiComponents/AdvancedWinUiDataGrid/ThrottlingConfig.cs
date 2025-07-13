@@ -7,6 +7,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// Konfigurácia pre throttling real-time validácie - HLAVNÝ TYP (bez duplikátov)
+    /// OPRAVA: Explicitne PUBLIC pre NuGet package visibility
     /// </summary>
     public class ThrottlingConfig
     {

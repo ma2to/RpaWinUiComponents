@@ -3,6 +3,8 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <!-- OPRAVA CA1416: Explicitne Windows targeting -->
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
 
     <!-- HLAVNÁ OPRAVA: Self-contained Windows App SDK -->
@@ -17,8 +19,8 @@
     <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
 
-    <!-- Suppress warnings -->
-    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013</NoWarn>
+    <!-- OPRAVA CA1416: Suppress platform warnings -->
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013;CA1416</NoWarn>
 
     <!-- Default XAML handling -->
     <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
@@ -42,7 +44,7 @@
     <!-- KĽÚČOVÁ OPRAVA: Najnovšia verzia Windows App SDK -->
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
     <PackageReference Include="RpaWinUiComponents" Version="1.0.8" />
-    
+
     <!-- NuGet balík namiesto lokálnych súborov -->
   </ItemGroup>
 

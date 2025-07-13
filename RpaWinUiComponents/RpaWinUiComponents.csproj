@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <!-- OPRAVA CA1416: Explicitne Windows targeting -->
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
     <PackageVersion>1.0.8</PackageVersion>
@@ -17,8 +19,8 @@
     <EnableMsixTooling>false</EnableMsixTooling>
     <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
 
-    <!-- Suppress warnings -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022</NoWarn>
+    <!-- OPRAVA CA1416: Suppress platform warnings -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416</NoWarn>
 
     <!-- Multi-platform support -->
     <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
@@ -27,6 +29,16 @@
   <ItemGroup>
     <Compile Remove="AdvancedWinUiDataGrid\Models\PublicApiTypes.cs" />
     <Compile Remove="PublicApiAliases.cs" />
+  </ItemGroup>
+
+  <!-- OPRAVA NETSDK1022: Disable default compile items a potom explicitne pridaj -->
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  
+  <!-- Explicitne zahrň všetky .cs súbory -->
+  <ItemGroup>
+    <Compile Include="**/*.cs" />
   </ItemGroup>
 
   <!-- Závislosti -->
@@ -59,17 +71,17 @@
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. OPRAVENÁ VERZIA v1.0.9 - Funkčný build bez chýb.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. OPRAVENÁ VERZIA v1.0.9 - Funkčný build bez chýb, Windows-only targeting.</Description>
     <Authors>RPA Solutions</Authors>
     <Company>RPA Solutions</Company>
     <Product>RpaWinUiComponents</Product>
     <Copyright>Copyright © RPA Solutions 2024</Copyright>
-    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed</PackageTags>
+    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;Windows</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.9: Opravený build, funkčný komponent bez CS chýb. Inteligentná automatická detekcia stĺpcov a validácií.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.8: Opravený build, funkčný komponent bez CS chýb. Windows-only targeting. Inteligentná automatická detekcia stĺpcov a validácií.</PackageReleaseNotes>
   </PropertyGroup>
 </Project>

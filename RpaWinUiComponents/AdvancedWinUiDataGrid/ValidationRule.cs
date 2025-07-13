@@ -10,6 +10,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// Validačné pravidlo pre bunky v DataGrid - HLAVNÝ TYP (bez duplikátov)
+    /// OPRAVA: Explicitne PUBLIC pre NuGet package visibility
     /// </summary>
     public class ValidationRule
     {

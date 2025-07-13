@@ -5,8 +5,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-// ✅ OPRAVENÉ: Používame nové, čisté namespace
+// ✅ KĽÚČOVÁ OPRAVA: Používame správne typy z hlavného namespace
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
+// OPRAVA CS0246: Explicitné using pre typy
+using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
+using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 
 namespace RpaWinUiComponents.Demo
 {
@@ -48,8 +51,8 @@ namespace RpaWinUiComponents.Demo
                     return;
                 }
 
-                // KROK 2: Definícia stĺpcov a validácií s NOVÝM NAMESPACE
-                var columns = new List<ColumnDefinition>  // ✅ Teraz: RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition
+                // KROK 2: Definícia stĺpcov a validácií s OPRAVENÝMI TYPMI
+                var columns = new List<ColumnDefinition>  // ✅ Teraz používa správny typ z hlavného namespace
                 {
                     new("ID", typeof(int)) { MinWidth = 60, Width = 80, Header = "🔢 ID" },
                     new("Meno", typeof(string)) { MinWidth = 120, Width = 150, Header = "👤 Meno" },
@@ -58,9 +61,9 @@ namespace RpaWinUiComponents.Demo
                     new("Plat", typeof(decimal)) { MinWidth = 100, Width = 120, Header = "💰 Plat" }
                 };
 
-                var validationRules = new List<ValidationRule>  // ✅ Teraz: RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule
+                var validationRules = new List<ValidationRule>  // ✅ Teraz používa správny typ z hlavného namespace
                 {
-                    ValidationRule.Required("Meno", "Meno je povinné"),  // ✅ Static helper metódy
+                    ValidationRule.Required("Meno", "Meno je povinné"),  // ✅ Static helper metódy z hlavného namespace
                     ValidationRule.Email("Email", "Neplatný email formát"),
                     ValidationRule.Range("Vek", 18, 100, "Vek musí byť 18-100"),
                     ValidationRule.Range("Plat", 500, 50000, "Plat musí byť 500-50000")
