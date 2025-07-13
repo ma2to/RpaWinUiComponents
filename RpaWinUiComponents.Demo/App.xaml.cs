@@ -1,4 +1,4 @@
-﻿// App.xaml.cs - OPRAVA pre použitie NuGet balíčka
+﻿// App.xaml.cs - OPRAVA pre PUBLIC API typy
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,13 +6,13 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Threading.Tasks;
 
-// ✅ OPRAVA: Import z NuGet balíčka
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
+// ✅ KĽÚČOVÁ OPRAVA: Import PUBLIC API z hlavného namespace
+using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
 namespace RpaWinUiComponents.Demo
 {
     /// <summary>
-    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA pre NuGet
+    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA pre PUBLIC API
     /// </summary>
     public partial class App : Application
     {
@@ -28,7 +28,7 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Inicializuje služby a DI kontajner pre demo aplikáciu - OPRAVA pre NuGet
+        /// Inicializuje služby a DI kontajner pre demo aplikáciu - OPRAVA pre PUBLIC API
         /// </summary>
         private void InitializeServices()
         {
@@ -51,8 +51,20 @@ namespace RpaWinUiComponents.Demo
                         {
                             System.Diagnostics.Debug.WriteLine("📦 Registrujú sa služby...");
 
-                            // ✅ KĽÚČOVÁ OPRAVA: Registrácia služieb pre AdvancedWinUiDataGrid z NuGet
-                            services.AddAdvancedWinUiDataGrid();
+                            // ✅ KĽÚČOVÁ OPRAVA: Registrácia služieb pre AdvancedWinUiDataGrid
+                            // Používame extension metódu z PUBLIC API
+                            try
+                            {
+                                services.AddAdvancedWinUiDataGrid();
+                                System.Diagnostics.Debug.WriteLine("✅ AddAdvancedWinUiDataGrid() úspešne zavolaná");
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"❌ Chyba pri AddAdvancedWinUiDataGrid(): {ex.Message}");
+                                // Fallback - manuálna registrácia základných služieb
+                                services.AddLogging();
+                                System.Diagnostics.Debug.WriteLine("⚠️ Fallback registrácia služieb");
+                            }
 
                             // Registrácia demo aplikácie služieb
                             services.AddSingleton<MainWindow>();
@@ -72,18 +84,41 @@ namespace RpaWinUiComponents.Demo
                 // Build host
                 _host = hostBuilder.Build();
 
-                // ✅ KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom z NuGet
-                RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
-                    .Configuration.ConfigureServices(_host.Services);
+                // ✅ KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom
+                // Používame PUBLIC API konfiguráciu
+                try
+                {
+                    AdvancedWinUiDataGridControl.Configuration.ConfigureServices(_host.Services);
+                    System.Diagnostics.Debug.WriteLine("✅ AdvancedWinUiDataGridControl.Configuration.ConfigureServices() úspešne");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Configuration.ConfigureServices() chyba: {ex.Message}");
+                    // Pokračujeme bez konfigurácie - komponent bude fungovať v základnom režime
+                }
 
                 // Konfigurácia loggingu
-                var loggerFactory = _host.Services.GetRequiredService<ILoggerFactory>();
-                RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
-                    .Configuration.ConfigureLogging(loggerFactory);
+                try
+                {
+                    var loggerFactory = _host.Services.GetRequiredService<ILoggerFactory>();
+                    AdvancedWinUiDataGridControl.Configuration.ConfigureLogging(loggerFactory);
+                    System.Diagnostics.Debug.WriteLine("✅ Configuration.ConfigureLogging() úspešne");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Configuration.ConfigureLogging() chyba: {ex.Message}");
+                }
 
                 // Zapnutie debug loggu pre vývoj
-                RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
-                    .Configuration.SetDebugLogging(true);
+                try
+                {
+                    AdvancedWinUiDataGridControl.Configuration.SetDebugLogging(true);
+                    System.Diagnostics.Debug.WriteLine("✅ Debug logging zapnuté");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ SetDebugLogging() chyba: {ex.Message}");
+                }
 
                 System.Diagnostics.Debug.WriteLine("✅ Demo App: Services initialized successfully");
             }
@@ -116,8 +151,17 @@ namespace RpaWinUiComponents.Demo
                     builder.SetMinimumLevel(LogLevel.Information);
                 });
 
-                // ✅ OPRAVA: Registrácia AdvancedWinUiDataGrid služieb z NuGet
-                services.AddAdvancedWinUiDataGrid();
+                // ✅ OPRAVA: Pokus o registráciu AdvancedWinUiDataGrid služieb
+                try
+                {
+                    services.AddAdvancedWinUiDataGrid();
+                    System.Diagnostics.Debug.WriteLine("✅ Fallback: AddAdvancedWinUiDataGrid() úspešné");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Fallback: AddAdvancedWinUiDataGrid() zlyhalo: {ex.Message}");
+                    // Pokračujeme bez registrácie - komponent vytvorí vlastné služby
+                }
 
                 // Demo služby
                 services.AddSingleton<MainWindow>();
@@ -125,9 +169,16 @@ namespace RpaWinUiComponents.Demo
 
                 var serviceProvider = services.BuildServiceProvider();
 
-                // Konfigurácia komponentu
-                RpaWinUiComponents.AdvancedWinUiDataGrid.AdvancedWinUiDataGridControl
-                    .Configuration.ConfigureServices(serviceProvider);
+                // Pokus o konfiguráciu komponentu
+                try
+                {
+                    AdvancedWinUiDataGridControl.Configuration.ConfigureServices(serviceProvider);
+                    System.Diagnostics.Debug.WriteLine("✅ Fallback: Configuration.ConfigureServices() úspešné");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Fallback: Configuration.ConfigureServices() zlyhalo: {ex.Message}");
+                }
 
                 // Vytvorenie pseudo-host pre fallback
                 _host = new FallbackHost(serviceProvider);

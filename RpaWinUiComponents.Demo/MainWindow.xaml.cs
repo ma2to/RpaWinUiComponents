@@ -1,15 +1,17 @@
-﻿// OPRAVA: MainWindow.xaml.cs - Aktualizované namespace
+﻿// MainWindow.xaml.cs - OPRAVA CS0234 a CS1503 chýb
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-// ✅ KĽÚČOVÁ OPRAVA: Používame správne typy z hlavného namespace
+// ✅ KĽÚČOVÁ OPRAVA: Používame HLAVNÉ PUBLIC typy z root namespace
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
-// OPRAVA CS0246: Explicitné using pre typy
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
-using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
+
+// ✅ EXPLICITNÉ ALIASY pre zamedzenie konfliktov
+using PublicColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
+using PublicValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
+using PublicThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig;
 
 namespace RpaWinUiComponents.Demo
 {
@@ -51,8 +53,8 @@ namespace RpaWinUiComponents.Demo
                     return;
                 }
 
-                // KROK 2: Definícia stĺpcov a validácií s OPRAVENÝMI TYPMI
-                var columns = new List<ColumnDefinition>  // ✅ Teraz používa správny typ z hlavného namespace
+                // KROK 2: ✅ OPRAVENÉ - Používame PUBLIC typy z hlavného namespace
+                var columns = new List<PublicColumnDefinition>
                 {
                     new("ID", typeof(int)) { MinWidth = 60, Width = 80, Header = "🔢 ID" },
                     new("Meno", typeof(string)) { MinWidth = 120, Width = 150, Header = "👤 Meno" },
@@ -61,23 +63,26 @@ namespace RpaWinUiComponents.Demo
                     new("Plat", typeof(decimal)) { MinWidth = 100, Width = 120, Header = "💰 Plat" }
                 };
 
-                var validationRules = new List<ValidationRule>  // ✅ Teraz používa správny typ z hlavného namespace
+                var validationRules = new List<PublicValidationRule>
                 {
-                    ValidationRule.Required("Meno", "Meno je povinné"),  // ✅ Static helper metódy z hlavného namespace
-                    ValidationRule.Email("Email", "Neplatný email formát"),
-                    ValidationRule.Range("Vek", 18, 100, "Vek musí byť 18-100"),
-                    ValidationRule.Range("Plat", 500, 50000, "Plat musí byť 500-50000")
+                    PublicValidationRule.Required("Meno", "Meno je povinné"),
+                    PublicValidationRule.Email("Email", "Neplatný email formát"),
+                    PublicValidationRule.Range("Vek", 18, 100, "Vek musí byť 18-100"),
+                    PublicValidationRule.Range("Plat", 500, 50000, "Plat musí byť 500-50000")
                 };
 
-                // KROK 3: KĽÚČOVÁ OPRAVA - NAJPRV inicializácia, potom dáta
+                // KROK 3: ✅ OPRAVENÉ - Používame PUBLIC typ pre throttling
+                var throttlingConfig = PublicThrottlingConfig.Default;
+
+                // KROK 4: KĽÚČOVÁ OPRAVA - InitializeAsync s PUBLIC typmi
                 UpdateLoadingState("Inicializuje sa DataGrid komponent...", "Pripájajú sa služby...");
                 await Task.Delay(300);
 
-                System.Diagnostics.Debug.WriteLine("🔧 Volám InitializeAsync...");
-                await DataGridControl.InitializeAsync(columns, validationRules, null, 15);
+                System.Diagnostics.Debug.WriteLine("🔧 Volám InitializeAsync s PUBLIC typmi...");
+                await DataGridControl.InitializeAsync(columns, validationRules, throttlingConfig, 15);
                 System.Diagnostics.Debug.WriteLine("✅ InitializeAsync dokončené");
 
-                // KROK 4: Teraz môžeme načítať dáta
+                // KROK 5: Teraz môžeme načítať dáta
                 UpdateLoadingState("Načítavajú sa testové dáta...", "Pripravujú sa ukážkové záznamy...");
                 await Task.Delay(200);
 
@@ -94,7 +99,7 @@ namespace RpaWinUiComponents.Demo
                 await DataGridControl.LoadDataAsync(testData);
                 System.Diagnostics.Debug.WriteLine("✅ Dáta načítané");
 
-                // KROK 5: Dokončenie inicializácie
+                // KROK 6: Dokončenie inicializácie
                 CompleteInitialization();
 
                 System.Diagnostics.Debug.WriteLine("🎉 Inicializácia ÚSPEŠNE dokončená!");
@@ -166,7 +171,7 @@ namespace RpaWinUiComponents.Demo
 
         #endregion
 
-        #region Button Event Handlers
+        #region Button Event Handlers - ✅ OPRAVENÉ
 
         private async void OnLoadSampleDataClick(object sender, RoutedEventArgs e)
         {
