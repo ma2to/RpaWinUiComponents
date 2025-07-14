@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Views/AdvancedDataGridControl.xaml - JEDNODUCHÁ TEST VERZIA -->
+<!-- OPRAVA CS1061: AdvancedDataGridControl.xaml pre správnu XAML compilation -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -18,7 +18,7 @@
 
         <!-- Debug Header -->
         <Border Grid.Row="0" Background="#E3F2FD" Padding="10" BorderBrush="#2196F3" BorderThickness="0,0,0,1">
-            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - Debug Mode" 
+            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - Debug Mode v1.0.11" 
                        FontSize="14" 
                        FontWeight="Bold" 
                        Foreground="#1976D2"/>
@@ -40,7 +40,7 @@
                     BorderThickness="1" 
                     CornerRadius="4">
 
-                <!-- JEDNODUCHÝ KONTAJNER PRE MANUÁLNE UI -->
+                <!-- KĽÚČOVÝ KONTAJNER PRE MANUÁLNE UI -->
                 <StackPanel x:Name="DataGridContainer" 
                            Background="White"
                            MinWidth="600"
@@ -53,12 +53,12 @@
                             Padding="20"
                             Margin="10">
                         <StackPanel>
-                            <TextBlock Text="📊 DataGrid Container" 
+                            <TextBlock Text="📊 DataGrid Container v1.0.11" 
                                        FontSize="16" 
                                        FontWeight="Bold" 
                                        Foreground="#333333"
                                        HorizontalAlignment="Center"/>
-                            <TextBlock Text="UI sa vytvorí dynamicky po inicializácii" 
+                            <TextBlock Text="UI sa vytvorí dynamicky po inicializácii (CS1061 OPRAVENÉ)" 
                                        FontSize="12" 
                                        Foreground="#666666"
                                        HorizontalAlignment="Center"
@@ -75,7 +75,7 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock Text="🛠️ Status: " FontSize="11" Foreground="#666666"/>
                 <TextBlock x:Name="DebugStatusText" 
-                           Text="Čaká na inicializáciu..." 
+                           Text="Čaká na inicializáciu (InitializeComponent OK)..." 
                            FontSize="11" 
                            Foreground="#2196F3" 
                            FontWeight="SemiBold"/>

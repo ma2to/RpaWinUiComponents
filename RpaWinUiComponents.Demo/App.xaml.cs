@@ -1,4 +1,4 @@
-﻿// App.xaml.cs - OPRAVA pre PUBLIC API typy
+﻿// OPRAVA RpaWinUiComponents.Demo/App.xaml.cs - CS1061 fix
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,13 +6,13 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Threading.Tasks;
 
-// ✅ KĽÚČOVÁ OPRAVA: Import PUBLIC API z hlavného namespace
+// ✅ KĽÚČOVÁ OPRAVA CS1061: Import PUBLIC API z PROJECT REFERENCE
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
 namespace RpaWinUiComponents.Demo
 {
     /// <summary>
-    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA pre PUBLIC API
+    /// Demo aplikácia pre testovanie RpaWinUiComponents balíka - OPRAVENÁ VERZIA pre PROJECT REFERENCE
     /// </summary>
     public partial class App : Application
     {
@@ -28,13 +28,13 @@ namespace RpaWinUiComponents.Demo
         }
 
         /// <summary>
-        /// Inicializuje služby a DI kontajner pre demo aplikáciu - OPRAVA pre PUBLIC API
+        /// OPRAVA CS1061: Inicializuje služby s PROJECT REFERENCE
         /// </summary>
         private void InitializeServices()
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("🔧 Inicializuje sa DI kontajner...");
+                System.Diagnostics.Debug.WriteLine("🔧 Inicializuje sa DI kontajner s PROJECT REFERENCE...");
 
                 // Vytvorenie host builderu s robustnou konfiguráciou
                 var hostBuilder = Host.CreateDefaultBuilder()
@@ -49,14 +49,13 @@ namespace RpaWinUiComponents.Demo
                     {
                         try
                         {
-                            System.Diagnostics.Debug.WriteLine("📦 Registrujú sa služby...");
+                            System.Diagnostics.Debug.WriteLine("📦 Registrujú sa služby s PROJECT REFERENCE...");
 
-                            // ✅ KĽÚČOVÁ OPRAVA: Registrácia služieb pre AdvancedWinUiDataGrid
-                            // Používame extension metódu z PUBLIC API
+                            // ✅ KĽÚČOVÁ OPRAVA CS1061: Extension metóda z PROJECT REFERENCE
                             try
                             {
                                 services.AddAdvancedWinUiDataGrid();
-                                System.Diagnostics.Debug.WriteLine("✅ AddAdvancedWinUiDataGrid() úspešne zavolaná");
+                                System.Diagnostics.Debug.WriteLine("✅ AddAdvancedWinUiDataGrid() úspešne zavolaná cez PROJECT REFERENCE");
                             }
                             catch (Exception ex)
                             {
@@ -72,7 +71,7 @@ namespace RpaWinUiComponents.Demo
                             // Dodatočné služby pre demo (voliteľné)
                             services.AddTransient<IDemoDataService, DemoDataService>();
 
-                            System.Diagnostics.Debug.WriteLine("✅ Služby úspešne zaregistrované");
+                            System.Diagnostics.Debug.WriteLine("✅ Služby úspešne zaregistrované cez PROJECT REFERENCE");
                         }
                         catch (Exception ex)
                         {
@@ -84,8 +83,7 @@ namespace RpaWinUiComponents.Demo
                 // Build host
                 _host = hostBuilder.Build();
 
-                // ✅ KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom
-                // Používame PUBLIC API konfiguráciu
+                // ✅ KĽÚČOVÁ OPRAVA: Konfigurácia RpaWinUiComponents s DI kontajnerom z PROJECT REFERENCE
                 try
                 {
                     AdvancedWinUiDataGridControl.Configuration.ConfigureServices(_host.Services);
@@ -120,7 +118,7 @@ namespace RpaWinUiComponents.Demo
                     System.Diagnostics.Debug.WriteLine($"⚠️ SetDebugLogging() chyba: {ex.Message}");
                 }
 
-                System.Diagnostics.Debug.WriteLine("✅ Demo App: Services initialized successfully");
+                System.Diagnostics.Debug.WriteLine("✅ Demo App: Services initialized successfully s PROJECT REFERENCE");
             }
             catch (Exception ex)
             {
@@ -201,7 +199,7 @@ namespace RpaWinUiComponents.Demo
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("🚀 Spúšťa sa aplikácia...");
+                System.Diagnostics.Debug.WriteLine("🚀 Spúšťa sa aplikácia s PROJECT REFERENCE...");
 
                 // Štart host služieb (ak nie je fallback)
                 if (_host != null && _host is not FallbackHost)
@@ -233,7 +231,7 @@ namespace RpaWinUiComponents.Demo
 
                 m_window.Activate();
 
-                System.Diagnostics.Debug.WriteLine("✅ Demo App: Application launched successfully");
+                System.Diagnostics.Debug.WriteLine("✅ Demo App: Application launched successfully s PROJECT REFERENCE");
             }
             catch (Exception ex)
             {

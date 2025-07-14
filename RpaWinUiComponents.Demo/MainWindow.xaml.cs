@@ -1,14 +1,14 @@
-﻿// MainWindow.xaml.cs - OPRAVA CS0234 a CS1503 chýb
+﻿// OPRAVA RpaWinUiComponents.Demo/MainWindow.xaml.cs - CS0234 fix
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 
-// ✅ KĽÚČOVÁ OPRAVA: Používame HLAVNÉ PUBLIC typy z root namespace
+// ✅ KĽÚČOVÁ OPRAVA CS0234: Import PUBLIC API typov z PROJECT REFERENCE
 using RpaWinUiComponents.AdvancedWinUiDataGrid;
 
-// ✅ EXPLICITNÉ ALIASY pre zamedzenie konfliktov
+// ✅ EXPLICITNÉ IMPORTY pre zamedzenie konfliktov
 using PublicColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 using PublicValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 using PublicThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig;
@@ -38,7 +38,7 @@ namespace RpaWinUiComponents.Demo
 
             try
             {
-                System.Diagnostics.Debug.WriteLine("🚀 ŠTART inicializácie MainWindow...");
+                System.Diagnostics.Debug.WriteLine("🚀 ŠTART inicializácie MainWindow s PROJECT REFERENCE...");
 
                 UpdateLoadingState("Inicializuje sa komponent...", "Pripravuje sa DataGrid...");
                 await Task.Delay(200);
@@ -53,7 +53,7 @@ namespace RpaWinUiComponents.Demo
                     return;
                 }
 
-                // KROK 2: ✅ OPRAVENÉ - Používame PUBLIC typy z hlavného namespace
+                // KROK 2: ✅ OPRAVENÉ CS0234 - Používame PUBLIC typy z PROJECT REFERENCE
                 var columns = new List<PublicColumnDefinition>
                 {
                     new("ID", typeof(int)) { MinWidth = 60, Width = 80, Header = "🔢 ID" },
@@ -71,14 +71,14 @@ namespace RpaWinUiComponents.Demo
                     PublicValidationRule.Range("Plat", 500, 50000, "Plat musí byť 500-50000")
                 };
 
-                // KROK 3: ✅ OPRAVENÉ - Používame PUBLIC typ pre throttling
+                // KROK 3: ✅ OPRAVENÉ CS0234 - Používame PUBLIC typ pre throttling
                 var throttlingConfig = PublicThrottlingConfig.Default;
 
                 // KROK 4: KĽÚČOVÁ OPRAVA - InitializeAsync s PUBLIC typmi
                 UpdateLoadingState("Inicializuje sa DataGrid komponent...", "Pripájajú sa služby...");
                 await Task.Delay(300);
 
-                System.Diagnostics.Debug.WriteLine("🔧 Volám InitializeAsync s PUBLIC typmi...");
+                System.Diagnostics.Debug.WriteLine("🔧 Volám InitializeAsync s PUBLIC typmi z PROJECT REFERENCE...");
                 await DataGridControl.InitializeAsync(columns, validationRules, throttlingConfig, 15);
                 System.Diagnostics.Debug.WriteLine("✅ InitializeAsync dokončené");
 
@@ -102,7 +102,7 @@ namespace RpaWinUiComponents.Demo
                 // KROK 6: Dokončenie inicializácie
                 CompleteInitialization();
 
-                System.Diagnostics.Debug.WriteLine("🎉 Inicializácia ÚSPEŠNE dokončená!");
+                System.Diagnostics.Debug.WriteLine("🎉 Inicializácia ÚSPEŠNE dokončená s PROJECT REFERENCE!");
 
             }
             catch (Exception ex)
@@ -146,7 +146,7 @@ namespace RpaWinUiComponents.Demo
 
                 if (StatusTextBlock != null)
                 {
-                    StatusTextBlock.Text = "DataGrid pripravený a inicializovaný úspešne";
+                    StatusTextBlock.Text = "DataGrid pripravený a inicializovaný úspešne s PROJECT REFERENCE";
                 }
             });
         }

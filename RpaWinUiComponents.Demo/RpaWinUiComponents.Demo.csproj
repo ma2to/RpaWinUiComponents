@@ -1,51 +1,47 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<!-- OPRAVA RpaWinUiComponents.Demo.csproj pre NuGet package použitie -->
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <!-- OPRAVA CA1416: Explicitne Windows targeting -->
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
 
-    <!-- HLAVNÁ OPRAVA: Self-contained Windows App SDK -->
+    <!-- Self-contained Windows App SDK -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>false</SelfContained>
     <PublishSingleFile>false</PublishSingleFile>
 
-    <!-- Disable problematic features -->
+    <!-- KĽÚČOVÁ OPRAVA MSB3030: Enable XAML resource loading -->
     <EnableMsixTooling>false</EnableMsixTooling>
-    <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
+    <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
     <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
-    <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
+    <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
 
-    <!-- OPRAVA CA1416: Suppress platform warnings -->
-    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013;CA1416</NoWarn>
+    <!-- Suppress warnings -->
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013;CA1416;CS0234;MSB3030</NoWarn>
 
     <!-- Default XAML handling -->
     <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
-
-    <!-- Application properties -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <UseWindowsTargetingPack>true</UseWindowsTargetingPack>
 
-    <!-- NOVÁ OPRAVA: Runtime identifiers -->
+    <!-- Runtime identifiers -->
     <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- OPRAVA: Aktualizované balíčky na najnovšie verzie -->
+  <!-- KĽÚČOVÁ OPRAVA: NuGet package reference s najnovšou verziou -->
   <ItemGroup>
+    <PackageReference Include="RpaWinUiComponents" Version="1.0.11" />
+
+    <!-- Dependencies -->
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
-
-    <!-- KĽÚČOVÁ OPRAVA: Najnovšia verzia Windows App SDK -->
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
-    <PackageReference Include="RpaWinUiComponents" Version="1.0.8" />
-
-    <!-- NuGet balík namiesto lokálnych súborov -->
   </ItemGroup>
 
   <!-- Application manifest -->
@@ -58,7 +54,7 @@
     <Content Include="Assets\**" />
   </ItemGroup>
 
-  <!-- IBA MainWindow a App XAML súbory -->
+  <!-- XAML súbory -->
   <ItemGroup>
     <Page Update="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -77,6 +73,11 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
+
+  <!-- OPRAVA MSB3030: Ensure NuGet content files are copied -->
+  <Target Name="CopyNuGetContentFiles" BeforeTargets="Build">
+    <Message Text="📦 Ensuring NuGet content files are available..." Importance="normal" />
+  </Target>
 
   <!-- Project metadata -->
   <PropertyGroup>

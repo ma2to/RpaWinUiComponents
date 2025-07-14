@@ -12,9 +12,9 @@ using System.Linq;
 using System.Threading.Tasks;
 
 // ✅ KĽÚČOVÁ OPRAVA: Aliasy pre rozlíšenie PUBLIC vs INTERNAL typov
-using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ColumnDefinition;
-using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ValidationRule;
-using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Models.ThrottlingConfig;
+using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
+using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
+using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
