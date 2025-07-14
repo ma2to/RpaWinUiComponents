@@ -1,4 +1,4 @@
-﻿// OPRAVENÝ AdvancedWinUiDataGridControl.cs - MODULÁRNE RIEŠENIE
+﻿// OPRAVENÝ AdvancedWinUiDataGridControl.cs - MODULÁRNE RIEŠENIE BEZ ViewModel property
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs
 
 using Microsoft.Extensions.Logging;
@@ -20,7 +20,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// HLAVNÝ VSTUPNÝ BOD - PUBLIC API pre AdvancedWinUiDataGrid komponent
-    /// Všetky PUBLIC typy sú v tomto namespace: RpaWinUiComponents.AdvancedWinUiDataGrid
+    /// OPRAVA CS1061: BEZ PUBLIC ViewModel property ktoré spôsobuje XamlTypeInfo.g.cs problémy
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
@@ -65,7 +65,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region HLAVNÉ PUBLIC API METÓDY
+        #region HLAVNÉ PUBLIC API METÓDY - BEZ ViewModel property
+
+        /// <summary>
+        /// KĽÚČOVÁ OPRAVA CS1061: ŽIADNA ViewModel property - len API metódy
+        /// </summary>
 
         /// <summary>
         /// JEDNODUCHÉ API: Inteligentné načítanie dát s automatickou detekciou stĺpcov a validácií
@@ -480,7 +484,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             ThrowIfDisposed();
             lock (_initializationLock)
             {
-                return _isInitialized && _internalView?.ViewModel?.IsInitialized == true;
+                return _isInitialized && _internalView?.InternalViewModel?.IsInitialized == true;
             }
         }
 

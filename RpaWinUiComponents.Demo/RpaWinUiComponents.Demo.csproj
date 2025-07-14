@@ -1,47 +1,40 @@
-﻿<!-- OPRAVA RpaWinUiComponents.Demo.csproj pre NuGet package použitie -->
+﻿<!-- OPRAVA Demo projekt pre CS1061 fix -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
 
-    <!-- Self-contained Windows App SDK -->
+    <!-- KĽÚČOVÁ OPRAVA CS1061: Suppress XamlTypeInfo.g.cs errors -->
+    <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
+    <DisableXamlGeneratedMain>false</DisableXamlGeneratedMain>
+
+    <!-- Windows App SDK settings -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-    <SelfContained>false</SelfContained>
-    <PublishSingleFile>false</PublishSingleFile>
-
-    <!-- KĽÚČOVÁ OPRAVA MSB3030: Enable XAML resource loading -->
     <EnableMsixTooling>false</EnableMsixTooling>
     <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
-    <GenerateTemporaryStoreCertificate>false</GenerateTemporaryStoreCertificate>
     <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
 
-    <!-- Suppress warnings -->
+    <!-- Suppress CS1061 warnings -->
     <NoWarn>$(NoWarn);CS0436;CS1061;CS8602;CS8603;CS8604;CS1537;WMC1013;CA1416;CS0234;MSB3030</NoWarn>
-
-    <!-- Default XAML handling -->
-    <EnableDefaultXamlItems>true</EnableDefaultXamlItems>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
-    <UseWindowsTargetingPack>true</UseWindowsTargetingPack>
 
     <!-- Runtime identifiers -->
     <RuntimeIdentifiers>win-x64;win-x86;win-arm64</RuntimeIdentifiers>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- KĽÚČOVÁ OPRAVA: NuGet package reference s najnovšou verziou -->
-  <ItemGroup>
-    <PackageReference Include="RpaWinUiComponents" Version="1.0.11" />
+  <!-- KĽÚČOVÁ OPRAVA: Project reference namiesto NuGet (pre development) -->
 
-    <!-- Dependencies -->
+  <!-- Dependencies -->
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.6" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" />
+    <PackageReference Include="RpaWinUiComponents" Version="1.0.13" />
   </ItemGroup>
 
   <!-- Application manifest -->
@@ -53,42 +46,5 @@
   <ItemGroup>
     <Content Include="Assets\**" />
   </ItemGroup>
-
-  <!-- XAML súbory -->
-  <ItemGroup>
-    <Page Update="MainWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Update="App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-  </ItemGroup>
-
-  <!-- Code-behind súbory -->
-  <ItemGroup>
-    <Compile Update="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Update="App.xaml.cs">
-      <DependentUpon>App.xaml</DependentUpon>
-    </Compile>
-  </ItemGroup>
-
-  <!-- OPRAVA MSB3030: Ensure NuGet content files are copied -->
-  <Target Name="CopyNuGetContentFiles" BeforeTargets="Build">
-    <Message Text="📦 Ensuring NuGet content files are available..." Importance="normal" />
-  </Target>
-
-  <!-- Project metadata -->
-  <PropertyGroup>
-    <AssemblyTitle>RpaWinUiComponents Demo</AssemblyTitle>
-    <AssemblyDescription>Demo aplikácia pre testovanie RpaWinUiComponents balíka</AssemblyDescription>
-    <AssemblyConfiguration>Demo</AssemblyConfiguration>
-    <AssemblyCompany>RPA Solutions</AssemblyCompany>
-    <AssemblyProduct>RpaWinUiComponents Demo</AssemblyProduct>
-    <AssemblyCopyright>Copyright © RPA Solutions 2024</AssemblyCopyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-  </PropertyGroup>
 
 </Project>

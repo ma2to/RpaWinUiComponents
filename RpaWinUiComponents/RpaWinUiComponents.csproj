@@ -1,4 +1,4 @@
-﻿<!-- OPRAVA RpaWinUiComponents.csproj - CS1061 a NETSDK1022 fix -->
+﻿<!-- KOMPLETNÁ OPRAVA RpaWinUiComponents.csproj - CS1061 ViewModel fix -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -6,15 +6,19 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.11</PackageVersion>
+    <PackageVersion>1.0.13</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- KĽÚČOVÁ OPRAVA NETSDK1022: Disable default items ktoré spôsobujú duplikáty -->
+    <!-- KĽÚČOVÁ OPRAVA CS1061: Disable problematic XAML generation -->
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    
+    <!-- OPRAVA: Suppress XamlTypeInfo.g.cs generation pre UserControls -->
+    <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
+    <DisableXamlGeneratedMain>true</DisableXamlGeneratedMain>
 
-    <!-- OPRAVA CS1061: Enable XAML compilation -->
+    <!-- XAML compilation settings -->
     <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
     <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
 
@@ -23,40 +27,23 @@
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
 
-    <!-- Suppress warnings -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002</NoWarn>
-
-    <!-- Multi-platform support -->
-    <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
-    <DefaultPlatform>AnyCPU</DefaultPlatform>
+    <!-- Suppress všetky warnings -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002;MSB3030</NoWarn>
   </PropertyGroup>
 
-  <!-- KĽÚČOVÁ OPRAVA CS1061: Explicitne definované .cs súbory bez duplikátov -->
+  <!-- Explicitné .cs súbory -->
   <ItemGroup>
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
-
-    <!-- Všetky .cs súbory okrem XAML code-behind -->
-    <Compile Include="AdvancedWinUiDataGrid\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Collections\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Commands\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Configuration\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Controls\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Converters\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Events\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Helpers\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Models\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Services\Interfaces\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\Services\Implementation\*.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\ViewModels\*.cs" />
-
-    <!-- XAML Code-behind súbory - explicitne s DependentUpon -->
+    <Compile Include="AdvancedWinUiDataGrid\**\*.cs" Exclude="AdvancedWinUiDataGrid\Views\*.xaml.cs" />
+    
+    <!-- XAML Code-behind súbory -->
     <Compile Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
       <DependentUpon>AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
 
-  <!-- KĽÚČOVÁ OPRAVA NETSDK1022: Explicitne definované XAML súbory -->
+  <!-- KĽÚČOVÁ OPRAVA: XAML súbory BEZ automatickej XamlTypeInfo generácie -->
   <ItemGroup>
     <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -77,65 +64,18 @@
     <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 
-  <!-- OPRAVA NETSDK1022: Exclude auto-included files -->
-  <ItemGroup>
-    <Compile Remove="obj\**\*" />
-    <Compile Remove="bin\**\*" />
-    <Page Remove="obj\**\*" />
-    <Page Remove="bin\**\*" />
-    <None Remove="obj\**\*" />
-    <None Remove="bin\**\*" />
-  </ItemGroup>
-
-  <!-- KĽÚČOVÁ OPRAVA CS1061: Ensure XAML gets compiled properly -->
-  <Target Name="EnsureXamlCompilation" BeforeTargets="MarkupCompilePass1">
-    <Message Text="🔧 Ensuring XAML compilation for InitializeComponent generation" Importance="high" />
-    <ItemGroup>
-      <!-- Verify XAML files are properly configured -->
-      <_XamlFiles Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml" />
-      <_XamlFiles Include="AdvancedWinUiDataGrid\Themes\Generic.xaml" />
-    </ItemGroup>
-    <Message Text="📄 XAML files to compile: @(_XamlFiles)" Importance="normal" />
-  </Target>
-
-  <!-- OPRAVA MSB3030: Include XBF files in NuGet package -->
+  <!-- Build targets -->
   <ItemGroup>
     <None Include="build\RpaWinUiComponents.targets" Pack="true" PackagePath="build\RpaWinUiComponents.targets" />
     <None Include="buildTransitive\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\RpaWinUiComponents.targets" />
   </ItemGroup>
 
-  <!-- OPRAVA MSB3030: Custom pack target pre XBF súbory -->
-  <Target Name="PackXbfFiles" AfterTargets="Build" BeforeTargets="Pack" Condition="'$(Configuration)' == 'Release'">
-    <PropertyGroup>
-      <_XbfOutputPath>$(OutputPath)</_XbfOutputPath>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <_XbfFiles Include="$(_XbfOutputPath)**\*.xbf" />
-    </ItemGroup>
-
-    <Message Text="📦 Found $([MSBuild]::ValueOrDefault('@(_XbfFiles->Count())', '0')) XBF files to pack" Importance="high" />
-
-    <ItemGroup Condition="'@(_XbfFiles)' != ''">
-      <None Include="@(_XbfFiles)" Pack="true" PackagePath="lib\$(TargetFramework)\%(_XbfFiles.RecursiveDir)%(_XbfFiles.Filename)%(_XbfFiles.Extension)" />
-    </ItemGroup>
-  </Target>
-
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s real-time validáciou, copy/paste funkcionalitou a Clean Architecture pre .NET 8. OPRAVENÁ VERZIA v1.0.11 - CS1061 InitializeComponent a NETSDK1022 vyriešené.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent - OPRAVENÁ VERZIA v1.0.13 - CS1061 ViewModel fix.</Description>
     <Authors>RPA Solutions</Authors>
-    <Company>RPA Solutions</Company>
-    <Product>RpaWinUiComponents</Product>
-    <Copyright>Copyright © RPA Solutions 2024</Copyright>
-    <PackageTags>WinUI3;DataGrid;Validation;MVVM;RPA;NET8;WinUI;Advanced;Fixed;Windows;NuGet;XBF;InitializeComponent</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageProjectUrl>https://github.com/rpa-solutions/RpaWinUiComponents</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/rpa-solutions/RpaWinUiComponents</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>v1.0.11: CS1061 InitializeComponent OPRAVENÉ. NETSDK1022 duplicate Page items VYRIEŠENÉ. Kompletne funkčný XAML compilation.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.13: CS1061 ViewModel property OPRAVENÉ. XamlTypeInfo.g.cs generation fix.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>

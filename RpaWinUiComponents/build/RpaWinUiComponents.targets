@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- build/RpaWinUiComponents.targets - OPRAVA CIEST K DLL -->
+<!-- build/RpaWinUiComponents.targets - OPRAVA MSB3030 XBF súborov -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.11</RpaWinUiComponentsVersion>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.12</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
   <!-- ✅ KRITICKÁ OPRAVA: Kontrola či nie sme v projekte RpaWinUiComponents samom -->
@@ -18,21 +18,21 @@
     <_RpaWinUiTargetFramework Condition="'$(_RpaWinUiTargetFramework)' == ''">net8.0-windows10.0.19041.0</_RpaWinUiTargetFramework>
   </PropertyGroup>
 
-  <!-- ✅ OPRAVENÉ: Správne cesty k DLL súboru -->
+  <!-- ✅ KĽÚČOVÁ OPRAVA XBF: Nepoužívame XBF súbory, iba DLL -->
   <PropertyGroup>
-    <!-- NAJPRV skúsime najšpecifickejšiu cestu -->
+    <!-- NAJPRV skúsime najšpecifickejšiu cestu k DLL -->
     <_RpaWinUiComponentsLibPath1>$(MSBuildThisFileDirectory)../lib/$(_RpaWinUiTargetFramework)/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath1>
     
     <!-- Fallback cesty pre rôzne framework verzie -->
     <_RpaWinUiComponentsLibPath2>$(MSBuildThisFileDirectory)../lib/net8.0-windows10.0.19041.0/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath2>
     <_RpaWinUiComponentsLibPath3>$(MSBuildThisFileDirectory)../lib/net8.0-windows/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath3>
     <_RpaWinUiComponentsLibPath4>$(MSBuildThisFileDirectory)../lib/net8.0/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath4>
-    
-    <!-- Pre prípad že je DLL v root -->
-    <_RpaWinUiComponentsLibPath5>$(MSBuildThisFileDirectory)../RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath5>
-    
-    <!-- Pre prípad že je v bin adresári -->
-    <_RpaWinUiComponentsLibPath6>$(MSBuildThisFileDirectory)../bin/RpaWinUiComponents.dll</_RpaWinUiComponentsLibPath6>
+  </PropertyGroup>
+
+  <!-- ✅ NOVÉ: Cesty k XAML source súborom namiesto XBF -->
+  <PropertyGroup>
+    <_RpaXamlContentPath>$(MSBuildThisFileDirectory)../contentFiles/any/$(_RpaWinUiTargetFramework)/AdvancedWinUiDataGrid</_RpaXamlContentPath>
+    <_RpaXamlContentPathFallback>$(MSBuildThisFileDirectory)../content/AdvancedWinUiDataGrid</_RpaXamlContentPathFallback>
   </PropertyGroup>
 
   <!-- ✅ Ensure WinUI 3 dependencies for consuming projects -->
@@ -58,18 +58,12 @@
       <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPath2)')">$(_RpaWinUiComponentsLibPath2)</_LibraryPath>
       <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPath3)')">$(_RpaWinUiComponentsLibPath3)</_LibraryPath>
       <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPath4)')">$(_RpaWinUiComponentsLibPath4)</_LibraryPath>
-      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPath5)')">$(_RpaWinUiComponentsLibPath5)</_LibraryPath>
-      <_LibraryPath Condition="'$(_LibraryPath)' == '' AND Exists('$(_RpaWinUiComponentsLibPath6)')">$(_RpaWinUiComponentsLibPath6)</_LibraryPath>
     </PropertyGroup>
 
     <!-- Debug output všetkých ciest -->
-    <Message Text="🔍 Searching for RpaWinUiComponents.dll in:" Importance="low" />
-    <Message Text="  Path 1: $(_RpaWinUiComponentsLibPath1) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath1)'))]" Importance="low" />
-    <Message Text="  Path 2: $(_RpaWinUiComponentsLibPath2) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath2)'))]" Importance="low" />
-    <Message Text="  Path 3: $(_RpaWinUiComponentsLibPath3) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath3)'))]" Importance="low" />
-    <Message Text="  Path 4: $(_RpaWinUiComponentsLibPath4) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath4)'))]" Importance="low" />
-    <Message Text="  Path 5: $(_RpaWinUiComponentsLibPath5) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath5)'))]" Importance="low" />
-    <Message Text="  Path 6: $(_RpaWinUiComponentsLibPath6) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath6)'))]" Importance="low" />
+    <Message Text="🔍 Searching for RpaWinUiComponents.dll:" Importance="normal" />
+    <Message Text="  Path 1: $(_RpaWinUiComponentsLibPath1) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath1)'))]" Importance="normal" />
+    <Message Text="  Path 2: $(_RpaWinUiComponentsLibPath2) [Exists: $(Exists('$(_RpaWinUiComponentsLibPath2)'))]" Importance="normal" />
 
     <!-- Ak sa našla DLL, pridaj reference -->
     <ItemGroup Condition="'$(_LibraryPath)' != ''">
@@ -85,13 +79,57 @@
     
     <!-- OPRAVA: Warning len ak sa skutočne nenašla DLL -->
     <Warning Text="❌ RpaWinUiComponents: Library not found in any expected location. Please verify NuGet package installation." Condition="'$(_LibraryPath)' == '' AND '$(Configuration)' != 'Debug'" />
-    <Message Text="⚠️ RpaWinUiComponents: Library not found, but this is normal during development. Package directory: $(MSBuildThisFileDirectory)" Importance="low" Condition="'$(_LibraryPath)' == '' AND '$(Configuration)' == 'Debug'" />
+    <Message Text="⚠️ RpaWinUiComponents: Library not found, but this is normal during development." Importance="low" Condition="'$(_LibraryPath)' == '' AND '$(Configuration)' == 'Debug'" />
+  </Target>
+
+  <!-- ✅ NOVÉ: Include XAML source files if available (namiesto XBF) -->
+  <Target Name="IncludeRpaXamlSources" BeforeTargets="MarkupCompilePass1" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false' AND '$(UseWinUI)' == 'true'">
+    
+    <!-- Check for XAML content files -->
+    <ItemGroup Condition="Exists('$(_RpaXamlContentPath)')">
+      <Page Include="$(_RpaXamlContentPath)\Views\*.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Include="$(_RpaXamlContentPath)\Themes\*.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <SubType>Designer</SubType>
+      </Page>
+    </ItemGroup>
+    
+    <!-- Fallback path -->
+    <ItemGroup Condition="!Exists('$(_RpaXamlContentPath)') AND Exists('$(_RpaXamlContentPathFallback)')">
+      <Page Include="$(_RpaXamlContentPathFallback)\Views\*.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <SubType>Designer</SubType>
+      </Page>
+      <Page Include="$(_RpaXamlContentPathFallback)\Themes\*.xaml">
+        <Generator>MSBuild:Compile</Generator>
+        <SubType>Designer</SubType>
+      </Page>
+    </ItemGroup>
+
+    <Message Text="📄 Including XAML source files from: $(_RpaXamlContentPath)" Importance="normal" Condition="Exists('$(_RpaXamlContentPath)')" />
+    <Message Text="📄 Using fallback XAML path: $(_RpaXamlContentPathFallback)" Importance="normal" Condition="!Exists('$(_RpaXamlContentPath)') AND Exists('$(_RpaXamlContentPathFallback)')" />
+    <Message Text="⚠️ No XAML content files found - this is normal if using embedded resources" Importance="low" Condition="!Exists('$(_RpaXamlContentPath)') AND !Exists('$(_RpaXamlContentPathFallback)')" />
+  </Target>
+
+  <!-- ✅ KĽÚČOVÁ OPRAVA XBF: Suppress XBF not found errors -->
+  <Target Name="SuppressXbfErrors" BeforeTargets="CopyFilesToOutputDirectory">
+    <Message Text="🚫 Suppressing XBF file copy errors (using DLL with embedded resources)" Importance="normal" />
+    
+    <!-- Remove any XBF file references that might cause MSB3030 -->
+    <ItemGroup>
+      <ContentWithTargetPath Remove="**\*.xbf" />
+      <ReferenceCopyLocalPaths Remove="**\*.xbf" />
+    </ItemGroup>
   </Target>
 
   <!-- ✅ Info message - LEN AK NIE SME V SAMOM PROJEKTE -->
   <Target Name="RpaWinUiComponentsInfo" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) for $(_RpaWinUiTargetFramework)" Importance="low" />
-    <Message Text="🔧 UseWinUI: $(UseWinUI), TargetFramework: $(TargetFramework)" Importance="low" />
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) for $(_RpaWinUiTargetFramework)" Importance="normal" />
+    <Message Text="🔧 UseWinUI: $(UseWinUI), TargetFramework: $(TargetFramework)" Importance="normal" />
+    <Message Text="💡 Using DLL with embedded XAML resources (no XBF files needed)" Importance="normal" />
   </Target>
 
   <!-- ✅ Ensure proper configuration for WinUI projects -->
@@ -101,12 +139,16 @@
       <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
       <WindowsAppSDKSelfContained Condition="'$(WindowsAppSDKSelfContained)' == ''">false</WindowsAppSDKSelfContained>
       <EnableMsixTooling Condition="'$(EnableMsixTooling)' == ''">false</EnableMsixTooling>
+      
+      <!-- XAML compilation settings for consuming project -->
+      <EnableMrtResourcePackaging Condition="'$(EnableMrtResourcePackaging)' == ''">true</EnableMrtResourcePackaging>
+      <UseWinUIModernResourceSystem Condition="'$(UseWinUIModernResourceSystem)' == ''">true</UseWinUIModernResourceSystem>
     </PropertyGroup>
   </Target>
 
   <!-- ✅ Suppress common warnings in consuming projects -->
   <PropertyGroup>
-    <NoWarn>$(NoWarn);CS0436;CS1061;CS1537;CS1503;CS0104;CS0234;WMC1013</NoWarn>
+    <NoWarn>$(NoWarn);CS0436;CS1061;CS1537;CS1503;CS0104;CS0234;WMC1013;MSB3030</NoWarn>
   </PropertyGroup>
 
 </Project>

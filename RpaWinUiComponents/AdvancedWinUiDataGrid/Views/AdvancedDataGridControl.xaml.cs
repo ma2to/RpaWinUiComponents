@@ -1,9 +1,11 @@
-﻿//Views/AdvancedDataGridControl.xaml.cs - KOMPLETNÁ OPRAVA CS1061 InitializeComponent
+﻿//Views/AdvancedDataGridControl.xaml.cs - FINÁLNA OPRAVA CS1061 - BEZ PUBLIC ViewModel
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Data;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -26,9 +28,9 @@ using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Thrott
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
     /// <summary>
-    /// KOMPLETNÁ OPRAVA CS1061 InitializeComponent - UserControl s XAML
+    /// FINÁLNA OPRAVA CS1061 - UserControl BEZ PUBLIC ViewModel property pre zamedzenie XamlTypeInfo.g.cs problémov
     /// </summary>
-    public sealed partial class AdvancedDataGridControl : UserControl, IDisposable
+    public sealed partial class AdvancedDataGridControl : UserControl, IDisposable, INotifyPropertyChanged
     {
         private AdvancedDataGridViewModel? _viewModel;
         private readonly ILogger<AdvancedDataGridControl> _logger;
@@ -43,7 +45,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         public AdvancedDataGridControl()
         {
             // ✅ KĽÚČOVÁ OPRAVA CS1061: InitializeComponent je dostupný cez partial class
-            // XAML compiler generuje túto metódu automaticky
             try
             {
                 this.InitializeComponent();
@@ -68,12 +69,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         #region Properties and Events
 
         /// <summary>
-        /// Public property ViewModel - POTREBNÉ PRE XAML BINDING
+        /// KĽÚČOVÁ OPRAVA CS1061: INTERNAL ViewModel property - NIE PUBLIC
+        /// Toto zabráni XamlTypeInfo.g.cs generovaniu problematického kódu
         /// </summary>
-        public AdvancedDataGridViewModel? ViewModel
+        internal AdvancedDataGridViewModel? InternalViewModel
         {
             get => _viewModel;
-            set
+            private set
             {
                 if (_viewModel != null)
                 {
@@ -90,12 +92,18 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 }
 
                 this.DataContext = _viewModel;
-                OnPropertyChanged(nameof(ViewModel));
+                OnPropertyChanged(nameof(InternalViewModel));
             }
         }
 
+        /// <summary>
+        /// KĽÚČOVÁ OPRAVA CS1061: ŽIADNA PUBLIC ViewModel property
+        /// Toto zabráni XamlTypeInfo.g.cs problemom
+        /// </summary>
+        // ODSTRÁNENÉ: public ViewModel property ktoré spôsobovalo CS1061
+
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
-        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion
 
@@ -110,7 +118,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 if (_viewModel == null)
                 {
                     _viewModel = CreateViewModel();
-                    ViewModel = _viewModel;
+                    InternalViewModel = _viewModel; // Použitie INTERNAL property
                 }
 
                 SetupEventHandlers();
@@ -420,17 +428,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Public API Methods - KOMPLETNÁ OPRAVA CS1061: INTERNAL TYPY + INTERNAL API + CUSTOM ROW COUNT
+        #region Public API Methods - KOMPLETNÁ OPRAVA CS1061: INTERNAL TYPY + INTERNAL API
 
         /// <summary>
-        /// KOMPLETNÁ OPRAVA CS1061: Internal view používa INTERNAL API s internal typmi + CUSTOM ROW COUNT
-        /// ŽIADNE KONVERZIE, priama kompatibilita
+        /// KOMPLETNÁ OPRAVA CS1061: Internal view používa INTERNAL API s internal typmi
         /// </summary>
         public async Task InitializeAsync(
-            List<InternalColumnDefinition> columns, // OPRAVA CS1061: internal typ
-            List<InternalValidationRule>? validationRules = null, // OPRAVA CS1061: internal typ
-            InternalThrottlingConfig? throttling = null, // OPRAVA CS1061: internal typ
-            int initialRowCount = 15)  // OPRAVA: Default je 15 namiesto 100
+            List<InternalColumnDefinition> columns,
+            List<InternalValidationRule>? validationRules = null,
+            InternalThrottlingConfig? throttling = null,
+            int initialRowCount = 15)
         {
             ThrowIfDisposed();
 
@@ -442,11 +449,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 if (_viewModel == null)
                 {
                     _viewModel = CreateViewModel();
-                    ViewModel = _viewModel;
+                    InternalViewModel = _viewModel; // Použitie INTERNAL property
                 }
 
-                // KĽÚČOVÁ OPRAVA CS1061: Volanie INTERNAL API metódy ViewModel s internal typmi + custom row count
-                // Žiadne konverzie, priama kompatibilita
                 await _viewModel.InitializeAsync(columns, validationRules ?? new List<InternalValidationRule>(), throttling, initialRowCount);
 
                 _isInitialized = true;
@@ -456,7 +461,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 _logger.LogInformation("✅ AdvancedDataGrid initialized successfully with {RowCount} rows", initialRowCount);
 
-                // Debug output
                 _logger.LogDebug("📊 After initialization - Columns: {ColumnCount}, Rows: {RowCount}",
                     _viewModel.Columns?.Count ?? 0, _viewModel.Rows?.Count ?? 0);
             }
@@ -483,7 +487,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _logger.LogInformation("📊 Loading data from DataTable with {RowCount} rows", dataTable?.Rows.Count ?? 0);
                 await _viewModel.LoadDataAsync(dataTable);
 
-                // UI update
                 await UpdateUIManuallyAsync();
 
                 _logger.LogInformation("✅ Data loaded successfully");
@@ -694,7 +697,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             OnErrorOccurred(e);
         }
 
-        private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(AdvancedDataGridViewModel.IsKeyboardShortcutsVisible))
             {
@@ -748,11 +751,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         private void UpdateKeyboardShortcutsVisibility()
         {
-            // Implementácia pre keyboard shortcuts visibility
             try
             {
                 _logger.LogTrace("Keyboard shortcuts visibility: {IsVisible}", _isKeyboardShortcutsVisible);
-                // Tu by mohla byť implementácia pre zobrazenie/skrytie keyboard shortcuts
             }
             catch (Exception ex)
             {
@@ -805,7 +806,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                // Základné keyboard handling
                 switch (e.Key)
                 {
                     case VirtualKey.F1:
@@ -815,7 +815,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         break;
 
                     case VirtualKey.Escape:
-                        // ESC handling
                         if (_viewModel != null)
                         {
                             _logger.LogDebug("ESC key pressed");
@@ -823,7 +822,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         break;
 
                     case VirtualKey.F5:
-                        // Refresh handling
                         if (_viewModel != null)
                         {
                             _logger.LogDebug("F5 refresh key pressed");
@@ -853,9 +851,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        private void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void Reset()
@@ -875,7 +873,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _rowElements.Clear();
                 _headerElements.Clear();
 
-                // Clear UI container
                 var container = this.FindName("DataGridContainer") as StackPanel;
                 container?.Children.Clear();
 

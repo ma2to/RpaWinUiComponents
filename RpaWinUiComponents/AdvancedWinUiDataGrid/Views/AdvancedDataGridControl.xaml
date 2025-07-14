@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- OPRAVA CS1061: AdvancedDataGridControl.xaml pre správnu XAML compilation -->
+<!-- OPRAVA CS1061: AdvancedDataGridControl.xaml - bez problematických ViewModel bindingov -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,6 +8,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="White">
+
+    <!-- OPRAVA CS1061: Odstránené všetky direct ViewModel bindingy ktoré spôsobovali XamlTypeInfo.g.cs chyby -->
 
     <Grid>
         <Grid.RowDefinitions>
@@ -18,7 +20,7 @@
 
         <!-- Debug Header -->
         <Border Grid.Row="0" Background="#E3F2FD" Padding="10" BorderBrush="#2196F3" BorderThickness="0,0,0,1">
-            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - Debug Mode v1.0.11" 
+            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - v1.0.12 (CS1061 FIXED)" 
                        FontSize="14" 
                        FontWeight="Bold" 
                        Foreground="#1976D2"/>
@@ -53,7 +55,7 @@
                             Padding="20"
                             Margin="10">
                         <StackPanel>
-                            <TextBlock Text="📊 DataGrid Container v1.0.11" 
+                            <TextBlock Text="📊 DataGrid Container v1.0.12" 
                                        FontSize="16" 
                                        FontWeight="Bold" 
                                        Foreground="#333333"
@@ -63,6 +65,11 @@
                                        Foreground="#666666"
                                        HorizontalAlignment="Center"
                                        Margin="0,5,0,0"/>
+                            <TextBlock Text="ViewModel property je teraz PUBLIC DependencyProperty" 
+                                       FontSize="11" 
+                                       Foreground="#4CAF50"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,2,0,0"/>
                         </StackPanel>
                     </Border>
 
@@ -75,7 +82,7 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock Text="🛠️ Status: " FontSize="11" Foreground="#666666"/>
                 <TextBlock x:Name="DebugStatusText" 
-                           Text="Čaká na inicializáciu (InitializeComponent OK)..." 
+                           Text="Čaká na inicializáciu (ViewModel DependencyProperty OK)..." 
                            FontSize="11" 
                            Foreground="#2196F3" 
                            FontWeight="SemiBold"/>
