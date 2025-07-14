@@ -1,4 +1,4 @@
-﻿// OPRAVENÉ AdvancedDataGridControl.xaml.cs - S funkčným UI renderingom
+﻿// KOMPLETNE PREROBENÉ AdvancedDataGridControl.xaml.cs - Správna implementácia UI a validácie
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Windows.System;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
@@ -29,9 +30,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private bool _disposed = false;
         private bool _isInitialized = false;
 
-        // UI tracking
+        // UI State
         private readonly List<InternalColumnDefinition> _columns = new();
-        private readonly List<DataGridRow> _dataRows = new();
+        private readonly List<Dictionary<string, object?>> _currentData = new();
+        private readonly List<InternalValidationRule> _validationRules = new();
+        private readonly Dictionary<string, TextBox> _cellControls = new(); // Key: "row_column", Value: TextBox
+        private readonly Dictionary<string, System.Threading.Timer> _validationTimers = new();
+
+        // Performance tracking
+        private readonly HashSet<string> _validationInProgress = new();
+        private InternalThrottlingConfig _throttlingConfig = InternalThrottlingConfig.Default;
 
         public AdvancedDataGridControl()
         {
@@ -40,9 +48,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 System.Diagnostics.Debug.WriteLine("🔧 Inicializujem AdvancedDataGridControl...");
                 this.InitializeComponent();
                 System.Diagnostics.Debug.WriteLine("✅ InitializeComponent() úspešne zavolaný");
-
-                // Aktualizuj status text
-                UpdateStatusText("XAML úspešne načítaný");
             }
             catch (Exception ex)
             {
@@ -89,10 +94,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region PUBLIC API METHODS - OPRAVENÉ!
+        #region PUBLIC API METHODS
 
         /// <summary>
-        /// ✅ OPRAVENÁ INICIALIZÁCIA - Skutočne vytvára UI
+        /// ✅ OPRAVENÁ INICIALIZÁCIA - Správne vytvára UI štruktúru
         /// </summary>
         public async Task InitializeAsync(
             List<InternalColumnDefinition> columns,
@@ -102,9 +107,22 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                UpdateStatusText("Inicializujem DataGrid...");
+                UpdateStatus("Inicializujem DataGrid...");
                 _logger.LogInformation("🚀 Začínam inicializáciu s {ColumnCount} stĺpcami", columns?.Count ?? 0);
 
+                // Vyčistenie existujúcich dát
+                await ClearAllAsync();
+
+                // Uloženie konfigurácie
+                _columns.Clear();
+                _columns.AddRange(columns ?? new List<InternalColumnDefinition>());
+
+                _validationRules.Clear();
+                _validationRules.AddRange(validationRules ?? new List<InternalValidationRule>());
+
+                _throttlingConfig = throttling ?? InternalThrottlingConfig.Default;
+
+                // Vytvorenie ViewModel ak neexistuje
                 if (_viewModel == null)
                 {
                     _viewModel = CreateViewModel();
@@ -112,36 +130,31 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 }
 
                 // Inicializácia ViewModel
-                await _viewModel.InitializeAsync(columns ?? new List<InternalColumnDefinition>(),
-                                               validationRules,
-                                               throttling,
-                                               initialRowCount);
+                await _viewModel.InitializeAsync(_columns, _validationRules, _throttlingConfig, initialRowCount);
 
-                // Uloženie stĺpcov
-                _columns.Clear();
-                _columns.AddRange(columns ?? new List<InternalColumnDefinition>());
-
-                // ✅ KĽÚČOVÉ: Vytvorenie UI pre stĺpce
+                // ✅ KĽÚČOVÉ: Vytvorenie UI štruktúry
                 CreateHeaderUI();
+                CreateInitialDataRows(initialRowCount);
 
-                // ✅ KĽÚČOVÉ: Vytvorenie prázdnych riadkov
-                CreateInitialRows(initialRowCount);
+                // Skrytie loading panelu
+                ShowDataGrid();
 
                 _isInitialized = true;
-                UpdateStatusText($"Inicializované s {_columns.Count} stĺpcami, {initialRowCount} riadkov");
+                UpdateStatus($"Inicializované: {_columns.Count} stĺpcov, {initialRowCount} riadkov");
 
                 _logger.LogInformation("✅ Inicializácia dokončená úspešne");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Chyba pri inicializácii");
-                UpdateStatusText($"Chyba: {ex.Message}");
+                UpdateStatus($"Chyba: {ex.Message}");
+                ShowError();
                 throw;
             }
         }
 
         /// <summary>
-        /// ✅ OPRAVENÉ NAČÍTANIE DÁT - Skutočne zobrazuje dáta
+        /// ✅ OPRAVENÉ NAČÍTANIE DÁT - Skutočne zobrazuje všetky dáta súčasne
         /// </summary>
         public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
         {
@@ -153,41 +166,41 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     await AutoInitializeFromData(data);
                 }
 
-                UpdateStatusText($"Načítavam {data?.Count ?? 0} riadkov...");
+                UpdateStatus($"Načítavam {data?.Count ?? 0} riadkov...");
                 _logger.LogInformation("📊 Načítavam {RowCount} riadkov dát", data?.Count ?? 0);
 
-                // Vyčistenie existujúcich dát
-                ClearDataRows();
+                // Vyčistenie existujúcich dát (ale zachovanie UI štruktúry)
+                ClearCurrentData();
 
-                if (data != null && data.Count > 0)
-                {
-                    // ✅ KĽÚČOVÉ: Vytvorenie UI pre každý riadok dát
-                    for (int i = 0; i < data.Count; i++)
-                    {
-                        CreateDataRowUI(data[i], i);
-                    }
-                }
+                // Uloženie nových dát
+                _currentData.Clear();
+                _currentData.AddRange(data ?? new List<Dictionary<string, object?>>());
+
+                // ✅ KĽÚČOVÉ: Naplnenie všetkých buniek súčasne
+                await PopulateAllCellsAsync();
 
                 // Pridanie prázdnych riadkov
-                var emptyRowsNeeded = Math.Max(5, 15 - (data?.Count ?? 0));
-                for (int i = data?.Count ?? 0; i < (data?.Count ?? 0) + emptyRowsNeeded; i++)
-                {
-                    CreateEmptyRowUI(i);
-                }
+                var totalNeeded = Math.Max(15, _currentData.Count + 5);
+                await EnsureRowCount(totalNeeded);
 
-                UpdateStatusText($"Načítané {data?.Count ?? 0} riadkov dát + {emptyRowsNeeded} prázdnych");
-                _logger.LogInformation("✅ Dáta načítané úspešne");
+                // ✅ KĽÚČOVÉ: Spustenie validácie všetkých buniek
+                await ValidateAllCellsAsync();
 
-                // Aktualizácia ViewModel ak existuje
+                UpdateStatus($"Načítané: {_currentData.Count} riadkov dát");
+                UpdateRowCount(_currentData.Count, totalNeeded);
+
+                _logger.LogInformation("✅ Dáta načítané a zobrazené úspešne");
+
+                // Aktualizácia ViewModel
                 if (_viewModel != null)
                 {
-                    await _viewModel.LoadDataAsync(data ?? new List<Dictionary<string, object?>>());
+                    await _viewModel.LoadDataAsync(_currentData);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Chyba pri načítaní dát");
-                UpdateStatusText($"Chyba: {ex.Message}");
+                UpdateStatus($"Chyba: {ex.Message}");
                 throw;
             }
         }
@@ -204,7 +217,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 return await _viewModel.ExportDataAsync();
             }
-            return new DataTable();
+            return CreateDataTableFromCurrentData();
         }
 
         public async Task<bool> ValidateAllRowsAsync()
@@ -213,17 +226,35 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 return await _viewModel.ValidateAllRowsAsync();
             }
-            return true;
+
+            // Fallback validácia
+            await ValidateAllCellsAsync();
+            return !HasValidationErrors();
         }
 
         public async Task ClearAllDataAsync()
         {
-            ClearDataRows();
-            UpdateStatusText("Všetky dáta vymazané");
-
-            if (_viewModel != null)
+            try
             {
-                await _viewModel.ClearAllDataAsync();
+                UpdateStatus("Vymazávam všetky dáta...");
+
+                // ✅ OPRAVENÉ: Správne vyčistenie bez memory leaks
+                await ClearAllAsync();
+
+                if (_viewModel != null)
+                {
+                    await _viewModel.ClearAllDataAsync();
+                }
+
+                UpdateStatus("Všetky dáta vymazané");
+                UpdateRowCount(0, 0);
+
+                _logger.LogInformation("✅ Všetky dáta vymazané bez memory leaks");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba pri mazaní dát");
+                throw;
             }
         }
 
@@ -237,174 +268,541 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         public void Reset()
         {
-            ClearDataRows();
-            ClearHeaders();
-            _columns.Clear();
-            _isInitialized = false;
-            UpdateStatusText("Reset dokončený");
+            try
+            {
+                UpdateStatus("Resetujem komponent...");
 
-            _viewModel?.Reset();
+                // ✅ OPRAVENÉ: Kompletný reset bez memory leaks
+                _ = ClearAllAsync();
+
+                _columns.Clear();
+                _validationRules.Clear();
+                _isInitialized = false;
+
+                ShowLoadingPanel();
+                UpdateStatus("Reset dokončený");
+
+                _viewModel?.Reset();
+
+                _logger.LogInformation("✅ Komponent resetovaný");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba pri reset");
+            }
         }
 
         #endregion
 
-        #region UI CREATION METHODS - NOVÉ!
+        #region UI CREATION METHODS
 
         /// <summary>
-        /// ✅ Vytvorí header UI pre stĺpce
+        /// ✅ Vytvorí header UI s správnymi šírkami stĺpcov
         /// </summary>
         private void CreateHeaderUI()
         {
-            var headerContainer = this.FindName("HeaderContainer") as StackPanel;
-            if (headerContainer == null)
+            var headerPanel = this.FindName("HeaderPanel") as StackPanel;
+            if (headerPanel == null)
             {
-                _logger.LogWarning("❌ HeaderContainer not found in XAML");
+                _logger.LogWarning("❌ HeaderPanel not found in XAML");
                 return;
             }
 
-            headerContainer.Children.Clear();
+            headerPanel.Children.Clear();
 
             foreach (var column in _columns)
             {
                 var headerBorder = new Border
                 {
-                    Style = this.Resources["CellBorderStyle"] as Style,
-                    MinWidth = column.MinWidth,
                     Width = column.Width,
+                    MinWidth = column.MinWidth,
+                    BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
+                    BorderThickness = new Thickness(0, 0, 1, 1),
                     Background = new SolidColorBrush(Microsoft.UI.Colors.LightGray)
                 };
 
                 var headerText = new TextBlock
                 {
                     Text = column.Header ?? column.Name,
-                    Style = this.Resources["HeaderTextStyle"] as Style,
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    Style = this.Resources["HeaderTextStyle"] as Style
                 };
 
                 headerBorder.Child = headerText;
-                headerContainer.Children.Add(headerBorder);
+                headerPanel.Children.Add(headerBorder);
             }
 
             _logger.LogDebug("✅ Header UI vytvorené pre {ColumnCount} stĺpcov", _columns.Count);
         }
 
         /// <summary>
-        /// ✅ Vytvorí UI pre riadok s dátami
+        /// ✅ Vytvorí začiatočné prázdne riadky
         /// </summary>
-        private void CreateDataRowUI(Dictionary<string, object?> rowData, int rowIndex)
+        private void CreateInitialDataRows(int rowCount)
         {
-            var rowsRepeater = this.FindName("RowsRepeater") as ItemsRepeater;
-            if (rowsRepeater == null)
+            var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+            if (dataRowsPanel == null)
             {
-                // Fallback - pridaj priamo do container
-                CreateRowUIFallback(rowData, rowIndex, false);
+                _logger.LogWarning("❌ DataRowsPanel not found");
                 return;
             }
 
-            // TODO: Implementácia cez ItemsRepeater
-            CreateRowUIFallback(rowData, rowIndex, false);
-        }
+            dataRowsPanel.Children.Clear();
 
-        /// <summary>
-        /// ✅ Vytvorí UI pre prázdny riadok
-        /// </summary>
-        private void CreateEmptyRowUI(int rowIndex)
-        {
-            CreateRowUIFallback(new Dictionary<string, object?>(), rowIndex, true);
-        }
-
-        /// <summary>
-        /// ✅ Fallback metóda pre vytvorenie riadku - pridáva priamo do kontajnera
-        /// </summary>
-        private void CreateRowUIFallback(Dictionary<string, object?> rowData, int rowIndex, bool isEmpty)
-        {
-            var dataGridContainer = this.FindName("DataGridContainer") as StackPanel;
-            if (dataGridContainer == null)
+            for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
             {
-                _logger.LogWarning("❌ DataGridContainer not found!");
-                return;
+                CreateRowUI(rowIndex, new Dictionary<string, object?>());
             }
 
-            // Vytvor border pre riadok
-            var rowBorder = new Border
+            _logger.LogDebug("✅ Vytvorených {RowCount} začiatočných riadkov", rowCount);
+        }
+
+        /// <summary>
+        /// ✅ Vytvorí UI pre jeden riadok s správnym layoutom
+        /// </summary>
+        private void CreateRowUI(int rowIndex, Dictionary<string, object?> rowData)
+        {
+            var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+            if (dataRowsPanel == null) return;
+
+            // Vytvor Grid pre riadok
+            var rowGrid = new Grid
             {
-                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
-                BorderThickness = new Thickness(0, 0, 0, 1),
+                MinHeight = 35,
                 Background = new SolidColorBrush(rowIndex % 2 == 0 ? Microsoft.UI.Colors.White : Microsoft.UI.Colors.WhiteSmoke)
             };
 
-            // Vytvor StackPanel pre bunky
-            var rowPanel = new StackPanel
+            // Definície stĺpcov
+            for (int i = 0; i < _columns.Count; i++)
             {
-                Orientation = Orientation.Horizontal,
-                MinHeight = 35
-            };
+                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(_columns[i].Width) });
+            }
 
-            // Vytvor bunky pre každý stĺpec
-            foreach (var column in _columns)
+            // Vytvor bunky
+            for (int colIndex = 0; colIndex < _columns.Count; colIndex++)
             {
-                var cellBorder = new Border
-                {
-                    Style = this.Resources["CellBorderStyle"] as Style,
-                    MinWidth = column.MinWidth,
-                    Width = column.Width
-                };
+                var column = _columns[colIndex];
+                var cellKey = $"{rowIndex}_{column.Name}";
 
+                // Získaj hodnotu z dát
                 var cellValue = "";
-                if (!isEmpty && rowData.ContainsKey(column.Name))
+                if (rowData.ContainsKey(column.Name))
                 {
                     cellValue = rowData[column.Name]?.ToString() ?? "";
                 }
 
+                // Vytvor TextBox pre bunku
                 var cellTextBox = new TextBox
                 {
                     Text = cellValue,
-                    Style = this.Resources["CellTextStyle"] as Style,
+                    Style = this.Resources["DataCellTextBoxStyle"] as Style,
                     IsReadOnly = column.IsReadOnly,
-                    Tag = $"{rowIndex}_{column.Name}" // Pre identifikáciu
+                    Tag = cellKey,
+                    BorderThickness = new Thickness(0, 0, 1, 1)
                 };
 
-                // Event handler pre zmeny
+                // ✅ KĽÚČOVÉ: Event handler pre real-time validáciu
                 cellTextBox.TextChanged += OnCellTextChanged;
+                cellTextBox.LostFocus += OnCellLostFocus;
 
-                cellBorder.Child = cellTextBox;
-                rowPanel.Children.Add(cellBorder);
+                // Uloženie referencie na TextBox
+                _cellControls[cellKey] = cellTextBox;
+
+                // Pozícia v Grid
+                Grid.SetColumn(cellTextBox, colIndex);
+                rowGrid.Children.Add(cellTextBox);
             }
 
-            rowBorder.Child = rowPanel;
-            dataGridContainer.Children.Add(rowBorder);
-        }
-
-        /// <summary>
-        /// ✅ Vytvorí začiatočné prázdne riadky
-        /// </summary>
-        private void CreateInitialRows(int rowCount)
-        {
-            for (int i = 0; i < rowCount; i++)
+            // Border okolo riadku
+            var rowBorder = new Border
             {
-                CreateEmptyRowUI(i);
-            }
-            _logger.LogDebug("✅ Vytvorených {RowCount} začiatočných riadkov", rowCount);
+                Child = rowGrid,
+                BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
+                BorderThickness = new Thickness(1, 0, 1, 1)
+            };
+
+            dataRowsPanel.Children.Add(rowBorder);
         }
 
         #endregion
 
-        #region EVENT HANDLERS
+        #region DATA MANAGEMENT
 
-        private void OnCellTextChanged(object sender, TextChangedEventArgs e)
+        /// <summary>
+        /// ✅ Naplní všetky bunky dátami súčasne
+        /// </summary>
+        private async Task PopulateAllCellsAsync()
         {
-            if (sender is TextBox textBox && textBox.Tag is string tag)
+            await Task.Run(() =>
             {
-                _logger.LogTrace("📝 Cell changed: {Tag} = {Value}", tag, textBox.Text);
-                // TODO: Notifikácia ViewModel o zmene
+                for (int rowIndex = 0; rowIndex < _currentData.Count; rowIndex++)
+                {
+                    var rowData = _currentData[rowIndex];
+
+                    foreach (var column in _columns)
+                    {
+                        var cellKey = $"{rowIndex}_{column.Name}";
+
+                        if (_cellControls.TryGetValue(cellKey, out var textBox))
+                        {
+                            var value = rowData.ContainsKey(column.Name) ? rowData[column.Name]?.ToString() ?? "" : "";
+
+                            // UI update na main thread
+                            this.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                textBox.Text = value;
+                            });
+                        }
+                    }
+                }
+            });
+
+            _logger.LogDebug("✅ Všetky bunky naplnené dátami");
+        }
+
+        /// <summary>
+        /// ✅ Zabezpečí dostatok riadkov
+        /// </summary>
+        private async Task EnsureRowCount(int neededRowCount)
+        {
+            var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+            if (dataRowsPanel == null) return;
+
+            var currentRowCount = dataRowsPanel.Children.Count;
+
+            if (currentRowCount < neededRowCount)
+            {
+                await Task.Run(() =>
+                {
+                    for (int i = currentRowCount; i < neededRowCount; i++)
+                    {
+                        this.DispatcherQueue.TryEnqueue(() =>
+                        {
+                            CreateRowUI(i, new Dictionary<string, object?>());
+                        });
+                    }
+                });
             }
         }
+
+        /// <summary>
+        /// ✅ OPRAVENÉ: Správne vyčistenie dát bez memory leaks
+        /// </summary>
+        private async Task ClearAllAsync()
+        {
+            await Task.Run(() =>
+            {
+                // Dispose validation timers
+                foreach (var timer in _validationTimers.Values)
+                {
+                    timer?.Dispose();
+                }
+                _validationTimers.Clear();
+
+                // Clear validation state
+                _validationInProgress.Clear();
+
+                // Unsubscribe events and clear cell controls
+                foreach (var kvp in _cellControls)
+                {
+                    this.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        var textBox = kvp.Value;
+                        if (textBox != null)
+                        {
+                            textBox.TextChanged -= OnCellTextChanged;
+                            textBox.LostFocus -= OnCellLostFocus;
+                        }
+                    });
+                }
+                _cellControls.Clear();
+
+                // Clear UI
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+                    dataRowsPanel?.Children.Clear();
+
+                    var headerPanel = this.FindName("HeaderPanel") as StackPanel;
+                    headerPanel?.Children.Clear();
+                });
+
+                // Clear data
+                _currentData.Clear();
+            });
+
+            _logger.LogDebug("✅ Všetky dáta vyčistené bez memory leaks");
+        }
+
+        private void ClearCurrentData()
+        {
+            foreach (var kvp in _cellControls)
+            {
+                kvp.Value.Text = "";
+                RemoveValidationError(kvp.Key);
+            }
+        }
+
+        #endregion
+
+        #region REAL-TIME VALIDATION
+
+        /// <summary>
+        /// ✅ OPRAVENÁ real-time validácia s throttling
+        /// </summary>
+        private async void OnCellTextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is not TextBox textBox || textBox.Tag is not string cellKey)
+                return;
+
+            try
+            {
+                // Throttling - zruší predchádzajúci timer
+                if (_validationTimers.TryGetValue(cellKey, out var existingTimer))
+                {
+                    existingTimer?.Dispose();
+                }
+
+                // Vytvor nový timer pre throttled validáciu
+                var timer = new System.Threading.Timer(async _ =>
+                {
+                    if (_disposed) return;
+
+                    await ValidateCellAsync(cellKey, textBox.Text);
+
+                    // Cleanup timer
+                    if (_validationTimers.TryGetValue(cellKey, out var timerToRemove))
+                    {
+                        timerToRemove?.Dispose();
+                        _validationTimers.Remove(cellKey);
+                    }
+                }, null, _throttlingConfig.TypingDelayMs, Timeout.Infinite);
+
+                _validationTimers[cellKey] = timer;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba v real-time validácii pre {CellKey}", cellKey);
+            }
+        }
+
+        private async void OnCellLostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox textBox && textBox.Tag is string cellKey)
+            {
+                await ValidateCellAsync(cellKey, textBox.Text);
+            }
+        }
+
+        /// <summary>
+        /// ✅ Validácia jednej bunky s vizuálnym indikátorom
+        /// </summary>
+        private async Task ValidateCellAsync(string cellKey, string value)
+        {
+            if (_validationInProgress.Contains(cellKey)) return;
+
+            try
+            {
+                _validationInProgress.Add(cellKey);
+
+                var parts = cellKey.Split('_', 2);
+                if (parts.Length != 2) return;
+
+                var rowIndex = int.Parse(parts[0]);
+                var columnName = parts[1];
+
+                // Nájdi príslušné validačné pravidlá
+                var rules = _validationRules.Where(r => r.ColumnName == columnName).ToList();
+                var errors = new List<string>();
+
+                foreach (var rule in rules)
+                {
+                    try
+                    {
+                        bool isValid;
+                        if (rule.IsAsync)
+                        {
+                            isValid = await rule.ValidateAsync(value, null);
+                        }
+                        else
+                        {
+                            isValid = rule.Validate(value, null);
+                        }
+
+                        if (!isValid)
+                        {
+                            errors.Add(rule.ErrorMessage);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Validačné pravidlo {RuleName} zlyhalo", rule.RuleName);
+                        errors.Add($"Chyba validácie: {rule.ErrorMessage}");
+                    }
+                }
+
+                // ✅ KĽÚČOVÉ: Aplikácia vizuálnych indikátorov chýb
+                this.DispatcherQueue.TryEnqueue(() =>
+                {
+                    ApplyValidationResult(cellKey, errors);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba pri validácii bunky {CellKey}", cellKey);
+            }
+            finally
+            {
+                _validationInProgress.Remove(cellKey);
+            }
+        }
+
+        /// <summary>
+        /// ✅ Aplikuje vizuálne indikátory validačných chýb
+        /// </summary>
+        private void ApplyValidationResult(string cellKey, List<string> errors)
+        {
+            if (!_cellControls.TryGetValue(cellKey, out var textBox))
+                return;
+
+            if (errors.Count > 0)
+            {
+                // Aplikuj error štýl
+                textBox.Style = this.Resources["ErrorCellTextBoxStyle"] as Style;
+
+                // Nastav tooltip s chybami
+                var tooltip = new ToolTip
+                {
+                    Content = string.Join("\n", errors)
+                };
+                ToolTipService.SetToolTip(textBox, tooltip);
+
+                _logger.LogDebug("❌ Validačné chyby v {CellKey}: {Errors}", cellKey, string.Join(", ", errors));
+            }
+            else
+            {
+                // Odstráň error štýl
+                textBox.Style = this.Resources["DataCellTextBoxStyle"] as Style;
+                ToolTipService.SetToolTip(textBox, null);
+            }
+        }
+
+        private void RemoveValidationError(string cellKey)
+        {
+            if (_cellControls.TryGetValue(cellKey, out var textBox))
+            {
+                textBox.Style = this.Resources["DataCellTextBoxStyle"] as Style;
+                ToolTipService.SetToolTip(textBox, null);
+            }
+        }
+
+        /// <summary>
+        /// ✅ Validácia všetkých buniek
+        /// </summary>
+        private async Task ValidateAllCellsAsync()
+        {
+            var tasks = new List<Task>();
+
+            foreach (var kvp in _cellControls)
+            {
+                var cellKey = kvp.Key;
+                var textBox = kvp.Value;
+
+                tasks.Add(ValidateCellAsync(cellKey, textBox.Text));
+            }
+
+            await Task.WhenAll(tasks);
+
+            // Update validation count
+            var errorCount = _cellControls.Count(kvp =>
+                ToolTipService.GetToolTip(kvp.Value) != null);
+
+            this.DispatcherQueue.TryEnqueue(() =>
+            {
+                UpdateValidationCount(errorCount);
+            });
+        }
+
+        private bool HasValidationErrors()
+        {
+            return _cellControls.Any(kvp => ToolTipService.GetToolTip(kvp.Value) != null);
+        }
+
+        #endregion
+
+        #region UI STATE MANAGEMENT
+
+        private void ShowLoadingPanel()
+        {
+            var loadingPanel = this.FindName("LoadingPanel") as FrameworkElement;
+            var dataGridContainer = this.FindName("DataGridContainer") as FrameworkElement;
+            var emptyStatePanel = this.FindName("EmptyStatePanel") as FrameworkElement;
+
+            if (loadingPanel != null) loadingPanel.Visibility = Visibility.Visible;
+            if (dataGridContainer != null) dataGridContainer.Visibility = Visibility.Collapsed;
+            if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowDataGrid()
+        {
+            var loadingPanel = this.FindName("LoadingPanel") as FrameworkElement;
+            var dataGridContainer = this.FindName("DataGridContainer") as FrameworkElement;
+            var emptyStatePanel = this.FindName("EmptyStatePanel") as FrameworkElement;
+
+            if (loadingPanel != null) loadingPanel.Visibility = Visibility.Collapsed;
+            if (dataGridContainer != null) dataGridContainer.Visibility = Visibility.Visible;
+            if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Collapsed;
+        }
+
+        private void ShowError()
+        {
+            var loadingPanel = this.FindName("LoadingPanel") as FrameworkElement;
+            var dataGridContainer = this.FindName("DataGridContainer") as FrameworkElement;
+            var emptyStatePanel = this.FindName("EmptyStatePanel") as FrameworkElement;
+
+            if (loadingPanel != null) loadingPanel.Visibility = Visibility.Collapsed;
+            if (dataGridContainer != null) dataGridContainer.Visibility = Visibility.Collapsed;
+            if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Visible;
+        }
+
+        private void UpdateStatus(string message)
+        {
+            var statusText = this.FindName("StatusText") as TextBlock;
+            var statusIndicator = this.FindName("StatusIndicator") as TextBlock;
+
+            if (statusText != null) statusText.Text = message;
+            if (statusIndicator != null) statusIndicator.Text = $" - {message}";
+
+            _logger.LogDebug("Status: {Status}", message);
+        }
+
+        private void UpdateRowCount(int dataRows, int totalRows)
+        {
+            var rowCountText = this.FindName("RowCountText") as TextBlock;
+            if (rowCountText != null)
+            {
+                rowCountText.Text = $"{dataRows}/{totalRows} riadkov";
+            }
+        }
+
+        private void UpdateValidationCount(int errorCount)
+        {
+            var validationText = this.FindName("ValidationText") as TextBlock;
+            if (validationText != null)
+            {
+                validationText.Text = errorCount > 0 ? $"{errorCount} chýb" : "";
+                validationText.Foreground = new SolidColorBrush(Microsoft.UI.Colors.Red);
+            }
+        }
+
+        #endregion
+
+        #region EVENT HANDLERS & HELPER METHODS
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                UpdateStatusText("Control načítaný");
+                UpdateStatus("Control načítaný");
                 if (_viewModel == null)
                 {
                     _viewModel = CreateViewModel();
@@ -415,7 +813,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during OnLoaded");
-                UpdateStatusText($"Chyba pri načítaní: {ex.Message}");
+                UpdateStatus($"Chyba pri načítaní: {ex.Message}");
             }
         }
 
@@ -429,34 +827,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 _logger.LogError(ex, "Error during OnUnloaded");
             }
-        }
-
-        #endregion
-
-        #region HELPER METHODS
-
-        private void ClearDataRows()
-        {
-            var dataGridContainer = this.FindName("DataGridContainer") as StackPanel;
-            if (dataGridContainer != null)
-            {
-                // Odstráň všetky riadky okrem header
-                var childrenToRemove = dataGridContainer.Children
-                    .Skip(1) // Preskočiť header
-                    .ToList();
-
-                foreach (var child in childrenToRemove)
-                {
-                    dataGridContainer.Children.Remove(child);
-                }
-            }
-            _dataRows.Clear();
-        }
-
-        private void ClearHeaders()
-        {
-            var headerContainer = this.FindName("HeaderContainer") as StackPanel;
-            headerContainer?.Children.Clear();
         }
 
         private async Task AutoInitializeFromData(List<Dictionary<string, object?>>? data)
@@ -477,12 +847,21 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
             else
             {
-                // Default stĺpce
                 columns.Add(new InternalColumnDefinition("Stĺpec1", typeof(string)) { Header = "Stĺpec 1", Width = 150 });
                 columns.Add(new InternalColumnDefinition("Stĺpec2", typeof(string)) { Header = "Stĺpec 2", Width = 150 });
             }
 
-            await InitializeAsync(columns);
+            // Vytvor základné validačné pravidlá
+            var rules = new List<InternalValidationRule>();
+            foreach (var col in columns)
+            {
+                if (col.Name.ToLower().Contains("email"))
+                {
+                    rules.Add(InternalValidationRule.Email(col.Name));
+                }
+            }
+
+            await InitializeAsync(columns, rules);
         }
 
         private string FormatColumnHeader(string columnName)
@@ -509,6 +888,30 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
 
             return result;
+        }
+
+        private DataTable CreateDataTableFromCurrentData()
+        {
+            var dt = new DataTable();
+
+            // Pridaj stĺpce
+            foreach (var column in _columns)
+            {
+                dt.Columns.Add(column.Name, typeof(string));
+            }
+
+            // Pridaj dáta
+            foreach (var rowData in _currentData)
+            {
+                var row = dt.NewRow();
+                foreach (var column in _columns)
+                {
+                    row[column.Name] = rowData.ContainsKey(column.Name) ? rowData[column.Name] : "";
+                }
+                dt.Rows.Add(row);
+            }
+
+            return dt;
         }
 
         private AdvancedDataGridViewModel CreateViewModel()
@@ -550,23 +953,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             };
         }
 
-        private void UpdateStatusText(string text)
-        {
-            try
-            {
-                var statusText = this.FindName("DebugStatusText") as TextBlock;
-                if (statusText != null)
-                {
-                    statusText.Text = text;
-                }
-                _logger.LogDebug("Status: {Status}", text);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Chyba pri aktualizácii status textu");
-            }
-        }
-
         private void SubscribeToViewModel(AdvancedDataGridViewModel viewModel) { }
         private void UnsubscribeFromViewModel(AdvancedDataGridViewModel viewModel) { }
 
@@ -581,6 +967,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             try
             {
                 _logger?.LogDebug("Disposing AdvancedDataGridControl...");
+
+                // ✅ OPRAVENÉ: Správne cleanup všetkých zdrojov
+                _ = ClearAllAsync();
 
                 if (_viewModel != null)
                 {
