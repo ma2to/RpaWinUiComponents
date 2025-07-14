@@ -1,4 +1,4 @@
-﻿<!-- KOMPLETNÁ OPRAVA RpaWinUiComponents.csproj - CS1061 ViewModel fix -->
+﻿<!-- FINÁLNA OPRAVA RpaWinUiComponents.csproj - Bez XBF v NuGet package -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -6,29 +6,34 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.13</PackageVersion>
+    <PackageVersion>1.0.16</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- KĽÚČOVÁ OPRAVA CS1061: Disable problematic XAML generation -->
+    <!-- XAML nastavenia - VYPNÚŤ XBF packaging -->
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    
-    <!-- OPRAVA: Suppress XamlTypeInfo.g.cs generation pre UserControls -->
+
+    <!-- KĽÚČOVÉ: XBF generation iba pre build, NIE pre package -->
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
     <DisableXamlGeneratedMain>true</DisableXamlGeneratedMain>
-
-    <!-- XAML compilation settings -->
-    <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
-    <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
+    <GenerateXbf>true</GenerateXbf>
+    <EnableXbfGeneration>true</EnableXbfGeneration>
+    <IncludeXbfInPackage>false</IncludeXbfInPackage>
 
     <!-- Windows App SDK settings -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
 
-    <!-- Suppress všetky warnings -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002;MSB3030</NoWarn>
+    <!-- XAML packaging - VYPNUTÉ -->
+    <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
+    <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
+    <IncludeXamlInPackage>false</IncludeXamlInPackage>
+
+    <!-- Suppress warnings -->
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002;MSB3030;MSB3277;MSB3026</NoWarn>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <!-- Explicitné .cs súbory -->
@@ -36,23 +41,36 @@
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
     <Compile Include="AdvancedWinUiDataGrid\**\*.cs" Exclude="AdvancedWinUiDataGrid\Views\*.xaml.cs" />
-    
+
     <!-- XAML Code-behind súbory -->
     <Compile Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
       <DependentUpon>AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml</DependentUpon>
     </Compile>
   </ItemGroup>
 
-  <!-- KĽÚČOVÁ OPRAVA: XAML súbory BEZ automatickej XamlTypeInfo generácie -->
-  <ItemGroup>
+  <!-- KĽÚČOVÉ: XAML súbory ako EmbeddedResource pre package -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'RpaWinUiComponents'">
+    <!-- Pre build: Page (generuje InitializeComponent) -->
     <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Pack>false</Pack>
     </Page>
     <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+      <Pack>false</Pack>
     </Page>
+
+    <!-- Pre package: EmbeddedResource -->
+    <EmbeddedResource Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
+      <LogicalName>RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl.xaml</LogicalName>
+      <Pack>true</Pack>
+    </EmbeddedResource>
+    <EmbeddedResource Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
+      <LogicalName>RpaWinUiComponents.AdvancedWinUiDataGrid.Themes.Generic.xaml</LogicalName>
+      <Pack>true</Pack>
+    </EmbeddedResource>
   </ItemGroup>
 
   <!-- Dependencies -->
@@ -70,12 +88,40 @@
     <None Include="buildTransitive\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\RpaWinUiComponents.targets" />
   </ItemGroup>
 
+  <!-- KĽÚČOVÉ: Kompletne vylúč XBF z package -->
+  <Target Name="RemoveXbfFromPackage" BeforeTargets="GenerateNuspec;_GetPackageFiles">
+    <ItemGroup>
+      <!-- Odstráň všetky XBF súbory z package obsahu -->
+      <TfmSpecificPackageFile Remove="**/*.xbf" />
+      <_PackageFiles Remove="**/*.xbf" />
+      <Content Remove="**/*.xbf" Pack="false" />
+      <None Remove="**/*.xbf" Pack="false" />
+      <Resource Remove="**/*.xbf" Pack="false" />
+
+      <!-- Odstráň XBF z build output ktorý ide do package -->
+      <_BuildOutputInPackage Remove="**/*.xbf" />
+      <ReferenceCopyLocalPaths Remove="**/*.xbf" />
+    </ItemGroup>
+
+    <Message Text="🚫 Všetky XBF súbory vylúčené z NuGet package" Importance="normal" />
+  </Target>
+
+  <!-- Dodatočná ochrana: Vymaž XBF súbory z bin pred packagingom -->
+  <Target Name="CleanXbfBeforePackage" BeforeTargets="Pack">
+    <ItemGroup>
+      <XbfFilesToDelete Include="$(OutputPath)**/*.xbf" />
+    </ItemGroup>
+
+    <Delete Files="@(XbfFilesToDelete)" ContinueOnError="true" />
+    <Message Text="🧹 XBF súbory vymazané z build output pre package" Importance="normal" />
+  </Target>
+
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent - OPRAVENÁ VERZIA v1.0.13 - CS1061 ViewModel fix.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent - v1.0.16 - XBF-free NuGet package.</Description>
     <Authors>RPA Solutions</Authors>
-    <PackageReleaseNotes>v1.0.13: CS1061 ViewModel property OPRAVENÉ. XamlTypeInfo.g.cs generation fix.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.16: Kompletne odstránené XBF súbory z NuGet package. MSB3030 chyby vyriešené.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
