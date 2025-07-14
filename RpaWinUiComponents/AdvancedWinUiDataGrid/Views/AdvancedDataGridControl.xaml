@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- OPRAVENÝ AdvancedDataGridControl.xaml - Bez parsing chýb -->
+<!-- OPRAVENÉ AdvancedDataGridControl.xaml - S funkčným DataGrid UI -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,15 +16,15 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Debug Header -->
+        <!-- Header -->
         <Border Grid.Row="0" Background="#E3F2FD" Padding="10" BorderBrush="#2196F3" BorderThickness="0,0,0,1">
-            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - v1.0.18 (XAML FIXED)" 
+            <TextBlock Text="🔍 RpaWinUiComponents DataGrid - Funkčná verzia" 
                        FontSize="14" 
                        FontWeight="Bold" 
                        Foreground="#1976D2"/>
         </Border>
 
-        <!-- Main Content Area -->
+        <!-- HLAVNÝ DATAGRID KONTAJNER -->
         <ScrollViewer Grid.Row="1" 
                       x:Name="MainScrollViewer"
                       ZoomMode="Disabled"
@@ -35,52 +35,70 @@
                       Background="White"
                       Padding="10">
 
-            <Border Background="White" 
-                    BorderBrush="#E0E0E0" 
-                    BorderThickness="1" 
-                    CornerRadius="4">
+            <!-- DataGrid Container - TOTO CHÝBALO! -->
+            <StackPanel x:Name="DataGridContainer" 
+                       Background="White"
+                       MinWidth="600"
+                       MinHeight="300">
 
-                <!-- HLAVNÝ KONTAJNER PRE UI -->
-                <StackPanel x:Name="DataGridContainer" 
-                           Background="White"
-                           MinWidth="600"
-                           MinHeight="300">
+                <!-- Header Row -->
+                <Border Background="#F8F9FA" 
+                        BorderBrush="#DEE2E6" 
+                        BorderThickness="1"
+                        Margin="0,0,0,2">
+                    <StackPanel x:Name="HeaderContainer" 
+                               Orientation="Horizontal" 
+                               Height="40"
+                               Background="#F8F9FA"/>
+                </Border>
 
-                    <!-- Placeholder obsah -->
-                    <Border Background="#F5F5F5" 
-                            BorderBrush="#CCCCCC" 
-                            BorderThickness="1" 
-                            Padding="20"
-                            Margin="10">
-                        <StackPanel>
-                            <TextBlock Text="📊 DataGrid Container v1.0.18" 
-                                       FontSize="16" 
-                                       FontWeight="Bold" 
-                                       Foreground="#333333"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="UI sa vytvorí dynamicky po inicializácii (XAML FIXED)" 
-                                       FontSize="12" 
-                                       Foreground="#666666"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,5,0,0"/>
-                            <TextBlock Text="Žiadne XAML parsing chyby" 
-                                       FontSize="11" 
-                                       Foreground="#4CAF50"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,2,0,0"/>
-                        </StackPanel>
-                    </Border>
+                <!-- Data Rows Container -->
+                <ItemsRepeater x:Name="RowsRepeater">
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#E0E0E0" 
+                                    BorderThickness="0,0,0,1" 
+                                    Background="White">
+                                <StackPanel x:Name="RowContainer" 
+                                           Orientation="Horizontal" 
+                                           MinHeight="35"
+                                           Background="Transparent"/>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
 
-                </StackPanel>
-            </Border>
+                <!-- Empty State -->
+                <Border x:Name="EmptyStatePanel"
+                        Background="#F5F5F5" 
+                        BorderBrush="#CCCCCC" 
+                        BorderThickness="1" 
+                        Padding="20"
+                        Margin="10"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="📊 Žiadne dáta" 
+                                   FontSize="16" 
+                                   FontWeight="Bold" 
+                                   Foreground="#666666"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Načítajte dáta pomocou LoadDataAsync()" 
+                                   FontSize="12" 
+                                   Foreground="#999999"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
         </ScrollViewer>
 
-        <!-- Debug Footer -->
+        <!-- Footer -->
         <Border Grid.Row="2" Background="#F5F5F5" Padding="10" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock Text="🛠️ Status: " FontSize="11" Foreground="#666666"/>
                 <TextBlock x:Name="DebugStatusText" 
-                           Text="XAML parsing OK, čaká na inicializáciu..." 
+                           Text="Pripravené na dáta..." 
                            FontSize="11" 
                            Foreground="#2196F3" 
                            FontWeight="SemiBold"/>
@@ -88,4 +106,31 @@
         </Border>
 
     </Grid>
+
+    <!-- Resources pre UI -->
+    <UserControl.Resources>
+        <Style x:Key="CellBorderStyle" TargetType="Border">
+            <Setter Property="BorderBrush" Value="#DEE2E6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="MinWidth" Value="80"/>
+            <Setter Property="Background" Value="White"/>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="#495057"/>
+        </Style>
+
+        <Style x:Key="CellTextStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+    </UserControl.Resources>
+
 </UserControl>
