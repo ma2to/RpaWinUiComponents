@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- buildTransitive/RpaWinUiComponents.targets - Transitive dynamická kontrola -->
+<!-- buildTransitive/RpaWinUiComponents.targets - Finálna verzia -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <!-- ✅ Import main build targets -->
@@ -11,11 +11,17 @@
 
   <!-- ✅ Ensure proper framework references for consuming projects -->
   <Target Name="EnsureRpaWinUiComponentsFramework" BeforeTargets="ResolveAssemblyReferences">
-    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies" Importance="normal" />
+    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.18)" Importance="normal" />
 
     <!-- Force WinUI 3 usage if not already set -->
     <PropertyGroup Condition="'$(UseWinUI)' == ''">
       <UseWinUI>true</UseWinUI>
+    </PropertyGroup>
+
+    <!-- Ensure proper XBF settings for transitive dependencies -->
+    <PropertyGroup Condition="'$(UseWinUI)' == 'true'">
+      <EnableXbfGeneration Condition="'$(EnableXbfGeneration)' == ''">true</EnableXbfGeneration>
+      <GenerateXbf Condition="'$(GenerateXbf)' == ''">true</GenerateXbf>
     </PropertyGroup>
   </Target>
 

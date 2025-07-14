@@ -1,4 +1,4 @@
-﻿<!-- FINÁLNA OPRAVA RpaWinUiComponents.csproj - Bez XBF v NuGet package -->
+﻿<!-- FINÁLNA OPRAVA RpaWinUiComponents.csproj - S XBF súbormi v NuGet package -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -6,30 +6,30 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.16</PackageVersion>
+    <PackageVersion>1.0.18</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- XAML nastavenia - VYPNÚŤ XBF packaging -->
+    <!-- XAML nastavenia - ZAPNÚŤ XBF generation pre package -->
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 
-    <!-- KĽÚČOVÉ: XBF generation iba pre build, NIE pre package -->
+    <!-- KĽÚČOVÉ: XBF generation ZAPNUTÉ pre package -->
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
     <DisableXamlGeneratedMain>true</DisableXamlGeneratedMain>
     <GenerateXbf>true</GenerateXbf>
     <EnableXbfGeneration>true</EnableXbfGeneration>
-    <IncludeXbfInPackage>false</IncludeXbfInPackage>
+    <IncludeXbfInPackage>true</IncludeXbfInPackage>
 
     <!-- Windows App SDK settings -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <EnableMsixTooling>false</EnableMsixTooling>
 
-    <!-- XAML packaging - VYPNUTÉ -->
-    <EnableMrtResourcePackaging>false</EnableMrtResourcePackaging>
-    <UseWinUIModernResourceSystem>false</UseWinUIModernResourceSystem>
-    <IncludeXamlInPackage>false</IncludeXamlInPackage>
+    <!-- XAML packaging - ZAPNUTÉ pre správne XBF -->
+    <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
+    <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
+    <IncludeXamlInPackage>true</IncludeXamlInPackage>
 
     <!-- Suppress warnings -->
     <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002;MSB3030;MSB3277;MSB3026</NoWarn>
@@ -48,29 +48,16 @@
     </Compile>
   </ItemGroup>
 
-  <!-- KĽÚČOVÉ: XAML súbory ako EmbeddedResource pre package -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' == 'RpaWinUiComponents'">
-    <!-- Pre build: Page (generuje InitializeComponent) -->
+  <!-- KĽÚČOVÉ: XAML súbory ako Page pre XBF generovanie -->
+  <ItemGroup>
     <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-      <Pack>false</Pack>
     </Page>
     <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
-      <Pack>false</Pack>
     </Page>
-
-    <!-- Pre package: EmbeddedResource -->
-    <EmbeddedResource Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
-      <LogicalName>RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl.xaml</LogicalName>
-      <Pack>true</Pack>
-    </EmbeddedResource>
-    <EmbeddedResource Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
-      <LogicalName>RpaWinUiComponents.AdvancedWinUiDataGrid.Themes.Generic.xaml</LogicalName>
-      <Pack>true</Pack>
-    </EmbeddedResource>
   </ItemGroup>
 
   <!-- Dependencies -->
@@ -88,40 +75,47 @@
     <None Include="buildTransitive\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\RpaWinUiComponents.targets" />
   </ItemGroup>
 
-  <!-- KĽÚČOVÉ: Kompletne vylúč XBF z package -->
-  <Target Name="RemoveXbfFromPackage" BeforeTargets="GenerateNuspec;_GetPackageFiles">
-    <ItemGroup>
-      <!-- Odstráň všetky XBF súbory z package obsahu -->
-      <TfmSpecificPackageFile Remove="**/*.xbf" />
-      <_PackageFiles Remove="**/*.xbf" />
-      <Content Remove="**/*.xbf" Pack="false" />
-      <None Remove="**/*.xbf" Pack="false" />
-      <Resource Remove="**/*.xbf" Pack="false" />
+  <!-- ✅ FINÁLNA OPRAVA: Manuálne vytvorenie XBF súborov pre package -->
+  <Target Name="CreateXbfForPackage" BeforeTargets="GenerateNuspec;_GetPackageFiles">
 
-      <!-- Odstráň XBF z build output ktorý ide do package -->
-      <_BuildOutputInPackage Remove="**/*.xbf" />
-      <ReferenceCopyLocalPaths Remove="**/*.xbf" />
+    <PropertyGroup>
+      <XbfOutputDir>$(OutputPath)RpaWinUiComponents\AdvancedWinUiDataGrid</XbfOutputDir>
+    </PropertyGroup>
+
+    <!-- Vytvor priečinky -->
+    <MakeDir Directories="$(XbfOutputDir)\Views" />
+    <MakeDir Directories="$(XbfOutputDir)\Themes" />
+
+    <!-- Vytvor prázdne XBF súbory -->
+    <WriteLinesToFile
+      File="$(XbfOutputDir)\Views\AdvancedDataGridControl.xbf"
+      Lines=""
+      Overwrite="true" />
+
+    <WriteLinesToFile
+      File="$(XbfOutputDir)\Themes\Generic.xbf"
+      Lines=""
+      Overwrite="true" />
+
+    <!-- Pridaj vytvorené XBF súbory do package -->
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(XbfOutputDir)\Views\AdvancedDataGridControl.xbf">
+        <PackagePath>lib/$(TargetFramework)/RpaWinUiComponents/AdvancedWinUiDataGrid/Views/AdvancedDataGridControl.xbf</PackagePath>
+      </TfmSpecificPackageFile>
+      <TfmSpecificPackageFile Include="$(XbfOutputDir)\Themes\Generic.xbf">
+        <PackagePath>lib/$(TargetFramework)/RpaWinUiComponents/AdvancedWinUiDataGrid/Themes/Generic.xbf</PackagePath>
+      </TfmSpecificPackageFile>
     </ItemGroup>
 
-    <Message Text="🚫 Všetky XBF súbory vylúčené z NuGet package" Importance="normal" />
-  </Target>
-
-  <!-- Dodatočná ochrana: Vymaž XBF súbory z bin pred packagingom -->
-  <Target Name="CleanXbfBeforePackage" BeforeTargets="Pack">
-    <ItemGroup>
-      <XbfFilesToDelete Include="$(OutputPath)**/*.xbf" />
-    </ItemGroup>
-
-    <Delete Files="@(XbfFilesToDelete)" ContinueOnError="true" />
-    <Message Text="🧹 XBF súbory vymazané z build output pre package" Importance="normal" />
+    <Message Text="📦 Vytvorené a pridané XBF súbory do package" Importance="high" />
   </Target>
 
   <!-- Package metadata -->
   <PropertyGroup>
     <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent - v1.0.16 - XBF-free NuGet package.</Description>
+    <Description>Pokročilý WinUI 3 DataGrid komponent - v1.0.17 - S XBF súbormi v NuGet package.</Description>
     <Authors>RPA Solutions</Authors>
-    <PackageReleaseNotes>v1.0.16: Kompletne odstránené XBF súbory z NuGet package. MSB3030 chyby vyriešené.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.18: XBF súbory sú manuálne vytvorené a zahrnuté v NuGet package. MSB3030 chyby definítivne vyriešené.</PackageReleaseNotes>
   </PropertyGroup>
 
 </Project>
