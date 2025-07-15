@@ -1,4 +1,4 @@
-﻿// OPRAVA 1,3,4,6: Improved ValidationService - Memory + Performance + Error Handling
+﻿// OPRAVA: ImprovedValidationService - Správna implementácia IValidationService interface
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Services/Implementation/ImprovedValidationService.cs
 
 using System;
@@ -12,13 +12,11 @@ using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// Improved ValidationService s performance a memory optimizations
-    /// OPRAVA: Riešenie memory leaks, performance issues a proper error handling
+    /// OPRAVENÁ implementácia ValidationService s správnymi interface signatures
     /// </summary>
     public class ImprovedValidationService : IValidationService, IDisposable
     {
@@ -27,16 +25,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private readonly SemaphoreSlim _validationSemaphore;
         private readonly ConcurrentDictionary<string, CancellationTokenSource> _pendingValidations = new();
 
-        // OPRAVA 1: Memory Management - WeakReference tracking
-        private readonly ConcurrentDictionary<string, WeakReference<CellViewModel>> _cellReferences = new();
+        // Memory Management - WeakReference tracking
+        private readonly ConcurrentDictionary<string, WeakReference> _cellReferences = new();
         private readonly Timer _cleanupTimer;
         private bool _disposed;
 
-        // OPRAVA 4: Performance Optimization
+        // Performance Optimization
         private readonly ConcurrentDictionary<string, DateTime> _lastValidationTime = new();
         private readonly TimeSpan _minimumValidationInterval = TimeSpan.FromMilliseconds(50);
 
-        // OPRAVA 6: Error Handling & Recovery
+        // Error Handling & Recovery
         private int _consecutiveErrors;
         private DateTime _lastErrorTime = DateTime.MinValue;
         private readonly TimeSpan _errorCooldownPeriod = TimeSpan.FromSeconds(5);
@@ -49,34 +47,34 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             _logger = logger;
             _validationSemaphore = new SemaphoreSlim(maxConcurrentValidations, maxConcurrentValidations);
 
-            // OPRAVA 1: Memory cleanup timer
+            // Memory cleanup timer
             _cleanupTimer = new Timer(CleanupWeakReferences, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
 
             _logger.LogDebug("ImprovedValidationService initialized with {MaxConcurrent} concurrent validations", maxConcurrentValidations);
         }
 
-        #region Core Validation Methods (OPRAVA 3,4: Performance + Proper Validation)
+        #region IValidationService Implementation - OPRAVENÉ SIGNATURES
 
         /// <summary>
-        /// Async validácia bunky s performance optimizations
+        /// OPRAVA CS0535: Správny signature pre ValidateCellAsync
         /// </summary>
-        public async Task<ValidationResult> ValidateCellAsync(CellViewModel cell, RowViewModel row, CancellationToken cancellationToken = default)
+        public async Task<ValidationResult> ValidateCellAsync(DataGridCell cell, DataGridRow row, CancellationToken cancellationToken = default)
         {
             if (cell == null) throw new ArgumentNullException(nameof(cell));
             if (row == null) throw new ArgumentNullException(nameof(row));
 
             var stopwatch = Stopwatch.StartNew();
-            var cellKey = cell.CellKey;
+            var cellKey = $"{cell.RowIndex}_{cell.ColumnName}";
 
             try
             {
-                // OPRAVA 4: Performance - Skip validation if too frequent
+                // Performance - Skip validation if too frequent
                 if (ShouldSkipValidation(cellKey))
                 {
                     return ValidationResult.Success(cell.ColumnName, cell.RowIndex);
                 }
 
-                // OPRAVA 6: Error Handling - Circuit breaker pattern
+                // Error Handling - Circuit breaker pattern
                 if (IsInErrorCooldown())
                 {
                     _logger.LogWarning("Validation service in error cooldown, skipping validation for {CellKey}", cellKey);
@@ -84,7 +82,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 }
 
                 // Track cell reference for memory management
-                TrackCellReference(cell);
+                TrackCellReference(cellKey, cell);
 
                 // Cancel previous validation for this cell
                 CancelPendingValidation(cellKey);
@@ -114,7 +112,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     try
                     {
                         var applicableRules = rules
-                            .Where(r => r.ShouldApply(ConvertToDataGridRow(row)))
+                            .Where(r => r.ShouldApply(row))
                             .OrderByDescending(r => r.Priority)
                             .ToList();
 
@@ -130,11 +128,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                                 if (rule.IsAsync)
                                 {
                                     hasAsyncValidation = true;
-                                    isValid = await rule.ValidateAsync(cell.Value, ConvertToDataGridRow(row), cts.Token);
+                                    isValid = await rule.ValidateAsync(cell.Value, row, cts.Token);
                                 }
                                 else
                                 {
-                                    isValid = rule.Validate(cell.Value, ConvertToDataGridRow(row));
+                                    isValid = rule.Validate(cell.Value, row);
                                 }
 
                                 if (!isValid)
@@ -155,8 +153,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                             }
                         }
 
-                        // OPRAVA 3: Proper validation error handling
-                        cell.SetValidationErrors(nameof(CellViewModel.Value), errorMessages);
+                        // Set validation errors on cell
+                        cell.SetValidationErrors(errorMessages);
 
                         // Update last validation time
                         _lastValidationTime[cellKey] = DateTime.UtcNow;
@@ -202,9 +200,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         }
 
         /// <summary>
-        /// Batch validation s performance optimizations
+        /// OPRAVA CS0535: Správný signature pre ValidateRowAsync
         /// </summary>
-        public async Task<List<ValidationResult>> ValidateRowAsync(RowViewModel row, CancellationToken cancellationToken = default)
+        public async Task<List<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default)
         {
             if (row == null) throw new ArgumentNullException(nameof(row));
 
@@ -216,7 +214,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 if (row.IsEmpty)
                 {
                     // Clear all validation errors for empty row
-                    foreach (var cell in row.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
+                    foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
                     {
                         cell.ClearValidationErrors();
                     }
@@ -224,8 +222,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     return results;
                 }
 
-                // OPRAVA 4: Performance - Parallel validation with controlled concurrency
-                var cellsToValidate = row.Cells
+                // Parallel validation with controlled concurrency
+                var cellsToValidate = row.Cells.Values
                     .Where(c => !IsSpecialColumn(c.ColumnName) && _validationRules.ContainsKey(c.ColumnName))
                     .ToList();
 
@@ -239,7 +237,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnValidationCompleted(new ValidationCompletedEventArgs
                 {
-                    Row = ConvertToDataGridRow(row),
+                    Row = row,
                     Results = results,
                     TotalDuration = stopwatch.Elapsed,
                     AsyncValidationCount = results.Count(r => r.WasAsync)
@@ -259,12 +257,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         }
 
         /// <summary>
-        /// Bulk validation with progress reporting a performance optimizations
+        /// OPRAVA CS0535: Správný signature pre ValidateAllRowsAsync
         /// </summary>
-        public async Task<List<ValidationResult>> ValidateAllRowsAsync(IEnumerable<RowViewModel> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+        public async Task<List<ValidationResult>> ValidateAllRowsAsync(IEnumerable<DataGridRow> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
             var allResults = new List<ValidationResult>();
-            var dataRows = rows?.Where(r => !r.IsEmpty).ToList() ?? new List<RowViewModel>();
+            var dataRows = rows?.Where(r => !r.IsEmpty).ToList() ?? new List<DataGridRow>();
 
             if (dataRows.Count == 0)
             {
@@ -276,7 +274,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             {
                 _logger.LogInformation("Validating {RowCount} non-empty rows", dataRows.Count);
 
-                // OPRAVA 4: Performance - Adaptive batch size based on row count
+                // Adaptive batch size based on row count
                 var batchSize = CalculateOptimalBatchSize(dataRows.Count);
                 var totalRows = dataRows.Count;
                 var processedRows = 0;
@@ -285,7 +283,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 {
                     var batch = dataRows.Skip(i).Take(batchSize).ToList();
 
-                    // OPRAVA 4: Performance - Parallel processing within batch
+                    // Parallel processing within batch
                     var batchTasks = batch.Select(row => ValidateRowAsync(row, cancellationToken));
                     var batchResults = await Task.WhenAll(batchTasks);
 
@@ -303,7 +301,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    // OPRAVA 4: Performance - Brief pause between batches to prevent UI freezing
+                    // Brief pause between batches to prevent UI freezing
                     if (i + batchSize < dataRows.Count)
                     {
                         await Task.Delay(1, cancellationToken);
@@ -333,7 +331,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
         #endregion
 
-        #region Rule Management (ZACHOVANÉ: Existing API)
+        #region Rule Management (Existing API maintained)
 
         public void AddValidationRule(ValidationRule rule)
         {
@@ -348,7 +346,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     new List<ValidationRule> { rule },
                     (key, existingRules) =>
                     {
-                        // OPRAVA 1: Memory - Remove old rule with same name to prevent duplicates
+                        // Remove old rule with same name to prevent duplicates
                         existingRules.RemoveAll(r => r.RuleName == rule.RuleName);
                         existingRules.Add(rule);
                         return existingRules;
@@ -436,7 +434,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
         #endregion
 
-        #region Private Methods (OPRAVA 1,4,6: Memory + Performance + Error Handling)
+        #region Private Methods
 
         private bool ShouldSkipValidation(string cellKey)
         {
@@ -465,7 +463,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
         private int CalculateOptimalBatchSize(int totalRows)
         {
-            // OPRAVA 4: Performance - Adaptive batch size
             return totalRows switch
             {
                 <= 50 => 10,
@@ -475,10 +472,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             };
         }
 
-        private void TrackCellReference(CellViewModel cell)
+        private void TrackCellReference(string cellKey, DataGridCell cell)
         {
-            // OPRAVA 1: Memory Management - Use WeakReference
-            _cellReferences[cell.CellKey] = new WeakReference<CellViewModel>(cell);
+            _cellReferences[cellKey] = new WeakReference(cell);
         }
 
         private void CleanupWeakReferences(object? state)
@@ -489,7 +485,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 foreach (var kvp in _cellReferences)
                 {
-                    if (!kvp.Value.TryGetTarget(out _))
+                    if (!kvp.Value.IsAlive)
                     {
                         keysToRemove.Add(kvp.Key);
                     }
@@ -533,34 +529,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
-        // OPRAVA 7: Code Quality - Helper conversion methods
-        private static DataGridRow ConvertToDataGridRow(RowViewModel rowViewModel)
-        {
-            var dataGridRow = new DataGridRow(rowViewModel.RowIndex)
-            {
-                IsEvenRow = rowViewModel.IsEvenRow
-            };
-
-            foreach (var cellVM in rowViewModel.Cells)
-            {
-                var cell = new DataGridCell(cellVM.ColumnName, cellVM.DataType, cellVM.RowIndex, cellVM.ColumnIndex)
-                {
-                    Value = cellVM.Value,
-                    OriginalValue = cellVM.OriginalValue,
-                    IsReadOnly = cellVM.IsReadOnly
-                };
-
-                if (cellVM.HasValidationErrors)
-                {
-                    cell.SetValidationErrors(new[] { cellVM.ValidationErrorsText });
-                }
-
-                dataGridRow.AddCell(cellVM.ColumnName, cell);
-            }
-
-            return dataGridRow;
-        }
-
         #endregion
 
         #region Event Handlers
@@ -577,7 +545,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
         #endregion
 
-        #region IDisposable (OPRAVA 1: Proper Memory Management)
+        #region IDisposable Implementation
 
         public void Dispose()
         {

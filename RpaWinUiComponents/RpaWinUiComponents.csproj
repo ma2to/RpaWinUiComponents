@@ -38,23 +38,21 @@
 
   <!-- Explicitné .cs súbory -->
   <ItemGroup>
+    <Compile Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs" />
     <Compile Include="AdvancedWinUiDataGrid\Views\ImprovedAdvancedDataGridControl.xaml.cs" />
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
     <Compile Include="AdvancedWinUiDataGrid\**\*.cs" Exclude="AdvancedWinUiDataGrid\Views\*.xaml.cs" />
+    <None Remove="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml" />
     <None Remove="AdvancedWinUiDataGrid\Views\ImprovedAdvancedDataGridControl.xaml" />
 
     <!-- XAML Code-behind súbory -->
-    <Compile Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
-      <DependentUpon>AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml</DependentUpon>
-    </Compile>
   </ItemGroup>
 
   <!-- KĽÚČOVÉ: XAML súbory ako Page pre XBF generovanie -->
   <ItemGroup>
     <Page Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
     </Page>
     <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
