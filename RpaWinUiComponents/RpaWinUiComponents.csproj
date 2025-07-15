@@ -38,9 +38,11 @@
 
   <!-- Explicitné .cs súbory -->
   <ItemGroup>
+    <Compile Include="AdvancedWinUiDataGrid\Views\ImprovedAdvancedDataGridControl.xaml.cs" />
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
     <Compile Include="AdvancedWinUiDataGrid\**\*.cs" Exclude="AdvancedWinUiDataGrid\Views\*.xaml.cs" />
+    <None Remove="AdvancedWinUiDataGrid\Views\ImprovedAdvancedDataGridControl.xaml" />
 
     <!-- XAML Code-behind súbory -->
     <Compile Include="AdvancedWinUiDataGrid\Views\AdvancedDataGridControl.xaml.cs">
@@ -58,6 +60,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="AdvancedWinUiDataGrid\Views\ImprovedAdvancedDataGridControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
 
   <!-- Dependencies -->
@@ -74,6 +79,11 @@
     <None Include="build\RpaWinUiComponents.targets" Pack="true" PackagePath="build\RpaWinUiComponents.targets" />
     <None Include="buildTransitive\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\RpaWinUiComponents.targets" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="AdvancedWinUiDataGrid\Themes\EditableCell.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </None>
+  </ItemGroup>
 
   <!-- ✅ FINÁLNA OPRAVA: Manuálne vytvorenie XBF súborov pre package -->
   <Target Name="CreateXbfForPackage" BeforeTargets="GenerateNuspec;_GetPackageFiles">
@@ -87,15 +97,9 @@
     <MakeDir Directories="$(XbfOutputDir)\Themes" />
 
     <!-- Vytvor prázdne XBF súbory -->
-    <WriteLinesToFile
-      File="$(XbfOutputDir)\Views\AdvancedDataGridControl.xbf"
-      Lines=""
-      Overwrite="true" />
+    <WriteLinesToFile File="$(XbfOutputDir)\Views\AdvancedDataGridControl.xbf" Lines="" Overwrite="true" />
 
-    <WriteLinesToFile
-      File="$(XbfOutputDir)\Themes\Generic.xbf"
-      Lines=""
-      Overwrite="true" />
+    <WriteLinesToFile File="$(XbfOutputDir)\Themes\Generic.xbf" Lines="" Overwrite="true" />
 
     <!-- Pridaj vytvorené XBF súbory do package -->
     <ItemGroup>

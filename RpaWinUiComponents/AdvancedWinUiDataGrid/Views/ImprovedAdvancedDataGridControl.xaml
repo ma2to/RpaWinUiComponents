@@ -1,0 +1,344 @@
+<!-- OPRAVA 2,4,5,7: Improved AdvancedDataGridControl s Virtualizáciou + Performance + UI/UX -->
+<!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/ImprovedAdvancedDataGridControl.xaml -->
+
+<UserControl
+    x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.ImprovedAdvancedDataGridControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:RpaWinUiComponents.AdvancedWinUiDataGrid.Controls"
+    xmlns:viewmodels="using:RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels"
+    xmlns:converters="using:RpaWinUiComponents.AdvancedWinUiDataGrid.Converters"
+    mc:Ignorable="d"
+    Background="White">
+
+    <UserControl.Resources>
+        <!-- Converters -->
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <converters:ValidationErrorToBrushConverter x:Key="ValidationErrorToBrushConverter"/>
+        <converters:AlternatingRowBackgroundConverter x:Key="AlternatingRowBackgroundConverter"/>
+
+        <!-- OPRAVA 4: Performance - Virtualized ItemsRepeater Layout -->
+        <UniformGridLayout x:Key="HeaderLayout" 
+                           Orientation="Horizontal" 
+                           MinItemWidth="80" 
+                           MinItemHeight="40"/>
+
+        <StackLayout x:Key="RowsLayout" 
+                     Orientation="Vertical" 
+                     Spacing="1"/>
+
+        <!-- OPRAVA 5: Better UI/UX - Responsive Column Template -->
+        <DataTemplate x:Key="HeaderTemplate" x:DataType="viewmodels:ColumnDefinitionViewModel">
+            <Border Background="#F8F9FA" 
+                    BorderBrush="#DEE2E6" 
+                    BorderThickness="0,0,1,1"
+                    MinWidth="{x:Bind MinWidth}"
+                    Width="{x:Bind Width}"
+                    MaxWidth="{x:Bind MaxWidth}"
+                    Padding="8,4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="{x:Bind Header}"
+                               FontWeight="SemiBold"
+                               FontSize="12"
+                               Foreground="#495057"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+
+                    <!-- Resize Grip (OPRAVA 5: Better UX) -->
+                    <Border Grid.Column="1" 
+                            Width="4" 
+                            Background="Transparent"
+                            Visibility="{x:Bind AllowResize, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Cursor="SizeWestEast">
+                        <Rectangle Fill="#CCCCCC" Width="1" VerticalAlignment="Stretch"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- OPRAVA 2,3: Proper Data Binding - Row Template s EditableCell controls -->
+        <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
+            <Border Background="{x:Bind IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}}"
+                    BorderBrush="#DEE2E6"
+                    BorderThickness="1,0,1,1">
+
+                <!-- OPRAVA 4: Performance - Virtualized Row Content -->
+                <ItemsRepeater ItemsSource="{x:Bind Cells}"
+                               Layout="{StaticResource HeaderLayout}">
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodels:CellViewModel">
+                            <!-- OPRAVA 3,5: Custom EditableCell Control s proper validation -->
+                            <controls:EditableCell CellViewModel="{x:Bind}"
+                                                   MinWidth="60"
+                                                   MinHeight="32"
+                                                   EditingStarted="OnCellEditingStarted"
+                                                   EditingCompleted="OnCellEditingCompleted"
+                                                   EditingCancelled="OnCellEditingCancelled"
+                                                   KeyboardNavigation="OnCellKeyboardNavigation">
+
+                                <!-- OPRAVA 3: Conditional styling based on column type -->
+                                <controls:EditableCell.Style>
+                                    <Style TargetType="controls:EditableCell">
+                                        <Setter Property="Template" Value="{StaticResource {x:Type controls:EditableCell}}"/>
+                                    </Style>
+                                </controls:EditableCell.Style>
+                            </controls:EditableCell>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </Border>
+        </DataTemplate>
+
+        <!-- OPRAVA 6: Error Handling - Error Display Template -->
+        <DataTemplate x:Key="ErrorTemplate">
+            <Border Background="#FFF3CD" 
+                    BorderBrush="#FFEAA7" 
+                    BorderThickness="1" 
+                    CornerRadius="4" 
+                    Padding="16"
+                    Margin="8">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="⚠️ Error Loading Data" 
+                               FontSize="16" 
+                               FontWeight="Bold" 
+                               Foreground="#856404"/>
+                    <TextBlock x:Name="ErrorMessageText"
+                               FontSize="12" 
+                               Foreground="#856404"
+                               TextWrapping="Wrap"/>
+                    <Button Content="Retry" 
+                            Background="#17A2B8" 
+                            Foreground="White"
+                            Click="OnRetryClick"/>
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Status Bar -->
+            <RowDefinition Height="Auto"/>
+            <!-- Headers -->
+            <RowDefinition Height="*"/>
+            <!-- Data -->
+            <RowDefinition Height="Auto"/>
+            <!-- Progress -->
+            <RowDefinition Height="Auto"/>
+            <!-- Footer -->
+        </Grid.RowDefinitions>
+
+        <!-- Status Bar (OPRAVA 5: Better Status Display) -->
+        <Border Grid.Row="0" 
+                Background="#F8F9FA" 
+                BorderBrush="#DEE2E6" 
+                BorderThickness="0,0,0,1" 
+                Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="📊 Advanced DataGrid" 
+                               FontSize="14" 
+                               FontWeight="Bold" 
+                               Foreground="#1976D2" 
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="StatusText" 
+                               Text="Ready" 
+                               FontSize="12" 
+                               Foreground="#666" 
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <!-- ZACHOVANÉ: Copy/Paste buttons -->
+                    <Button x:Name="CopyButton" 
+                            Content="📋 Copy" 
+                            FontSize="10" 
+                            Padding="8,4"
+                            Click="OnCopyClick"/>
+                    <Button x:Name="PasteButton" 
+                            Content="📥 Paste" 
+                            FontSize="10" 
+                            Padding="8,4"
+                            Click="OnPasteClick"/>
+                    <Button x:Name="ValidateButton" 
+                            Content="✅ Validate" 
+                            FontSize="10" 
+                            Padding="8,4"
+                            Click="OnValidateClick"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Headers (OPRAVA 4: Performance - Virtualized Headers) -->
+        <Border Grid.Row="1" 
+                Background="#F8F9FA" 
+                BorderBrush="#DEE2E6" 
+                BorderThickness="1,0,1,1">
+            <ScrollViewer x:Name="HeaderScrollViewer"
+                          HorizontalScrollMode="Auto"
+                          VerticalScrollMode="Disabled"
+                          HorizontalScrollBarVisibility="Hidden"
+                          VerticalScrollBarVisibility="Disabled"
+                          ZoomMode="Disabled">
+                <ItemsRepeater x:Name="HeaderRepeater"
+                               ItemTemplate="{StaticResource HeaderTemplate}"
+                               Layout="{StaticResource HeaderLayout}"/>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="2">
+            <!-- Loading State -->
+            <StackPanel x:Name="LoadingPanel" 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Center"
+                       Visibility="Visible"
+                       Spacing="16">
+                <ProgressRing Width="48" Height="48" IsActive="True"/>
+                <TextBlock Text="Initializing DataGrid..." 
+                          FontSize="16" 
+                          Foreground="#666"
+                          HorizontalAlignment="Center"/>
+                <TextBlock x:Name="LoadingDetailText"
+                          Text="Preparing components..."
+                          FontSize="12" 
+                          Foreground="#999"
+                          HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- OPRAVA 4: Performance - Virtualized Data Display -->
+            <ScrollViewer x:Name="DataScrollViewer"
+                          Visibility="Collapsed"
+                          HorizontalScrollMode="Auto"
+                          VerticalScrollMode="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          ZoomMode="Disabled"
+                          ViewChanged="OnScrollViewChanged">
+                <ItemsRepeater x:Name="DataRepeater"
+                               ItemTemplate="{StaticResource RowTemplate}"
+                               Layout="{StaticResource RowsLayout}"
+                               Margin="1"/>
+            </ScrollViewer>
+
+            <!-- Empty State -->
+            <StackPanel x:Name="EmptyStatePanel"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Visibility="Collapsed"
+                       Spacing="16">
+                <TextBlock Text="📄 No Data" 
+                          FontSize="20" 
+                          FontWeight="Bold" 
+                          Foreground="#999"
+                          HorizontalAlignment="Center"/>
+                <TextBlock Text="Use LoadDataAsync() to load data" 
+                          FontSize="14" 
+                          Foreground="#BBB"
+                          HorizontalAlignment="Center"/>
+                <Button Content="Load Sample Data" 
+                        Background="#17A2B8" 
+                        Foreground="White"
+                        Padding="16,8"
+                        Click="OnLoadSampleDataClick"/>
+            </StackPanel>
+
+            <!-- Error State (OPRAVA 6: Error Handling) -->
+            <ContentPresenter x:Name="ErrorPresenter"
+                              ContentTemplate="{StaticResource ErrorTemplate}"
+                              Visibility="Collapsed"/>
+        </Grid>
+
+        <!-- Progress Bar (OPRAVA 5: Better UX) -->
+        <Border Grid.Row="3" 
+                x:Name="ProgressPanel"
+                Background="#F5F5F5" 
+                BorderBrush="#E0E0E0" 
+                BorderThickness="0,1,0,0" 
+                Padding="12,8"
+                Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock x:Name="ProgressText" 
+                              Text="Processing..." 
+                              FontSize="12" 
+                              Foreground="#333"/>
+                    <ProgressBar x:Name="ProgressBar" 
+                                Height="4" 
+                                Minimum="0" 
+                                Maximum="100" 
+                                Value="0"/>
+                </StackPanel>
+
+                <Button Grid.Column="1" 
+                        x:Name="CancelButton"
+                        Content="Cancel" 
+                        FontSize="10" 
+                        Padding="8,4"
+                        Click="OnCancelClick"/>
+            </Grid>
+        </Border>
+
+        <!-- Footer Status (OPRAVA 5: Better Status Information) -->
+        <Border Grid.Row="4" 
+                Background="#F5F5F5" 
+                BorderBrush="#E0E0E0" 
+                BorderThickness="0,1,0,0" 
+                Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                    <TextBlock x:Name="RowCountText" 
+                              Text="0 rows" 
+                              FontSize="11" 
+                              Foreground="#666"/>
+                    <TextBlock x:Name="ValidationText" 
+                              Text="" 
+                              FontSize="11" 
+                              Foreground="Red"/>
+                    <TextBlock x:Name="MemoryText"
+                              Text=""
+                              FontSize="11"
+                              Foreground="#999"/>
+                </StackPanel>
+
+                <!-- ZACHOVANÉ: Keyboard shortcuts info -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="F2: Edit | Enter: Next | Tab: Navigate | Ctrl+C/V: Copy/Paste" 
+                              FontSize="10" 
+                              Foreground="#999" 
+                              VerticalAlignment="Center"/>
+                    <Button x:Name="HelpButton" 
+                            Content="?" 
+                            Width="20" 
+                            Height="20"
+                            FontSize="10"
+                            Click="OnHelpClick"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
