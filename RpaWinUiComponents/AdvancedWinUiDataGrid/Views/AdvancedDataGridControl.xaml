@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- KOMPLETNE PREROBENÉ AdvancedDataGridControl.xaml - Používa ListView namiesto custom UI -->
+<!-- OPRAVENÝ AdvancedDataGridControl.xaml - Fixnuté WMC0035 chyby -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.AdvancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -55,17 +55,9 @@
             </StackPanel>
         </Border>
 
-        <!-- Main Content -->
-        <ScrollViewer Grid.Row="1" 
-                      x:Name="MainScrollViewer"
-                      ZoomMode="Disabled"
-                      HorizontalScrollMode="Auto"
-                      VerticalScrollMode="Auto"
-                      HorizontalScrollBarVisibility="Auto"
-                      VerticalScrollBarVisibility="Auto"
-                      Background="White">
-
-            <!-- Placeholder pre loading -->
+        <!-- Main Content - OPRAVENÉ: Jeden Grid kontajner namiesto duplicitného obsahu -->
+        <Grid Grid.Row="1" x:Name="MainContentGrid">
+            <!-- Loading Panel -->
             <StackPanel x:Name="LoadingPanel" 
                        HorizontalAlignment="Center" 
                        VerticalAlignment="Center"
@@ -78,50 +70,58 @@
                           Margin="0,16,0,0"/>
             </StackPanel>
 
-            <!-- Skutočný DataGrid kontajner -->
-            <Grid x:Name="DataGridContainer" 
-                  Visibility="Collapsed"
-                  Margin="8">
+            <!-- DataGrid Container s ScrollViewer -->
+            <ScrollViewer x:Name="MainScrollViewer"
+                          Visibility="Collapsed"
+                          ZoomMode="Disabled"
+                          HorizontalScrollMode="Auto"
+                          VerticalScrollMode="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto"
+                          Background="White">
 
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <!-- Header -->
-                    <RowDefinition Height="*"/>
-                    <!-- Data -->
-                </Grid.RowDefinitions>
+                <!-- ✅ OPRAVENÉ: Len jeden Content element v ScrollViewer -->
+                <Grid x:Name="DataGridContainer" Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Header -->
+                        <RowDefinition Height="*"/>
+                        <!-- Data -->
+                    </Grid.RowDefinitions>
 
-                <!-- Header Row -->
-                <Border Grid.Row="0" 
-                        Background="#F8F9FA" 
-                        BorderBrush="#DEE2E6" 
-                        BorderThickness="1"
-                        CornerRadius="4,4,0,0">
-                    <ScrollViewer x:Name="HeaderScrollViewer"
+                    <!-- Header Row -->
+                    <Border Grid.Row="0" 
+                            Background="#F8F9FA" 
+                            BorderBrush="#DEE2E6" 
+                            BorderThickness="1"
+                            CornerRadius="4,4,0,0">
+                        <ScrollViewer x:Name="HeaderScrollViewer"
+                                      HorizontalScrollMode="Auto"
+                                      VerticalScrollMode="Disabled"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      ZoomMode="Disabled">
+                            <StackPanel x:Name="HeaderPanel" 
+                                       Orientation="Horizontal" 
+                                       Background="#F8F9FA"
+                                       MinHeight="45"/>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Data Rows -->
+                    <ScrollViewer Grid.Row="1"
+                                  x:Name="DataScrollViewer"
                                   HorizontalScrollMode="Auto"
-                                  VerticalScrollMode="Disabled"
-                                  HorizontalScrollBarVisibility="Hidden"
-                                  VerticalScrollBarVisibility="Disabled"
+                                  VerticalScrollMode="Auto"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
                                   ZoomMode="Disabled">
-                        <StackPanel x:Name="HeaderPanel" 
-                                   Orientation="Horizontal" 
-                                   Background="#F8F9FA"
-                                   MinHeight="45"/>
+                        <StackPanel x:Name="DataRowsPanel" 
+                                   Background="White"/>
                     </ScrollViewer>
-                </Border>
+                </Grid>
 
-                <!-- Data Rows -->
-                <ScrollViewer Grid.Row="1"
-                              x:Name="DataScrollViewer"
-                              HorizontalScrollMode="Auto"
-                              VerticalScrollMode="Auto"
-                              HorizontalScrollBarVisibility="Auto"
-                              VerticalScrollBarVisibility="Auto"
-                              ZoomMode="Disabled">
-                    <StackPanel x:Name="DataRowsPanel" 
-                               Background="White"/>
-                </ScrollViewer>
-
-            </Grid>
+            </ScrollViewer>
 
             <!-- Empty State -->
             <StackPanel x:Name="EmptyStatePanel"
@@ -139,8 +139,7 @@
                           HorizontalAlignment="Center"
                           Margin="0,8,0,0"/>
             </StackPanel>
-
-        </ScrollViewer>
+        </Grid>
 
         <!-- Status Footer -->
         <Border Grid.Row="2" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="12,8">

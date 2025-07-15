@@ -1,4 +1,4 @@
-﻿// KOMPLETNE PREROBENÉ AdvancedDataGridControl.xaml.cs - Správna implementácia UI a validácie
+﻿// OPRAVENÝ AdvancedDataGridControl.xaml.cs - Fixnuté CS1061 a CS0029 chyby
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,7 +16,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
-// Internal typy
+// ✅ OPRAVENÉ: Len interné typy - WinUI aliasy sú už v GlobalUsings.cs
 using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig;
@@ -46,7 +46,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             try
             {
                 System.Diagnostics.Debug.WriteLine("🔧 Inicializujem AdvancedDataGridControl...");
-                this.InitializeComponent();
+                this.InitializeComponent(); // ✅ OPRAVENÉ: Teraz by malo fungovať po fixnutí XAML
                 System.Diagnostics.Debug.WriteLine("✅ InitializeComponent() úspešne zavolaný");
             }
             catch (Exception ex)
@@ -154,7 +154,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// ✅ OPRAVENÉ NAČÍTANIE DÁT - Skutočne zobrazuje všetky dáta súčasne
+        /// ✅ OPRAVENÉ NAČÍTANIE DÁT - S memory management a garbage collection
         /// </summary>
         public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
         {
@@ -169,8 +169,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 UpdateStatus($"Načítavam {data?.Count ?? 0} riadkov...");
                 _logger.LogInformation("📊 Načítavam {RowCount} riadkov dát", data?.Count ?? 0);
 
-                // Vyčistenie existujúcich dát (ale zachovanie UI štruktúry)
-                ClearCurrentData();
+                // ✅ KĽÚČOVÉ: Memory management - najprv vyčistiť pamäť
+                await ClearAllMemoryAsync();
+
+                // Force garbage collection po vyčistení
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+
+                _logger.LogDebug("🗑️ Pamäť vyčistená pred načítaním nových dát");
 
                 // Uloženie nových dát
                 _currentData.Clear();
@@ -189,7 +196,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 UpdateStatus($"Načítané: {_currentData.Count} riadkov dát");
                 UpdateRowCount(_currentData.Count, totalNeeded);
 
-                _logger.LogInformation("✅ Dáta načítané a zobrazené úspešne");
+                _logger.LogInformation("✅ Dáta načítané a zobrazené úspešne s optimalizovanou pamäťou");
 
                 // Aktualizácia ViewModel
                 if (_viewModel != null)
@@ -238,8 +245,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 UpdateStatus("Vymazávam všetky dáta...");
 
-                // ✅ OPRAVENÉ: Správne vyčistenie bez memory leaks
-                await ClearAllAsync();
+                // ✅ OPRAVENÉ: Použitie novej memory management metódy
+                await ClearAllMemoryAsync();
+
+                // Force garbage collection
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
 
                 if (_viewModel != null)
                 {
@@ -249,7 +261,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 UpdateStatus("Všetky dáta vymazané");
                 UpdateRowCount(0, 0);
 
-                _logger.LogInformation("✅ Všetky dáta vymazané bez memory leaks");
+                _logger.LogInformation("✅ Všetky dáta vymazané s optimalizovanou pamäťou");
             }
             catch (Exception ex)
             {
@@ -272,8 +284,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 UpdateStatus("Resetujem komponent...");
 
-                // ✅ OPRAVENÉ: Kompletný reset bez memory leaks
-                _ = ClearAllAsync();
+                // ✅ OPRAVENÉ: Kompletný reset s pamäťovým managementom
+                _ = ClearAllMemoryAsync();
+
+                // Force garbage collection
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
 
                 _columns.Clear();
                 _validationRules.Clear();
@@ -284,7 +301,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 _viewModel?.Reset();
 
-                _logger.LogInformation("✅ Komponent resetovaný");
+                _logger.LogInformation("✅ Komponent resetovaný s optimalizovanou pamäťou");
             }
             catch (Exception ex)
             {
@@ -297,11 +314,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         #region UI CREATION METHODS
 
         /// <summary>
-        /// ✅ Vytvorí header UI s správnymi šírkami stĺpcov
+        /// ✅ OPRAVENÉ: Vytvorí header UI s správnymi šírkami stĺpcov (CS0029 fix)
         /// </summary>
         private void CreateHeaderUI()
         {
-            var headerPanel = this.FindName("HeaderPanel") as StackPanel;
+            var headerPanel = this.FindName("HeaderPanel") as WinUIStackPanel;
             if (headerPanel == null)
             {
                 _logger.LogWarning("❌ HeaderPanel not found in XAML");
@@ -312,9 +329,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             foreach (var column in _columns)
             {
-                var headerBorder = new Border
+                var headerBorder = new WinUIBorder
                 {
-                    Width = column.Width,
+                    Width = column.Width, // ✅ OPRAVENÉ: double do double conversion
                     MinWidth = column.MinWidth,
                     BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
                     BorderThickness = new Thickness(0, 0, 1, 1),
@@ -339,7 +356,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         /// </summary>
         private void CreateInitialDataRows(int rowCount)
         {
-            var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+            var dataRowsPanel = this.FindName("DataRowsPanel") as WinUIStackPanel;
             if (dataRowsPanel == null)
             {
                 _logger.LogWarning("❌ DataRowsPanel not found");
@@ -357,24 +374,28 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// ✅ Vytvorí UI pre jeden riadok s správnym layoutom
+        /// ✅ OPRAVENÉ: Vytvorí UI pre jeden riadok s správnym layoutom (CS0029 fix)
         /// </summary>
         private void CreateRowUI(int rowIndex, Dictionary<string, object?> rowData)
         {
-            var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+            var dataRowsPanel = this.FindName("DataRowsPanel") as WinUIStackPanel;
             if (dataRowsPanel == null) return;
 
-            // Vytvor Grid pre riadok
-            var rowGrid = new Grid
+            // ✅ OPRAVENÉ: Použitie explicitného WinUIGrid aliasu
+            var rowGrid = new WinUIGrid
             {
                 MinHeight = 35,
                 Background = new SolidColorBrush(rowIndex % 2 == 0 ? Microsoft.UI.Colors.White : Microsoft.UI.Colors.WhiteSmoke)
             };
 
-            // Definície stĺpcov
+            // ✅ OPRAVENÉ: Definície stĺpcov s explicitným WinUIColumnDefinition
             for (int i = 0; i < _columns.Count; i++)
             {
-                rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(_columns[i].Width) });
+                var columnWidth = _columns[i].Width; // double hodnota
+                rowGrid.ColumnDefinitions.Add(new WinUIColumnDefinition
+                {
+                    Width = new GridLength(columnWidth) // ✅ OPRAVENÉ: Explicitný double do GridLength
+                });
             }
 
             // Vytvor bunky
@@ -408,12 +429,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _cellControls[cellKey] = cellTextBox;
 
                 // Pozícia v Grid
-                Grid.SetColumn(cellTextBox, colIndex);
+                WinUIGrid.SetColumn(cellTextBox, colIndex); // ✅ OPRAVENÉ: Použitie WinUIGrid aliasu
                 rowGrid.Children.Add(cellTextBox);
             }
 
             // Border okolo riadku
-            var rowBorder = new Border
+            var rowBorder = new WinUIBorder
             {
                 Child = rowGrid,
                 BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
@@ -464,7 +485,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         /// </summary>
         private async Task EnsureRowCount(int neededRowCount)
         {
-            var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+            var dataRowsPanel = this.FindName("DataRowsPanel") as WinUIStackPanel;
             if (dataRowsPanel == null) return;
 
             var currentRowCount = dataRowsPanel.Children.Count;
@@ -481,6 +502,99 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         });
                     }
                 });
+            }
+        }
+
+        /// <summary>
+        /// ✅ NOVÁ METÓDA: Kompletné vyčistenie pamäte pred načítaním nových dát
+        /// </summary>
+        private async Task ClearAllMemoryAsync()
+        {
+            try
+            {
+                _logger.LogDebug("🗑️ Začínam kompletné vyčistenie pamäte...");
+
+                await Task.Run(() =>
+                {
+                    // 1. Dispose všetkých timerov
+                    foreach (var timer in _validationTimers.Values)
+                    {
+                        timer?.Dispose();
+                    }
+                    _validationTimers.Clear();
+
+                    // 2. Clear validation state
+                    _validationInProgress.Clear();
+
+                    // 3. Unsubscribe events a dispose UI controls
+                    var cellKeysToRemove = _cellControls.Keys.ToList();
+                    foreach (var cellKey in cellKeysToRemove)
+                    {
+                        if (_cellControls.TryGetValue(cellKey, out var textBox))
+                        {
+                            this.DispatcherQueue.TryEnqueue(() =>
+                            {
+                                try
+                                {
+                                    // Unsubscribe events
+                                    textBox.TextChanged -= OnCellTextChanged;
+                                    textBox.LostFocus -= OnCellLostFocus;
+
+                                    // Clear tooltip
+                                    ToolTipService.SetToolTip(textBox, null);
+
+                                    // Clear tag
+                                    textBox.Tag = null;
+                                    textBox.Text = "";
+                                }
+                                catch (Exception ex)
+                                {
+                                    _logger.LogWarning(ex, "Chyba pri cleanup TextBox {CellKey}", cellKey);
+                                }
+                            });
+                        }
+                    }
+                    _cellControls.Clear();
+
+                    // 4. Clear UI panels
+                    this.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        try
+                        {
+                            var dataRowsPanel = this.FindName("DataRowsPanel") as WinUIStackPanel;
+                            if (dataRowsPanel != null)
+                            {
+                                // Dispose všetkých child elementov
+                                foreach (var child in dataRowsPanel.Children.ToList())
+                                {
+                                    if (child is WinUIBorder border && border.Child is WinUIGrid grid)
+                                    {
+                                        grid.Children.Clear();
+                                        grid.ColumnDefinitions.Clear();
+                                    }
+                                }
+                                dataRowsPanel.Children.Clear();
+                            }
+
+                            var headerPanel = this.FindName("HeaderPanel") as WinUIStackPanel;
+                            headerPanel?.Children.Clear();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Chyba pri cleanup UI panels");
+                        }
+                    });
+
+                    // 5. Clear data collections
+                    _currentData.Clear();
+                    _currentData.TrimExcess(); // Uvoľnenie excess kapacity
+                });
+
+                _logger.LogDebug("✅ Pamäť kompletne vyčistená");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba pri kompletnom vyčistení pamäte");
             }
         }
 
@@ -519,10 +633,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // Clear UI
                 this.DispatcherQueue.TryEnqueue(() =>
                 {
-                    var dataRowsPanel = this.FindName("DataRowsPanel") as StackPanel;
+                    var dataRowsPanel = this.FindName("DataRowsPanel") as WinUIStackPanel;
                     dataRowsPanel?.Children.Clear();
 
-                    var headerPanel = this.FindName("HeaderPanel") as StackPanel;
+                    var headerPanel = this.FindName("HeaderPanel") as WinUIStackPanel;
                     headerPanel?.Children.Clear();
                 });
 
@@ -621,11 +735,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         bool isValid;
                         if (rule.IsAsync)
                         {
-                            isValid = await rule.ValidateAsync(value, null);
+                            isValid = await rule.ValidateAsync(value, null!);
                         }
                         else
                         {
-                            isValid = rule.Validate(value, null);
+                            isValid = rule.Validate(value, null!);
                         }
 
                         if (!isValid)
@@ -734,33 +848,33 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private void ShowLoadingPanel()
         {
             var loadingPanel = this.FindName("LoadingPanel") as FrameworkElement;
-            var dataGridContainer = this.FindName("DataGridContainer") as FrameworkElement;
+            var mainScrollViewer = this.FindName("MainScrollViewer") as FrameworkElement;
             var emptyStatePanel = this.FindName("EmptyStatePanel") as FrameworkElement;
 
             if (loadingPanel != null) loadingPanel.Visibility = Visibility.Visible;
-            if (dataGridContainer != null) dataGridContainer.Visibility = Visibility.Collapsed;
+            if (mainScrollViewer != null) mainScrollViewer.Visibility = Visibility.Collapsed;
             if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Collapsed;
         }
 
         private void ShowDataGrid()
         {
             var loadingPanel = this.FindName("LoadingPanel") as FrameworkElement;
-            var dataGridContainer = this.FindName("DataGridContainer") as FrameworkElement;
+            var mainScrollViewer = this.FindName("MainScrollViewer") as FrameworkElement;
             var emptyStatePanel = this.FindName("EmptyStatePanel") as FrameworkElement;
 
             if (loadingPanel != null) loadingPanel.Visibility = Visibility.Collapsed;
-            if (dataGridContainer != null) dataGridContainer.Visibility = Visibility.Visible;
+            if (mainScrollViewer != null) mainScrollViewer.Visibility = Visibility.Visible;
             if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Collapsed;
         }
 
         private void ShowError()
         {
             var loadingPanel = this.FindName("LoadingPanel") as FrameworkElement;
-            var dataGridContainer = this.FindName("DataGridContainer") as FrameworkElement;
+            var mainScrollViewer = this.FindName("MainScrollViewer") as FrameworkElement;
             var emptyStatePanel = this.FindName("EmptyStatePanel") as FrameworkElement;
 
             if (loadingPanel != null) loadingPanel.Visibility = Visibility.Collapsed;
-            if (dataGridContainer != null) dataGridContainer.Visibility = Visibility.Collapsed;
+            if (mainScrollViewer != null) mainScrollViewer.Visibility = Visibility.Collapsed;
             if (emptyStatePanel != null) emptyStatePanel.Visibility = Visibility.Visible;
         }
 
@@ -969,13 +1083,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _logger?.LogDebug("Disposing AdvancedDataGridControl...");
 
                 // ✅ OPRAVENÉ: Správne cleanup všetkých zdrojov
-                _ = ClearAllAsync();
+                _ = ClearAllMemoryAsync();
 
                 if (_viewModel != null)
                 {
                     UnsubscribeFromViewModel(_viewModel);
                     _viewModel.Dispose();
-                    _viewModel = null;
+                    _viewModel = null!; // ✅ OPRAVENÉ CS8625: Null-forgiving operator
                 }
 
                 _disposed = true;
