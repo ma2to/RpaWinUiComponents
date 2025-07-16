@@ -358,12 +358,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             foreach (var column in _columns)
             {
+                // ✅ OPRAVENÉ: Header border s správnym Thickness
                 var headerBorder = new Border
                 {
                     Width = column.Width,
                     MinWidth = column.MinWidth,
                     BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
-                    BorderThickness = new Thickness(0, 0, 1, 1),
+                    BorderThickness = new Thickness(0, 0, 1, 1), // ✅ Left, Top, Right, Bottom
                     Background = new SolidColorBrush(Microsoft.UI.Colors.LightGray)
                 };
 
@@ -375,7 +376,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Foreground = new SolidColorBrush(Microsoft.UI.Colors.Black),
                     VerticalAlignment = VerticalAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Padding = new Thickness(8, 10)
+                    Padding = new Thickness(8, 10, 8, 10) // ✅ Left, Top, Right, Bottom
                 };
 
                 headerBorder.Child = headerText;
@@ -421,14 +422,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 Background = new SolidColorBrush(rowIndex % 2 == 0 ? Microsoft.UI.Colors.White : Microsoft.UI.Colors.WhiteSmoke)
             };
 
-            // Definície stĺpcov
+            // ✅ OPRAVA CS0029: Správne vytvorenie ColumnDefinition pre WinUI Grid
             for (int i = 0; i < _columns.Count; i++)
             {
                 var columnWidth = _columns[i].Width;
-                rowGrid.ColumnDefinitions.Add(new ColumnDefinition
-                {
-                    Width = new GridLength(columnWidth)
-                });
+
+                // ✅ RIEŠENIE: Vytvor WinUI ColumnDefinition s GridLength
+                var gridColumnDef = new Microsoft.UI.Xaml.Controls.ColumnDefinition();
+                gridColumnDef.Width = new GridLength(columnWidth, GridUnitType.Pixel);
+
+                rowGrid.ColumnDefinitions.Add(gridColumnDef);
             }
 
             // Vytvor bunky
@@ -448,9 +451,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 var cellTextBox = new TextBox
                 {
                     Text = cellValue,
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(1, 1, 1, 1),
                     BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
-                    Padding = new Thickness(8, 6),
+                    Padding = new Thickness(8, 6, 8, 6),
                     FontSize = 12,
                     VerticalAlignment = VerticalAlignment.Center,
                     Background = new SolidColorBrush(Microsoft.UI.Colors.White),
@@ -803,9 +806,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             if (errors.Count > 0)
             {
-                // Aplikuj error štýl
+                // ✅ OPRAVENÉ: Aplikuj error štýl s správnym Thickness
                 textBox.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Red);
-                textBox.BorderThickness = new Thickness(2);
+                textBox.BorderThickness = new Thickness(2, 2, 2, 2); // ✅ Left, Top, Right, Bottom
                 textBox.Background = new SolidColorBrush(Microsoft.UI.Colors.MistyRose);
 
                 // Nastav tooltip s chybami
@@ -819,9 +822,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
             else
             {
-                // Odstráň error štýl
+                // ✅ OPRAVENÉ: Odstráň error štýl s správnym Thickness
                 textBox.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray);
-                textBox.BorderThickness = new Thickness(1);
+                textBox.BorderThickness = new Thickness(1, 1, 1, 1); // ✅ Left, Top, Right, Bottom
                 textBox.Background = new SolidColorBrush(Microsoft.UI.Colors.White);
                 ToolTipService.SetToolTip(textBox, null);
             }

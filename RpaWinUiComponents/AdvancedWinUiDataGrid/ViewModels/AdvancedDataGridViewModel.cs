@@ -636,6 +636,25 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
+        #region UPDATED COMMANDS
+
+        private void InitializeCommands()
+        {
+            ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync);
+            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync);
+            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync);
+
+            // ✅ OPRAVENÉ: Commands používajú nové metódy
+            CopyCommand = new AsyncRelayCommand(CopySelectedCellsAsync);
+            PasteCommand = new AsyncRelayCommand(PasteFromClipboardAsync);
+
+            DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRowInternal);
+            ExportToDataTableCommand = new AsyncRelayCommand(async () => await ExportDataAsync());
+            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcuts);
+        }
+
+        #endregion
+
         #region Additional Public Methods - OPRAVA CS1503
 
         /// <summary>
@@ -1356,6 +1375,265 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         #endregion
+
+        #region COPY/PASTE OPERATIONS - CHÝBAJÚCE METÓDY
+
+        /// <summary>
+        /// ✅ OPRAVA CS1061: Kopíruje vybrané bunky do schránky
+        /// </summary>
+        public async Task CopySelectedCellsAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                _logger.LogDebug("🔄 Kopírujem vybrané bunky...");
+
+                var selectedCells = GetSelectedCells();
+                if (selectedCells.Count == 0)
+                {
+                    _logger.LogDebug("⚠️ Žiadne bunky nie sú vybrané");
+                    return;
+                }
+
+                await _clipboardService.CopySelectedCellsAsync(selectedCells);
+
+                _logger.LogInformation("✅ Skopírovaných {CellCount} buniek do schránky", selectedCells.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba pri kopírovaní buniek");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "CopySelectedCellsAsync"));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// ✅ OPRAVA CS1061: Vloží dáta zo schránky do aktuálnej pozície
+        /// </summary>
+        public async Task PasteFromClipboardAsync()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (!IsInitialized)
+                {
+                    _logger.LogWarning("⚠️ Komponent nie je inicializovaný");
+                    return;
+                }
+
+                _logger.LogDebug("🔄 Vkladám dáta zo schránky...");
+
+                // Získaj aktuálnu pozíciu z navigation service
+                var currentCell = _navigationService.CurrentCell;
+                if (currentCell == null)
+                {
+                    _logger.LogDebug("⚠️ Žiadna bunka nie je vybraná pre paste operáciu");
+                    return;
+                }
+
+                var startRowIndex = currentCell.RowIndex;
+                var startColumnIndex = currentCell.ColumnIndex;
+
+                // Vykonaj paste operáciu
+                var success = await _clipboardService.PasteToPositionAsync(
+                    startRowIndex,
+                    startColumnIndex,
+                    Rows.ToList(),
+                    Columns.ToList()
+                );
+
+                if (success)
+                {
+                    // Aplikuj throttling delay ak je povolený
+                    if (ThrottlingConfig.IsEnabled && ThrottlingConfig.PasteDelayMs > 0)
+                    {
+                        await Task.Delay(ThrottlingConfig.PasteDelayMs);
+                    }
+
+                    _logger.LogInformation("✅ Úspešne vložené dáta zo schránky na pozíciu [{Row},{Col}]",
+                        startRowIndex, startColumnIndex);
+                }
+                else
+                {
+                    _logger.LogDebug("⚠️ Paste operácia nebola úspešná (možno prázdna schránka)");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Chyba pri vkladaní zo schránky");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "PasteFromClipboardAsync"));
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// ✅ POMOCNÁ METÓDA: Získa zoznam vybraných buniek
+        /// </summary>
+        private List<DataGridCell> GetSelectedCells()
+        {
+            var selectedCells = new List<DataGridCell>();
+
+            try
+            {
+                foreach (var row in Rows)
+                {
+                    foreach (var cell in row.Cells.Values)
+                    {
+                        if (cell.IsSelected || cell.HasFocus)
+                        {
+                            selectedCells.Add(cell);
+                        }
+                    }
+                }
+
+                // Ak nie sú žiadne bunky explicitne vybrané, použij aktuálnu bunku
+                if (selectedCells.Count == 0)
+                {
+                    var currentCell = _navigationService.CurrentCell;
+                    if (currentCell != null)
+                    {
+                        selectedCells.Add(currentCell);
+                    }
+                }
+
+                _logger.LogTrace("Nájdených {Count} vybraných buniek", selectedCells.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chyba pri získavaní vybraných buniek");
+            }
+
+            return selectedCells;
+        }
+
+        /// <summary>
+        /// ✅ POMOCNÁ METÓDA: Označí bunku ako vybranú
+        /// </summary>
+        public void SelectCell(int rowIndex, string columnName)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                if (rowIndex < 0 || rowIndex >= Rows.Count)
+                {
+                    _logger.LogWarning("⚠️ Neplatný index riadku: {RowIndex}", rowIndex);
+                    return;
+                }
+
+                var row = Rows[rowIndex];
+                var cell = row.GetCell(columnName);
+                if (cell != null)
+                {
+                    // Odznač všetky ostatné bunky
+                    ClearAllSelections();
+
+                    // Vyber aktuálnu bunku
+                    cell.IsSelected = true;
+                    cell.HasFocus = true;
+
+                    _logger.LogTrace("✅ Bunka vybraná: {ColumnName}[{RowIndex}]", columnName, rowIndex);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chyba pri výbere bunky {ColumnName}[{RowIndex}]", columnName, rowIndex);
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "SelectCell"));
+            }
+        }
+
+        /// <summary>
+        /// ✅ POMOCNÁ METÓDA: Vyčistí všetky výbery buniek
+        /// </summary>
+        public void ClearAllSelections()
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                foreach (var row in Rows)
+                {
+                    foreach (var cell in row.Cells.Values)
+                    {
+                        cell.IsSelected = false;
+                        if (!_navigationService.CurrentCell?.Equals(cell) == true)
+                        {
+                            cell.HasFocus = false;
+                        }
+                    }
+                }
+
+                _logger.LogTrace("✅ Všetky výbery buniek vyčistené");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chyba pri čistení výberov buniek");
+            }
+        }
+
+        /// <summary>
+        /// ✅ POMOCNÁ METÓDA: Vyber rozsah buniek
+        /// </summary>
+        public void SelectCellRange(int startRow, int startCol, int endRow, int endCol)
+        {
+            ThrowIfDisposed();
+
+            try
+            {
+                // Normalizuj rozsah
+                var minRow = Math.Min(startRow, endRow);
+                var maxRow = Math.Max(startRow, endRow);
+                var minCol = Math.Min(startCol, endCol);
+                var maxCol = Math.Max(startCol, endCol);
+
+                // Validácia rozsahu
+                if (minRow < 0 || maxRow >= Rows.Count)
+                {
+                    _logger.LogWarning("⚠️ Neplatný rozsah riadkov: {MinRow}-{MaxRow}", minRow, maxRow);
+                    return;
+                }
+
+                var editableColumns = Columns.Where(c => !IsSpecialColumn(c.Name)).ToList();
+                if (minCol < 0 || maxCol >= editableColumns.Count)
+                {
+                    _logger.LogWarning("⚠️ Neplatný rozsah stĺpcov: {MinCol}-{MaxCol}", minCol, maxCol);
+                    return;
+                }
+
+                // Vyčisti existujúce výbery
+                ClearAllSelections();
+
+                // Vyber rozsah buniek
+                var selectedCount = 0;
+                for (int r = minRow; r <= maxRow; r++)
+                {
+                    var row = Rows[r];
+                    for (int c = minCol; c <= maxCol; c++)
+                    {
+                        var columnName = editableColumns[c].Name;
+                        var cell = row.GetCell(columnName);
+                        if (cell != null)
+                        {
+                            cell.IsSelected = true;
+                            selectedCount++;
+                        }
+                    }
+                }
+
+                _logger.LogDebug("✅ Vybraný rozsah buniek: {Count} buniek", selectedCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Chyba pri výbere rozsahu buniek");
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "SelectCellRange"));
+            }
+        }
+
+        #endregion
+
+
 
         #region Events & Property Changed
 

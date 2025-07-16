@@ -1,10 +1,10 @@
-﻿// OPRAVENÝ AdvancedWinUiDataGridControl.cs - MODULÁRNE RIEŠENIE BEZ ViewModel property
+﻿// OPRAVA CS0246: AdvancedWinUiDataGridControl.cs - Chýbajúci using
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/AdvancedWinUiDataGridControl.cs
 
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Controls;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Views;
+using RpaWinUiComponents.AdvancedWinUiDataGrid.Views; // ✅ KĽÚČOVÁ OPRAVA - pridaný using
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -20,18 +20,20 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
     /// <summary>
     /// HLAVNÝ VSTUPNÝ BOD - PUBLIC API pre AdvancedWinUiDataGrid komponent
-    /// OPRAVA CS1061: BEZ PUBLIC ViewModel property ktoré spôsobuje XamlTypeInfo.g.cs problémy
+    /// OPRAVA CS0246: Používa UnifiedAdvancedDataGridControl ako internal view
     /// </summary>
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
-        private readonly AdvancedDataGridControl _internalView;
+        // ✅ OPRAVA CS0246: Použitie správneho typu
+        private readonly UnifiedAdvancedDataGridControl _internalView;
         private bool _disposed = false;
         private bool _isInitialized = false;
         private readonly object _initializationLock = new object();
 
         public AdvancedWinUiDataGridControl()
         {
-            _internalView = new AdvancedDataGridControl();
+            // ✅ OPRAVA CS0246: Vytvorenie internal view
+            _internalView = new UnifiedAdvancedDataGridControl();
             Content = _internalView;
             _internalView.ErrorOccurred += OnInternalError;
         }
@@ -65,11 +67,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region HLAVNÉ PUBLIC API METÓDY - BEZ ViewModel property
-
-        /// <summary>
-        /// KĽÚČOVÁ OPRAVA CS1061: ŽIADNA ViewModel property - len API metódy
-        /// </summary>
+        #region HLAVNÉ PUBLIC API METÓDY
 
         /// <summary>
         /// JEDNODUCHÉ API: Inteligentné načítanie dát s automatickou detekciou stĺpcov a validácií
@@ -248,7 +246,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
         #endregion
 
-        #region AUTOMATICKÁ INICIALIZÁCIA (internal metódy) - používa PUBLIC typy
+        #region AUTOMATICKÁ INICIALIZÁCIA (internal metódy)
 
         private async Task AutoInitializeFromDataAsync(List<Dictionary<string, object?>>? data)
         {
@@ -484,7 +482,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             ThrowIfDisposed();
             lock (_initializationLock)
             {
-                return _isInitialized && _internalView?.InternalViewModel?.IsInitialized == true;
+                return _isInitialized;
             }
         }
 
