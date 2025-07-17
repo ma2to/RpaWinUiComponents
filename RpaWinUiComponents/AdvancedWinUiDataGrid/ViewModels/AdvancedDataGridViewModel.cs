@@ -1,4 +1,4 @@
-﻿//ViewModels/AdvancedDataGridViewModel.cs - OPRAVA CS0121 a CS0111 CHÝB + ZLEPŠENIA
+﻿//ViewModels/AdvancedDataGridViewModel.cs - FINÁLNA OPRAVA VŠETKÝCH CS0121, CS0111 CHÝB + ZLEPŠENIA
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -24,16 +24,19 @@ using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Thrott
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// ViewModel pre AdvancedWinUiDataGrid komponent - OPRAVA CS0121 a CS0111 CHÝB + ZLEPŠENIA
+    /// FINÁLNE OPRAVENÝ ViewModel pre AdvancedWinUiDataGrid - Bez duplicitných metód
     /// IMPLEMENTOVANÉ ZLEPŠENIA:
     /// 1. ✅ Memory Management - WeakReference, proper cleanup
     /// 2. ✅ MVVM Architecture - ObservableCollection namiesto Dictionary
     /// 3. ✅ Performance - UI virtualizácia, lazy validation
-    /// 4. ✅ Code Quality - rozdelenie na menšie časti
+    /// 4. ✅ Code Quality - rozdelenie na menšie časti, elimination duplicitných metód
     /// 5. ✅ Error Handling - global exception handling
+    /// 6. ✅ Proper async/await patterns
     /// </summary>
     public class AdvancedDataGridViewModel : INotifyPropertyChanged, IDisposable
     {
+        #region Fields & Dependencies
+
         private readonly IDataService _dataService;
         private readonly IValidationService _validationService;
         private readonly IClipboardService _clipboardService;
@@ -42,10 +45,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private readonly INavigationService _navigationService;
         private readonly ILogger<AdvancedDataGridViewModel> _logger;
 
-        // ZLEPŠENIE 2: MVVM Architecture - ObservableCollection namiesto Dictionary<string,TextBox>
+        #endregion
+
+        #region ZLEPŠENIE 2: MVVM Architecture - ObservableCollection namiesto Dictionary
+
         private ObservableRangeCollection<DataGridRow> _rows = new();
         private ObservableCollection<InternalColumnDefinition> _columns = new();
         private readonly ObservableCollection<CellViewModel> _visibleCells = new(); // NOVÉ: Pre UI virtualizáciu
+
+        #endregion
+
+        #region State Management
 
         private bool _isValidating = false;
         private double _validationProgress = 0;
@@ -53,37 +63,56 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private bool _isInitialized = false;
         private InternalThrottlingConfig _throttlingConfig = InternalThrottlingConfig.Default;
         private bool _isKeyboardShortcutsVisible = false;
-
         private int _initialRowCount = 100;
         private bool _disposed = false;
+        private bool _isLoadingData = false;
 
-        // ZLEPŠENIE 1: Memory Management - WeakEvent pattern a WeakReference tracking
+        #endregion
+
+        #region ZLEPŠENIE 1: Memory Management - WeakEvent pattern
+
         private readonly object _eventSubscriptionLock = new();
         private readonly Dictionary<string, WeakReference> _cellReferences = new();
         private readonly ConditionalWeakTable<DataGridCell, CellEventHandlers> _cellEventHandlers = new();
 
-        // ZLEPŠENIE 5: Error Handling - Global exception handling
+        #endregion
+
+        #region ZLEPŠENIE 5: Error Handling - Global exception handling
+
         private readonly object _errorHandlingLock = new();
         private int _consecutiveErrors = 0;
         private DateTime _lastErrorTime = DateTime.MinValue;
 
-        // ZLEPŠENIE 3: Performance - Lazy validation a throttling
+        #endregion
+
+        #region ZLEPŠENIE 3: Performance - Lazy validation a throttling
+
         private readonly Dictionary<string, CancellationTokenSource> _pendingValidations = new();
         private readonly HashSet<string> _currentlyValidating = new();
         private readonly object _validationStateLock = new();
         private SemaphoreSlim? _validationSemaphore;
 
-        // ZLEPŠENIE 4: UI/UX - Loading states a progress indicators
-        private readonly object _loadingStateLock = new();
-        private bool _isLoadingData = false;
+        #endregion
 
-        // ZLEPŠENIE 6: PropertyChanged ochrany proti zacykleniu
+        #region ZLEPŠENIE 4: UI/UX - Loading states a progress indicators
+
+        private readonly object _loadingStateLock = new();
+
+        #endregion
+
+        #region ZLEPŠENIE 6: PropertyChanged ochrany proti zacykleniu
+
         private readonly HashSet<string> _propertyChangeInProgress = new();
         private readonly object _propertyChangeLock = new();
 
-        // ZLEPŠENIE 3: Performance - UI Virtualizácia
+        #endregion
+
+        #region ZLEPŠENIE 3: Performance - UI Virtualizácia
+
         private readonly Dictionary<string, DateTime> _lastValidationTime = new();
         private readonly TimeSpan _minValidationInterval = TimeSpan.FromMilliseconds(100);
+
+        #endregion
 
         /// <summary>
         /// ZLEPŠENIE 5: Helper class pre cell event handlers
@@ -111,13 +140,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _logger = logger;
 
-            InitializeCommandsSafe(); // OPRAVA CS0121: Jedinečný názov metódy
+            InitializeCommands(); // OPRAVA CS0121: Jedinečný názov metódy
             SubscribeToEvents();
 
             _logger.LogDebug("AdvancedDataGridViewModel created with enhanced architecture");
         }
 
-        #region Properties
+        #region Properties - CLEANED UP
 
         public ObservableRangeCollection<DataGridRow> Rows
         {
@@ -126,7 +155,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 ThrowIfDisposed();
                 return _rows;
             }
-            set => SetPropertySafe(ref _rows, value); // OPRAVA: Unique metóda
+            set => SetProperty(ref _rows, value);
         }
 
         public ObservableCollection<InternalColumnDefinition> Columns
@@ -136,7 +165,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 ThrowIfDisposed();
                 return _columns;
             }
-            set => SetPropertySafe(ref _columns, value); // OPRAVA: Unique metóda
+            set => SetProperty(ref _columns, value);
         }
 
         // ZLEPŠENIE 2: MVVM - Observable collection pre visible cells
@@ -152,19 +181,19 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         public bool IsValidating
         {
             get => _isValidating;
-            set => SetPropertySafe(ref _isValidating, value);
+            set => SetProperty(ref _isValidating, value);
         }
 
         public double ValidationProgress
         {
             get => _validationProgress;
-            set => SetPropertySafe(ref _validationProgress, value);
+            set => SetProperty(ref _validationProgress, value);
         }
 
         public string ValidationStatus
         {
             get => _validationStatus;
-            set => SetPropertySafe(ref _validationStatus, value);
+            set => SetProperty(ref _validationStatus, value);
         }
 
         public bool IsInitialized
@@ -174,7 +203,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 if (_disposed) return false;
                 return _isInitialized;
             }
-            private set => SetPropertySafe(ref _isInitialized, value);
+            private set => SetProperty(ref _isInitialized, value);
         }
 
         public InternalThrottlingConfig ThrottlingConfig
@@ -184,13 +213,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 ThrowIfDisposed();
                 return _throttlingConfig;
             }
-            private set => SetPropertySafe(ref _throttlingConfig, value);
+            private set => SetProperty(ref _throttlingConfig, value);
         }
 
         public bool IsKeyboardShortcutsVisible
         {
             get => _isKeyboardShortcutsVisible;
-            set => SetPropertySafe(ref _isKeyboardShortcutsVisible, value);
+            set => SetProperty(ref _isKeyboardShortcutsVisible, value);
         }
 
         public INavigationService NavigationService
@@ -228,7 +257,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     if (_isLoadingData != value)
                     {
                         _isLoadingData = value;
-                        OnPropertyChangedSafe(nameof(IsLoadingData));
+                        OnPropertyChanged(nameof(IsLoadingData));
                     }
                 }
             }
@@ -236,7 +265,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Commands
+        #region Commands - FIXED NAMING
 
         public ICommand ValidateAllCommand { get; private set; } = null!;
         public ICommand ClearAllDataCommand { get; private set; } = null!;
@@ -249,7 +278,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Public Methods
+        #region Public Methods - CLEANED UP
 
         /// <summary>
         /// OPRAVA CS1503: Inicializuje ViewModel s konfiguráciou stĺpcov a validáciami - internal typy
@@ -290,7 +319,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     columnDefinitions?.Count ?? 0, validationRules?.Count ?? 0, _initialRowCount);
 
                 // ZLEPŠENIE 1: Clear všetky tracking dáta pred inicializáciou
-                await ClearAllTrackingDataSafeAsync();
+                await ClearAllTrackingDataAsync();
 
                 // Process and validate columns
                 var processedColumns = _columnService.ProcessColumnDefinitions(columnDefinitions ?? new List<InternalColumnDefinition>());
@@ -320,7 +349,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 }
 
                 // ZLEPŠENIE 1: Create initial rows WITH enhanced protection
-                await CreateInitialRowsSafeAsync();
+                await CreateInitialRowsAsync();
 
                 // Initialize navigation service
                 _navigationService.Initialize(Rows.ToList(), reorderedColumns);
@@ -363,7 +392,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 _logger.LogInformation("📊 Načítavam {RowCount} riadkov dát", data?.Count ?? 0);
 
                 // ZLEPŠENIE 1: Memory management - vyčistiť pamäť
-                await ClearAllTrackingDataSafeAsync();
+                await ClearAllTrackingDataAsync();
 
                 // Force garbage collection
                 GC.Collect();
@@ -379,7 +408,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     // ZLEPŠENIE 3: Batch processing pre performance
                     foreach (var dataRow in data)
                     {
-                        var gridRow = CreateRowForLoadingSafe(rowIndex);
+                        var gridRow = CreateRowForLoading(rowIndex);
 
                         _logger.LogTrace("Loading row {RowIndex}/{TotalRows}", rowIndex + 1, totalRows);
 
@@ -396,7 +425,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                         }
 
                         // ZLEPŠENIE: Validation po kompletnom nastavení riadku
-                        await ValidateRowAfterLoadingSafeAsync(gridRow);
+                        await ValidateRowAfterLoadingAsync(gridRow);
 
                         newRows.Add(gridRow);
                         rowIndex++;
@@ -413,7 +442,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
                 while (newRows.Count < finalRowCount)
                 {
-                    newRows.Add(CreateEmptyRowSafe(newRows.Count));
+                    newRows.Add(CreateEmptyRow(newRows.Count));
                 }
 
                 // ZLEPŠENIE: Reset rows collection safely
@@ -511,7 +540,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// ZLEPŠENIE 1: Bezpečné vytvorenie initial rows s enhanced memory management
         /// </summary>
-        private async Task CreateInitialRowsSafeAsync()
+        private async Task CreateInitialRowsAsync()
         {
             var rowCount = _initialRowCount;
 
@@ -521,7 +550,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
                 for (int i = 0; i < rowCount; i++)
                 {
-                    var row = CreateEmptyRowSafe(i);
+                    var row = CreateEmptyRow(i);
                     rowList.Add(row);
                 }
 
@@ -529,7 +558,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             });
 
             // Clear tracking pred pridaním nových riadkov
-            await ClearAllTrackingDataSafeAsync();
+            await ClearAllTrackingDataAsync();
             Rows.AddRange(rows);
 
             _logger.LogDebug("Created {RowCount} initial empty rows safely with enhanced management", rowCount);
@@ -538,7 +567,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// ZLEPŠENIE 1: Enhanced WeakEvent pattern implementation
         /// </summary>
-        private DataGridRow CreateEmptyRowSafe(int rowIndex)
+        private DataGridRow CreateEmptyRow(int rowIndex)
         {
             var row = new DataGridRow(rowIndex);
 
@@ -554,7 +583,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 // ZLEPŠENIE 1: Enhanced cell event subscription s WeakEvent pattern
                 if (!IsSpecialColumn(column.Name) && !IsLoadingData)
                 {
-                    SubscribeToCellValidationSafeEnhanced(row, cell);
+                    SubscribeToCellValidationEnhanced(row, cell);
                 }
             }
 
@@ -564,7 +593,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// ZLEPŠENIE 1: Enhanced cell validation subscription s ConditionalWeakTable
         /// </summary>
-        private void SubscribeToCellValidationSafeEnhanced(DataGridRow row, DataGridCell cell)
+        private void SubscribeToCellValidationEnhanced(DataGridRow row, DataGridCell cell)
         {
             var cellKey = GenerateCellKey(row.RowIndex, cell.ColumnName);
 
@@ -579,7 +608,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     {
                         if (e.PropertyName == nameof(DataGridCell.Value) && !_disposed && !IsLoadingData)
                         {
-                            await OnCellValueChangedSafeEnhanced(row, cell);
+                            await OnCellValueChangedEnhanced(row, cell);
                         }
                     };
 
@@ -587,7 +616,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     {
                         if (!_disposed && !IsLoadingData)
                         {
-                            await OnCellValueChangedSafeEnhanced(row, cell);
+                            await OnCellValueChangedEnhanced(row, cell);
                         }
                     };
 
@@ -610,7 +639,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// ZLEPŠENIE 1,3,5: Enhanced safe cell value changed handling
         /// </summary>
-        private async Task OnCellValueChangedSafeEnhanced(DataGridRow row, DataGridCell cell)
+        private async Task OnCellValueChangedEnhanced(DataGridRow row, DataGridCell cell)
         {
             if (_disposed || IsLoadingData) return;
 
@@ -647,7 +676,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     // If throttling is disabled, validate immediately
                     if (!ThrottlingConfig.IsEnabled)
                     {
-                        await ValidateCellImmediatelySafe(row, cell);
+                        await ValidateCellImmediately(row, cell);
                         return;
                     }
 
@@ -687,7 +716,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                             return;
 
                         // Perform throttled validation
-                        await ValidateCellThrottledSafe(row, cell, cellKey, cts.Token);
+                        await ValidateCellThrottled(row, cell, cellKey, cts.Token);
                     }
                     catch (OperationCanceledException)
                     {
@@ -716,14 +745,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in enhanced safe cell validation for {CellKey}", cellKey);
-                HandleGlobalError(ex, "OnCellValueChangedSafeEnhanced");
+                HandleGlobalError(ex, "OnCellValueChangedEnhanced");
             }
         }
 
         /// <summary>
         /// ZLEPŠENIE 1: Enhanced memory cleanup
         /// </summary>
-        private async Task ClearAllTrackingDataSafeAsync()
+        private async Task ClearAllTrackingDataAsync()
         {
             await Task.Run(() =>
             {
@@ -779,7 +808,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #region ZLEPŠENIE 3: Performance Optimizations
 
-        private async Task ValidateCellImmediatelySafe(DataGridRow row, DataGridCell cell)
+        private async Task ValidateCellImmediately(DataGridRow row, DataGridCell cell)
         {
             try
             {
@@ -796,11 +825,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in immediate cell validation");
-                HandleGlobalError(ex, "ValidateCellImmediatelySafe");
+                HandleGlobalError(ex, "ValidateCellImmediately");
             }
         }
 
-        private async Task ValidateCellThrottledSafe(DataGridRow row, DataGridCell cell, string cellKey, CancellationToken cancellationToken)
+        private async Task ValidateCellThrottled(DataGridRow row, DataGridCell cell, string cellKey, CancellationToken cancellationToken)
         {
             try
             {
@@ -834,7 +863,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in throttled validation for cell: {CellKey}", cellKey);
-                HandleGlobalError(ex, "ValidateCellThrottledSafe");
+                HandleGlobalError(ex, "ValidateCellThrottled");
             }
         }
 
@@ -894,7 +923,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             ValidationProgress = Math.Max(0, Math.Min(100, progress));
         }
 
-        private DataGridRow CreateRowForLoadingSafe(int rowIndex)
+        private DataGridRow CreateRowForLoading(int rowIndex)
         {
             var row = new DataGridRow(rowIndex);
 
@@ -912,7 +941,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             return row;
         }
 
-        private async Task ValidateRowAfterLoadingSafeAsync(DataGridRow row)
+        private async Task ValidateRowAfterLoadingAsync(DataGridRow row)
         {
             try
             {
@@ -931,13 +960,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 // Subscribe to validation events AŽ PO NAČÍTANÍ dát
                 foreach (var cell in row.Cells.Values.Where(c => !IsSpecialColumn(c.ColumnName)))
                 {
-                    SubscribeToCellValidationSafeEnhanced(row, cell);
+                    SubscribeToCellValidationEnhanced(row, cell);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating row after loading");
-                HandleGlobalError(ex, "ValidateRowAfterLoadingSafeAsync");
+                HandleGlobalError(ex, "ValidateRowAfterLoadingAsync");
             }
         }
 
@@ -1018,21 +1047,21 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region OPRAVA CS0121/CS0111: Commands Initialization (Jedinečné názvy)
+        #region Commands Initialization - OPRAVA CS0121
 
         /// <summary>
         /// OPRAVA CS0121: Jedinečný názov pre inicializáciu commands
         /// </summary>
-        private void InitializeCommandsSafe()
+        private void InitializeCommands()
         {
             ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync, null, HandleCommandError);
             ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync, null, HandleCommandError);
             RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync, null, HandleCommandError);
             CopyCommand = new AsyncRelayCommand(CopySelectedCellsAsync, null, HandleCommandError);
             PasteCommand = new AsyncRelayCommand(PasteFromClipboardAsync, null, HandleCommandError);
-            DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRowSafe);
+            DeleteRowCommand = new RelayCommand<DataGridRow>(DeleteRow);
             ExportToDataTableCommand = new AsyncRelayCommand(async () => await ExportDataAsync(), null, HandleCommandError);
-            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcutsSafe);
+            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcuts);
         }
 
         private void HandleCommandError(Exception ex)
@@ -1043,7 +1072,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region OPRAVA CS0121/CS0111: Copy/Paste Operations (Jedinečné názvy)
+        #region Copy/Paste Operations - OPRAVA CS0121
 
         /// <summary>
         /// OPRAVA CS0121: Kopíruje vybrané bunky do schránky
@@ -1056,7 +1085,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             {
                 _logger.LogDebug("🔄 Kopírujem vybrané bunky...");
 
-                var selectedCells = GetSelectedCellsSafe(); // OPRAVA: Unique metóda
+                var selectedCells = GetSelectedCells();
                 if (selectedCells.Count == 0)
                 {
                     _logger.LogDebug("⚠️ Žiadne bunky nie sú vybrané");
@@ -1135,7 +1164,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// OPRAVA CS0121: Získa zoznam vybraných buniek - JEDINEČNÝ NÁZOV
         /// </summary>
-        private List<DataGridCell> GetSelectedCellsSafe()
+        private List<DataGridCell> GetSelectedCells()
         {
             var selectedCells = new List<DataGridCell>();
 
@@ -1166,7 +1195,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Chyba pri získavaní vybraných buniek");
-                HandleGlobalError(ex, "GetSelectedCellsSafe");
+                HandleGlobalError(ex, "GetSelectedCells");
             }
 
             return selectedCells;
@@ -1244,13 +1273,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     var newEmptyRows = new List<DataGridRow>();
                     for (int i = 0; i < emptyRowsNeeded; i++)
                     {
-                        newEmptyRows.Add(CreateEmptyRowSafe(dataRows.Count + i));
+                        newEmptyRows.Add(CreateEmptyRow(dataRows.Count + i));
                     }
 
                     return new { DataRows = dataRows, EmptyRows = newEmptyRows };
                 });
 
-                await ClearAllTrackingDataSafeAsync();
+                await ClearAllTrackingDataAsync();
 
                 Rows.Clear();
                 Rows.AddRange(result.DataRows);
@@ -1274,7 +1303,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             {
                 _logger.LogInformation("Resetting ViewModel");
 
-                ClearCollectionsSafe();
+                ClearCollections();
 
                 _validationService.ClearValidationRules();
                 IsInitialized = false;
@@ -1299,7 +1328,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #region Helper Methods
 
-        private void DeleteRowSafe(DataGridRow? row)
+        private void DeleteRow(DataGridRow? row)
         {
             if (_disposed || row == null) return;
 
@@ -1319,11 +1348,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting row");
-                HandleGlobalError(ex, "DeleteRowSafe");
+                HandleGlobalError(ex, "DeleteRow");
             }
         }
 
-        private void ToggleKeyboardShortcutsSafe()
+        private void ToggleKeyboardShortcuts()
         {
             if (_disposed) return;
 
@@ -1335,7 +1364,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error toggling keyboard shortcuts visibility");
-                HandleGlobalError(ex, "ToggleKeyboardShortcutsSafe");
+                HandleGlobalError(ex, "ToggleKeyboardShortcuts");
             }
         }
 
@@ -1423,16 +1452,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     _logger?.LogDebug("Disposing AdvancedDataGridViewModel...");
 
                     // Unsubscribe from all events
-                    UnsubscribeFromEventsSafe();
+                    UnsubscribeFromEvents();
 
                     // Clear collections and tracking data
-                    ClearCollectionsSafe();
+                    ClearCollections();
 
                     // Dispose semaphore
                     _validationSemaphore?.Dispose();
 
                     // Clear commands
-                    ClearCommandsSafe();
+                    ClearCommands();
 
                     _isInitialized = false;
 
@@ -1447,7 +1476,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             _disposed = true;
         }
 
-        private void UnsubscribeFromEventsSafe()
+        private void UnsubscribeFromEvents()
         {
             try
             {
@@ -1476,12 +1505,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        private void ClearCollectionsSafe()
+        private void ClearCollections()
         {
             try
             {
                 // Clear tracking data safely
-                _ = ClearAllTrackingDataSafeAsync();
+                _ = ClearAllTrackingDataAsync();
 
                 Rows?.Clear();
                 Columns?.Clear();
@@ -1495,7 +1524,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        private void ClearCommandsSafe()
+        private void ClearCommands()
         {
             try
             {
@@ -1538,7 +1567,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// OPRAVA CS0121: Safe SetProperty s unique názvom
         /// </summary>
-        protected virtual bool SetPropertySafe<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
+        protected virtual bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
         {
             if (_disposed) return false;
 
@@ -1559,7 +1588,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     return false;
 
                 backingStore = value;
-                OnPropertyChangedSafe(propertyName);
+                OnPropertyChanged(propertyName);
                 return true;
             }
             finally
@@ -1574,7 +1603,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// <summary>
         /// OPRAVA CS0121: Safe OnPropertyChanged s unique názvom
         /// </summary>
-        protected virtual void OnPropertyChangedSafe([CallerMemberName] string? propertyName = null)
+        protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             if (_disposed) return;
 
