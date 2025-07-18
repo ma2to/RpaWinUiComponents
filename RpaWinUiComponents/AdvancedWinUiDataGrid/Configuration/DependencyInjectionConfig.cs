@@ -127,7 +127,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
             services.AddScoped<INavigationService, NavigationService>();
 
             // Register ViewModels
-            services.AddTransient<AdvancedDataGridViewModel>();
+            services.AddTransient<ViewModels.AdvancedDataGridViewModel>();
 
             return services;
         }
