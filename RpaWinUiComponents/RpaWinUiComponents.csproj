@@ -38,6 +38,7 @@
 
   <!-- Explicitné .cs súbory -->
   <ItemGroup>
+    <Compile Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml.cs" />
     <Compile Include="AdvancedWinUiDataGrid\Views\UnifiedAdvancedDataGridControl.xaml.cs" />
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
@@ -46,6 +47,7 @@
     <!-- XAML Code-behind súbory -->
   </ItemGroup>
   <ItemGroup>
+    <None Remove="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml" />
     <None Remove="AdvancedWinUiDataGrid\Views\UnifiedAdvancedDataGridControl.xaml" />
   </ItemGroup>
 
@@ -54,6 +56,9 @@
     <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="AdvancedWinUiDataGrid\Views\UnifiedAdvancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>

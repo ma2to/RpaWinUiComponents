@@ -1,4 +1,4 @@
-﻿// OPRAVA 2,4,7: Row Management + Performance + Code Quality
+﻿// ZLEPŠENIE 2,4,7: Row Management + Performance + Code Quality
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ViewModels/RowViewModel.cs
 
 using System;
@@ -14,8 +14,10 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Collections;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// ViewModel pre jeden riadok s performance optimizations
-    /// OPRAVA: Proper collection management a lazy loading
+    /// Enhanced ViewModel pre jeden riadok s performance optimizations
+    /// ZLEPŠENIE 2: Proper collection management a lazy loading
+    /// ZLEPŠENIE 4: Performance optimizations s virtualizáciou
+    /// OPRAVA CS0122: UpdateRowStatus je teraz public
     /// </summary>
     public class RowViewModel : INotifyPropertyChanged, IDisposable
     {
@@ -71,7 +73,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
-        /// Pre UI virtualizáciu (OPRAVA 4: Performance)
+        /// Pre UI virtualizáciu (ZLEPŠENIE 4: Performance)
         /// </summary>
         public bool IsVisible
         {
@@ -102,7 +104,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Cell Management (OPRAVA 4: Performance Optimized)
+        #region Cell Management (ZLEPŠENIE 4: Performance Optimized)
 
         /// <summary>
         /// Pridá bunku s performance optimalizáciou
@@ -267,7 +269,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Batch Operations (OPRAVA 4: Performance)
+        #region Batch Operations (ZLEPŠENIE 4: Performance)
 
         /// <summary>
         /// Bulk aktualizácia hodnôt (performance optimized)
@@ -323,7 +325,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Validation Management (OPRAVA 3: Proper Validation)
+        #region Validation Management (ZLEPŠENIE 3: Proper Validation)
 
         /// <summary>
         /// Async validácia celého riadku s performance optimalizáciou
@@ -357,7 +359,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         private async Task<bool> ValidateCellAsync(CellViewModel cell, CancellationToken cancellationToken)
         {
-            // Tu by sa volal ValidationService
+            // Tu by sa volal ValidationService cez parent ViewModel
             // Placeholder implementácia
             await Task.Delay(1, cancellationToken);
             return !cell.HasValidationErrors;
@@ -411,7 +413,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #region Private Methods
 
-        private void UpdateRowStatus()
+        /// <summary>
+        /// OPRAVA CS0122: UpdateRowStatus je teraz PUBLIC
+        /// </summary>
+        public void UpdateRowStatus()
         {
             try
             {
@@ -434,7 +439,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region IDisposable (OPRAVA 1: Memory Management)
+        #region IDisposable (ZLEPŠENIE 1: Memory Management)
 
         public void Dispose()
         {

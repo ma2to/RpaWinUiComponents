@@ -1,18 +1,20 @@
-﻿// OPRAVA 2,3,7: Proper MVVM Data Binding + Validation Support + Code Quality
+﻿// ZLEPŠENIE 3: CellViewModel s proper INotifyDataErrorInfo pattern
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ViewModels/CellViewModel.cs
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Microsoft.UI.Xaml;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// ViewModel pre jednu bunku s proper data binding a validation support
-    /// OPRAVA: Nahradí Dictionary<string,TextBox> pattern za clean MVVM
+    /// Enhanced ViewModel pre jednu bunku s proper INotifyDataErrorInfo validation pattern
+    /// ZLEPŠENIE 3: Implementuje WinUI 3 validation triggers a visual states
+    /// ZLEPŠENIE 1: Memory management s proper disposal
+    /// ZLEPŠENIE 2: Proper MVVM data binding
     /// </summary>
     public class CellViewModel : INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
     {
@@ -25,10 +27,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private readonly Dictionary<string, List<string>> _errors = new();
         private bool _disposed;
 
+        // ZLEPŠENIE 3: Validation state tracking
+        private bool _isValidating;
+        private DateTime _lastValidationTime = DateTime.MinValue;
+
         public CellViewModel(string columnName, Type dataType, int rowIndex, int columnIndex)
         {
-            ColumnName = columnName;
-            DataType = dataType;
+            ColumnName = columnName ?? throw new ArgumentNullException(nameof(columnName));
+            DataType = dataType ?? throw new ArgumentNullException(nameof(dataType));
             RowIndex = rowIndex;
             ColumnIndex = columnIndex;
             CellKey = $"{rowIndex}_{columnName}";
@@ -85,6 +91,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
+        /// ZLEPŠENIE 3: Validation state property
+        /// </summary>
+        public bool IsValidating
+        {
+            get => _isValidating;
+            set => SetProperty(ref _isValidating, value);
+        }
+
+        /// <summary>
         /// Formatted value for display
         /// </summary>
         public string DisplayValue
@@ -117,6 +132,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// Či je bunka prázdna
         /// </summary>
         public bool IsEmpty => Value == null || string.IsNullOrWhiteSpace(Value.ToString());
+
+        /// <summary>
+        /// ZLEPŠENIE 3: Či bola bunka nedávno validovaná (pre throttling)
+        /// </summary>
+        public bool WasRecentlyValidated(TimeSpan threshold)
+        {
+            return DateTime.UtcNow - _lastValidationTime < threshold;
+        }
 
         #endregion
 
@@ -191,15 +214,24 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
+        /// <summary>
+        /// ZLEPŠENIE 3: Označí bunku ako nedávno validovanú
+        /// </summary>
+        public void MarkAsValidated()
+        {
+            _lastValidationTime = DateTime.UtcNow;
+            IsValidating = false;
+        }
+
         #endregion
 
-        #region INotifyDataErrorInfo Implementation (OPRAVA 3: Proper Validation)
+        #region INotifyDataErrorInfo Implementation (ZLEPŠENIE 3: Proper Validation)
 
         public bool HasErrors => _errors.Count > 0;
 
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
 
-        public System.Collections.IEnumerable GetErrors(string? propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
             if (string.IsNullOrEmpty(propertyName))
                 return _errors.SelectMany(kvp => kvp.Value);
@@ -229,6 +261,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
             OnPropertyChanged(nameof(HasValidationErrors));
             OnPropertyChanged(nameof(ValidationErrorsText));
+
+            // ZLEPŠENIE 3: Mark as validated after setting errors
+            MarkAsValidated();
         }
 
         /// <summary>
@@ -246,6 +281,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
             OnPropertyChanged(nameof(HasValidationErrors));
             OnPropertyChanged(nameof(ValidationErrorsText));
+
+            // ZLEPŠENIE 3: Mark as validated after clearing errors
+            MarkAsValidated();
         }
 
         private void OnErrorsChanged(string propertyName)
@@ -269,6 +307,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         private void OnValueChanged()
         {
             OnPropertyChanged(nameof(DisplayValue));
+            OnPropertyChanged(nameof(IsEmpty));
             ValueChanged?.Invoke(this, Value);
         }
 
@@ -295,7 +334,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region IDisposable (OPRAVA 1: Memory Management)
+        #region IDisposable (ZLEPŠENIE 1: Memory Management)
 
         public void Dispose()
         {
@@ -322,6 +361,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             {
                 // Suppress disposal errors
             }
+        }
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(CellViewModel));
         }
 
         #endregion
