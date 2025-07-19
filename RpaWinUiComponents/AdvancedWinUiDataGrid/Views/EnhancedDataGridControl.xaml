@@ -1,4 +1,4 @@
-<!-- ZLEPŠENIE 2,4: Enhanced XAML s MVVM binding a ItemsRepeater -->
+<!-- KOMPLETNÝ EnhancedDataGridControl.xaml s opraveným zobrazením buniek -->
 <!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
 
 <UserControl
@@ -13,21 +13,31 @@
     Background="White">
 
     <UserControl.Resources>
-        <!-- ZLEPŠENIE 2: Converters for MVVM binding -->
+        <!-- =============================================== -->
+        <!-- CONVERTERS -->
+        <!-- =============================================== -->
+
+        <!-- BoolToVisibilityConverter s Inverse support -->
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
         <converters:ValidationErrorToBrushConverter x:Key="ValidationErrorToBrushConverter"/>
         <converters:AlternatingRowBackgroundConverter x:Key="AlternatingRowBackgroundConverter"/>
+        <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
 
-        <!-- ZLEPŠENIE 4: Optimized styles for performance -->
+        <!-- =============================================== -->
+        <!-- STYLES -->
+        <!-- =============================================== -->
+
+        <!-- Cell Border Style -->
         <Style x:Key="OptimizedCellStyle" TargetType="Border">
             <Setter Property="MinHeight" Value="35"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
-            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="White"/>
         </Style>
 
+        <!-- Header Cell Style -->
         <Style x:Key="HeaderCellStyle" TargetType="Border">
             <Setter Property="Background" Value="#F8F9FA"/>
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
@@ -36,25 +46,41 @@
             <Setter Property="MinHeight" Value="45"/>
         </Style>
 
-        <!-- ZLEPŠENIE 3: Validation TextBox style -->
-        <Style x:Key="ValidatedTextBoxStyle" TargetType="TextBox">
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="8,6"/>
+        <!-- Display TextBlock Style -->
+        <Style x:Key="CellDisplayTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="MinHeight" Value="35"/>
-            <Setter Property="Background" 
-                    Value="{Binding HasValidationErrors, Converter={StaticResource ValidationErrorToBrushConverter}}"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
-        <!-- ZLEPŠENIE 4: Row template for ItemsRepeater -->
+        <!-- Edit TextBox Style -->
+        <Style x:Key="CellEditTextBoxStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="BorderBrush" Value="#007ACC"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="Black"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="AcceptsReturn" Value="False"/>
+            <Setter Property="TextWrapping" Value="NoWrap"/>
+        </Style>
+
+        <!-- =============================================== -->
+        <!-- ROW TEMPLATE s OPRAVENÝM zobrazením buniek -->
+        <!-- =============================================== -->
+
         <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
             <Border Background="{Binding IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}}"
                     BorderBrush="#DEE2E6" 
-                    BorderThickness="1,0,1,1"
-                    Visibility="{Binding IsVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    BorderThickness="1,0,1,1">
 
-                <!-- ZLEPŠENIE 4: ItemsRepeater for cells within row -->
+                <!-- ItemsRepeater pre cells v riadku -->
                 <ItemsRepeater ItemsSource="{x:Bind Cells}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal"/>
@@ -66,13 +92,49 @@
                                     Width="150"
                                     MinWidth="80">
 
-                                <!-- ZLEPŠENIE 3: Validated TextBox with proper binding -->
-                                <TextBox Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         Style="{StaticResource ValidatedTextBoxStyle}"
-                                         IsReadOnly="{x:Bind IsReadOnly}"
-                                         BorderThickness="0"
-                                         Background="Transparent"
-                                         ToolTipService.ToolTip="{x:Bind ValidationErrorsText}"/>
+                                <!-- KĽÚČOVÁ OPRAVA: Grid s display a edit mode -->
+                                <Grid>
+                                    <!-- DISPLAY MODE: TextBlock pre zobrazenie hodnoty (vždy viditeľný) -->
+                                    <TextBlock x:Name="DisplayTextBlock"
+                                               Text="{x:Bind DisplayValue, Mode=OneWay}"
+                                               Style="{StaticResource CellDisplayTextStyle}"
+                                               Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
+                                               DoubleTapped="OnCellDoubleTapped"
+                                               Tapped="OnCellTapped"
+                                               RightTapped="OnCellRightTapped"/>
+
+                                    <!-- EDIT MODE: TextBox pre editáciu (viditeľný len pri editácii) -->
+                                    <TextBox x:Name="EditTextBox"
+                                             Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource CellEditTextBoxStyle}"
+                                             BorderBrush="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource ValidationErrorToBrushConverter}}"
+                                             IsReadOnly="{x:Bind IsReadOnly}"
+                                             Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                                             GotFocus="OnCellGotFocus"
+                                             LostFocus="OnCellLostFocus"
+                                             KeyDown="OnCellKeyDown"
+                                             TextChanged="OnCellTextChanged"
+                                             ToolTipService.ToolTip="{x:Bind ValidationErrorsText, Mode=OneWay}"/>
+
+                                    <!-- VALIDATION ERROR INDICATOR -->
+                                    <Border x:Name="ValidationBorder"
+                                            BorderBrush="Red"
+                                            BorderThickness="2"
+                                            Background="Transparent"
+                                            CornerRadius="2"
+                                            Visibility="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                                            IsHitTestVisible="False"
+                                            Opacity="0.7"/>
+
+                                    <!-- FOCUS INDICATOR -->
+                                    <Rectangle x:Name="FocusIndicator"
+                                               Stroke="#007ACC"
+                                               StrokeThickness="2"
+                                               StrokeDashArray="2,2"
+                                               Fill="Transparent"
+                                               Visibility="{x:Bind HasFocus, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                                               IsHitTestVisible="False"/>
+                                </Grid>
                             </Border>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
@@ -80,7 +142,10 @@
             </Border>
         </DataTemplate>
 
-        <!-- ZLEPŠENIE 5: Loading template -->
+        <!-- =============================================== -->
+        <!-- LOADING TEMPLATE -->
+        <!-- =============================================== -->
+
         <DataTemplate x:Key="LoadingTemplate">
             <StackPanel HorizontalAlignment="Center" 
                        VerticalAlignment="Center"
@@ -98,6 +163,10 @@
         </DataTemplate>
     </UserControl.Resources>
 
+    <!-- =============================================== -->
+    <!-- MAIN LAYOUT -->
+    <!-- =============================================== -->
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -108,7 +177,10 @@
             <!-- Status -->
         </Grid.RowDefinitions>
 
-        <!-- ZLEPŠENIE 5: Status/Title Bar -->
+        <!-- =============================================== -->
+        <!-- TITLE BAR -->
+        <!-- =============================================== -->
+
         <Border Grid.Row="0" 
                 Background="#F8F9FA" 
                 BorderBrush="#DEE2E6" 
@@ -128,7 +200,10 @@
             </StackPanel>
         </Border>
 
-        <!-- ZLEPŠENIE 5: Main Content with Loading State -->
+        <!-- =============================================== -->
+        <!-- MAIN CONTENT s LOADING STATE -->
+        <!-- =============================================== -->
+
         <Grid Grid.Row="1">
             <!-- Loading Panel -->
             <ContentPresenter ContentTemplate="{StaticResource LoadingTemplate}"
@@ -137,7 +212,7 @@
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"/>
 
-            <!-- ZLEPŠENIE 2,4: Main DataGrid with MVVM binding -->
+            <!-- Main DataGrid -->
             <ScrollViewer x:Name="MainScrollViewer"
                           Visibility="{x:Bind IsLoading, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse, Mode=OneWay}"
                           ZoomMode="Disabled"
@@ -149,7 +224,7 @@
                           Padding="8">
 
                 <StackPanel>
-                    <!-- ZLEPŠENIE 2: Header Row with MVVM binding -->
+                    <!-- HEADER ROW -->
                     <Border Background="#F8F9FA" 
                             BorderBrush="#DEE2E6" 
                             BorderThickness="1"
@@ -177,7 +252,7 @@
                         </ItemsRepeater>
                     </Border>
 
-                    <!-- ZLEPŠENIE 2,4: Data Rows with MVVM binding and virtualization -->
+                    <!-- DATA ROWS s OPRAVENÝM template -->
                     <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}"
                                   ItemTemplate="{StaticResource RowTemplate}">
                         <ItemsRepeater.Layout>
@@ -187,7 +262,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- ZLEPŠENIE 5: Empty State -->
+            <!-- EMPTY STATE -->
             <StackPanel x:Name="EmptyStatePanel"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
@@ -205,7 +280,10 @@
             </StackPanel>
         </Grid>
 
-        <!-- ZLEPŠENIE 5: Status Footer -->
+        <!-- =============================================== -->
+        <!-- STATUS FOOTER -->
+        <!-- =============================================== -->
+
         <Border Grid.Row="2" 
                 Background="#34495E" 
                 Padding="16,10">
@@ -231,7 +309,7 @@
                         <Run Text="{x:Bind ViewModel.Rows.Count, Mode=OneWay}"/>
                     </TextBlock>
 
-                    <!-- ZLEPŠENIE 5: Validation Progress -->
+                    <!-- VALIDATION PROGRESS (OPRAVENÉ s ProgressToPercentageConverter) -->
                     <StackPanel Orientation="Horizontal" 
                                Spacing="8"
                                Visibility="{x:Bind ViewModel.IsValidating, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
@@ -244,22 +322,15 @@
                                     Width="100"
                                     Height="4"
                                     VerticalAlignment="Center"/>
-                        <TextBlock Text="{x:Bind ViewModel.ValidationProgress, Mode=OneWay}"
-                                  Foreground="#F39C12" 
-                                  FontSize="11"
-                                  VerticalAlignment="Center">
-                            <TextBlock.Text>
-                                <Binding Path="ValidationProgress" Mode="OneWay">
-                                    <Binding.Converter>
-                                        <converters:ProgressToPercentageConverter/>
-                                    </Binding.Converter>
-                                </Binding>
-                            </TextBlock.Text>
-                        </TextBlock>
+                        <!-- OPRAVENÝ TextBlock - použitý váš ProgressToPercentageConverter -->
+                        <TextBlock Foreground="#F39C12" 
+                                   FontSize="11"
+                                   VerticalAlignment="Center"
+                                   Text="{Binding ViewModel.ValidationProgress, Mode=OneWay, Converter={StaticResource ProgressToPercentageConverter}}"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- ZLEPŠENIE 4: Keyboard Shortcuts Info -->
+                <!-- Keyboard Shortcuts Info -->
                 <StackPanel Grid.Column="1" 
                            Orientation="Horizontal" 
                            Spacing="16">
@@ -271,7 +342,10 @@
             </Grid>
         </Border>
 
-        <!-- ZLEPŠENIE 4: Keyboard Shortcuts Panel -->
+        <!-- =============================================== -->
+        <!-- KEYBOARD SHORTCUTS PANEL -->
+        <!-- =============================================== -->
+
         <Border Grid.Row="1"
                 Grid.RowSpan="2"
                 Background="#2C3E50"
@@ -290,22 +364,22 @@
 
                 <StackPanel Spacing="4">
                     <TextBlock Foreground="#BDC3C7" FontSize="11">
-                        <Run Text="Tab/Shift+Tab" Foreground="White"/> - Navigácia
+                        <Run Text="Double-click" Foreground="White"/> - Editácia bunky
                     </TextBlock>
                     <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="Enter" Foreground="White"/> - Potvrdenie
                     </TextBlock>
                     <TextBlock Foreground="#BDC3C7" FontSize="11">
-                        <Run Text="F2" Foreground="White"/> - Editácia
-                    </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="ESC" Foreground="White"/> - Zrušenie
                     </TextBlock>
                     <TextBlock Foreground="#BDC3C7" FontSize="11">
-                        <Run Text="Ctrl+C/V" Foreground="White"/> - Copy/Paste
+                        <Run Text="F2" Foreground="White"/> - Editácia
                     </TextBlock>
                     <TextBlock Foreground="#BDC3C7" FontSize="11">
-                        <Run Text="Delete" Foreground="White"/> - Vymazanie
+                        <Run Text="Tab" Foreground="White"/> - Navigácia
+                    </TextBlock>
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
+                        <Run Text="Ctrl+C/V" Foreground="White"/> - Copy/Paste
                     </TextBlock>
                 </StackPanel>
             </StackPanel>
