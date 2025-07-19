@@ -1,5 +1,5 @@
 <!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
-<!-- KOMPLETNÝ OPRAVENÝ XAML bez tooltips a s ItemsRepeater -->
+<!-- OPRAVENÉ: Explicitne vypnuté WinUI 3 automatic validation tooltips -->
 
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.EnhancedDataGridControl"
@@ -24,7 +24,7 @@
         <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
 
         <!-- =============================================== -->
-        <!-- STYLES -->
+        <!-- STYLES - OPRAVENÉ pre vypnutie tooltips -->
         <!-- =============================================== -->
 
         <!-- Cell Border Style -->
@@ -34,6 +34,8 @@
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="White"/>
+            <!-- OPRAVENÉ: Vypnutie tooltips na Border level -->
+            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- Header Cell Style -->
@@ -43,9 +45,10 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,10"/>
             <Setter Property="MinHeight" Value="45"/>
+            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
-        <!-- Display TextBlock Style -->
+        <!-- Display TextBlock Style - BEZ TOOLTIPS -->
         <Style x:Key="CellDisplayTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -54,9 +57,11 @@
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <!-- OPRAVENÉ: Len ToolTip property, IsEnabled neexistuje v WinUI 3 -->
+            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
-        <!-- Edit TextBox Style -->
+        <!-- Edit TextBox Style - OPRAVENÉ pre WinUI 3 -->
         <Style x:Key="CellEditTextBoxStyle" TargetType="TextBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
@@ -68,16 +73,20 @@
             <Setter Property="Padding" Value="6,4"/>
             <Setter Property="AcceptsReturn" Value="False"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
+
+            <!-- 🚫 KĽÚČOVÉ: Vypnutie WinUI 3 automatic validation tooltips -->
+            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- =============================================== -->
-        <!-- ROW TEMPLATE s ItemsRepeater BEZ TOOLTIPS -->
+        <!-- ROW TEMPLATE s ItemsRepeater - OPRAVENÉ BEZ TOOLTIPS -->
         <!-- =============================================== -->
 
         <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
             <Border Background="{x:Bind IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}, Mode=OneWay}"
                     BorderBrush="#DEE2E6" 
-                    BorderThickness="1,0,1,1">
+                    BorderThickness="1,0,1,1"
+                    ToolTipService.ToolTip="{x:Null}">
 
                 <!-- ItemsRepeater pre cells v riadku -->
                 <ItemsRepeater ItemsSource="{x:Bind Cells}">
@@ -89,18 +98,20 @@
                         <DataTemplate x:DataType="viewmodels:CellViewModel">
                             <Border Style="{StaticResource OptimizedCellStyle}"
                                     Width="150"
-                                    MinWidth="80">
+                                    MinWidth="80"
+                                    ToolTipService.ToolTip="{x:Null}">
 
-                                <Grid>
+                                <Grid ToolTipService.ToolTip="{x:Null}">
                                     <!-- DISPLAY MODE: TextBlock pre zobrazenie hodnoty -->
                                     <TextBlock x:Name="DisplayTextBlock"
                                                Text="{x:Bind DisplayValue, Mode=OneWay}"
                                                Style="{StaticResource CellDisplayTextStyle}"
                                                Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
                                                DoubleTapped="OnCellDoubleTapped"
-                                               Tapped="OnCellTapped"/>
+                                               Tapped="OnCellTapped"
+                                               ToolTipService.ToolTip="{x:Null}"/>
 
-                                    <!-- EDIT MODE: TextBox pre editáciu -->
+                                    <!-- EDIT MODE: TextBox pre editáciu - BEZ TOOLTIPS -->
                                     <TextBox x:Name="EditTextBox"
                                              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CellEditTextBoxStyle}"
@@ -110,7 +121,8 @@
                                              GotFocus="OnCellGotFocus"
                                              LostFocus="OnCellLostFocus"
                                              KeyDown="OnCellKeyDown"
-                                             TextChanged="OnCellTextChanged"/>
+                                             TextChanged="OnCellTextChanged"
+                                             ToolTipService.ToolTip="{x:Null}"/>
 
                                     <!-- VALIDATION ERROR INDICATOR - len vizuálny, BEZ tooltip -->
                                     <Border x:Name="ValidationBorder"
@@ -120,7 +132,8 @@
                                             CornerRadius="2"
                                             Visibility="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                                             IsHitTestVisible="False"
-                                            Opacity="0.7"/>
+                                            Opacity="0.7"
+                                            ToolTipService.ToolTip="{x:Null}"/>
 
                                     <!-- FOCUS INDICATOR -->
                                     <Rectangle x:Name="FocusIndicator"
@@ -129,7 +142,8 @@
                                                StrokeDashArray="2,2"
                                                Fill="Transparent"
                                                Visibility="{x:Bind HasFocus, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
-                                               IsHitTestVisible="False"/>
+                                               IsHitTestVisible="False"
+                                               ToolTipService.ToolTip="{x:Null}"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
