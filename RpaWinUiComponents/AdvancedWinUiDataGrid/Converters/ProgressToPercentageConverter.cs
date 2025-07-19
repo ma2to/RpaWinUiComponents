@@ -1,4 +1,6 @@
-﻿//Converters/ProgressToPercentageConverter.cs
+﻿// ZLEPŠENIE 5: Progress converter pre UI binding
+// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Converters/ProgressToPercentageConverter.cs
+
 using Microsoft.UI.Xaml.Data;
 using System;
 

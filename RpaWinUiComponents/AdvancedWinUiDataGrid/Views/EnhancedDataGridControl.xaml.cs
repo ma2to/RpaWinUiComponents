@@ -32,9 +32,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
     /// ✅ ZLEPŠENIE 5: Loading states a progress indicators
     /// ✅ ZLEPŠENIE 1: Proper memory management
     /// ✅ ZLEPŠENIE 6: Enhanced error handling
+    /// ✅ OPRAVA CS0549: Odstránený virtual z sealed typu
     /// </summary>
     public sealed partial class EnhancedDataGridControl : UserControl, IDisposable, INotifyPropertyChanged
     {
+        #region Fields & Dependencies
+
         private AdvancedDataGridViewModel? _viewModel;
         private readonly ILogger<EnhancedDataGridControl> _logger;
         private bool _disposed = false;
@@ -48,6 +51,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         // ZLEPŠENIE 1: Memory management
         private CancellationTokenSource? _cancellationTokenSource;
         private readonly Timer _memoryMonitorTimer;
+
+        // ZLEPŠENIE 1: WeakReference tracking pre cells
+        private readonly Dictionary<string, WeakReference> _cellReferences = new();
+        private readonly object _cellTrackingLock = new();
+
+        #endregion
+
+        #region Constructor
 
         public EnhancedDataGridControl()
         {
@@ -76,6 +87,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
             _logger.LogDebug("EnhancedDataGridControl vytvorený s MVVM pattern");
         }
+
+        #endregion
 
         #region Properties (ZLEPŠENIE 5: Loading States)
 
@@ -214,9 +227,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _logger.LogInformation("📊 Enhanced načítavam {RowCount} riadkov dát", data?.Count ?? 0);
 
                 // ZLEPŠENIE 1: Memory management
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
+                await TriggerMemoryCleanup();
 
                 LoadingProgress = 20;
 
@@ -388,10 +399,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // ZLEPŠENIE 1: Force cleanup if memory usage is high
                 if (memoryMB > 500) // 500MB threshold
                 {
-                    this.DispatcherQueue.TryEnqueue(() =>
+                    this.DispatcherQueue.TryEnqueue(async () =>
                     {
                         _logger.LogInformation("High memory usage detected ({MemoryMB} MB), triggering cleanup", memoryMB);
-                        TriggerMemoryCleanup();
+                        await TriggerMemoryCleanup();
                     });
                 }
             }
@@ -402,25 +413,59 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         }
 
         /// <summary>
-        /// ZLEPŠENIE 1: Trigger memory cleanup
+        /// ZLEPŠENIE 1: Trigger memory cleanup s WeakReference pattern
         /// </summary>
-        private void TriggerMemoryCleanup()
+        private async Task TriggerMemoryCleanup()
         {
             try
             {
-                // Cleanup ViewModel memory
-                _viewModel?.Reset();
+                await Task.Run(() =>
+                {
+                    // ZLEPŠENIE 1: Cleanup WeakReferences
+                    lock (_cellTrackingLock)
+                    {
+                        var keysToRemove = new List<string>();
+                        foreach (var kvp in _cellReferences)
+                        {
+                            if (!kvp.Value.IsAlive)
+                            {
+                                keysToRemove.Add(kvp.Key);
+                            }
+                        }
 
-                // Force aggressive garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
+                        foreach (var key in keysToRemove)
+                        {
+                            _cellReferences.Remove(key);
+                        }
+
+                        _logger.LogDebug("Cleaned up {Count} dead cell references", keysToRemove.Count);
+                    }
+
+                    // Cleanup ViewModel memory
+                    _viewModel?.Reset();
+
+                    // Force aggressive garbage collection
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+                });
 
                 _logger.LogInformation("Enhanced memory cleanup completed");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during enhanced memory cleanup");
+            }
+        }
+
+        /// <summary>
+        /// ZLEPŠENIE 1: Track cell s WeakReference pattern
+        /// </summary>
+        private void TrackCellReference(string cellKey, object cellObject)
+        {
+            lock (_cellTrackingLock)
+            {
+                _cellReferences[cellKey] = new WeakReference(cellObject);
             }
         }
 
@@ -483,9 +528,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 LoadingMessage = "Emergency reset completed";
 
                 // Force memory cleanup
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
+                _ = TriggerMemoryCleanup();
 
                 _logger.LogInformation("Emergency reset completed successfully");
             }
@@ -843,6 +886,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // Dispose timer
                 _memoryMonitorTimer?.Dispose();
 
+                // Clear cell references
+                lock (_cellTrackingLock)
+                {
+                    _cellReferences.Clear();
+                }
+
                 // Dispose ViewModel
                 if (_viewModel != null)
                 {
@@ -862,14 +911,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region INotifyPropertyChanged
+        #region INotifyPropertyChanged (OPRAVA CS0549: Odstránený virtual z sealed typu)
 
-        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
+        protected bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
         {
             if (EqualityComparer<T>.Default.Equals(backingStore, value))
                 return false;
