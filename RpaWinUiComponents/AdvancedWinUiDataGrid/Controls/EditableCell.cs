@@ -448,7 +448,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
             var validationState = hasErrors ? "ValidationError" : "Valid";
             VisualStateManager.GoToState(this, validationState, true);
 
-            // Update tooltip with validation errors
+            // ❌ ODSTRÁNENÉ: Update tooltip with validation errors
+            /*
             if (hasErrors && !string.IsNullOrEmpty(CellViewModel?.ValidationErrorsText))
             {
                 ToolTipService.SetToolTip(this, CellViewModel.ValidationErrorsText);
@@ -457,6 +458,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
             {
                 ToolTipService.SetToolTip(this, null);
             }
+            */
 
             // Update validation border
             if (_validationBorder != null)

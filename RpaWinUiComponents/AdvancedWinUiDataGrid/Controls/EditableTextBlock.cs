@@ -340,11 +340,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
                     _rootBorder.BorderThickness = new Thickness(2);
                     _rootBorder.Background = new SolidColorBrush(Microsoft.UI.Colors.MistyRose);
 
-                    // Set tooltip for validation errors
+                    // ❌ ODSTRÁNENÉ: Set tooltip for validation errors
+                    /*
                     if (!string.IsNullOrEmpty(ValidationErrorsText))
                     {
                         ToolTipService.SetToolTip(this, ValidationErrorsText);
                     }
+                    */
                 }
                 else
                 {
@@ -352,7 +354,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
                     _rootBorder.BorderThickness = new Thickness(1);
                     _rootBorder.Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent);
 
-                    ToolTipService.SetToolTip(this, null);
+                    // ❌ ODSTRÁNENÉ: Clear tooltip
+                    // ToolTipService.SetToolTip(this, null);
                 }
             }
 
