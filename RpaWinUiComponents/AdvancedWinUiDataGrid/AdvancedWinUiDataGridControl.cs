@@ -25,7 +25,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
     public class AdvancedWinUiDataGridControl : UserControl, IDisposable
     {
         // ✅ OPRAVA CS0246: Použitie správneho typu
-        private readonly UnifiedAdvancedDataGridControl _internalView;
+        private readonly EnhancedDataGridControl _internalView;
         private bool _disposed = false;
         private bool _isInitialized = false;
         private readonly object _initializationLock = new object();
@@ -33,7 +33,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         public AdvancedWinUiDataGridControl()
         {
             // ✅ OPRAVA CS0246: Vytvorenie internal view
-            _internalView = new UnifiedAdvancedDataGridControl();
+            _internalView = new EnhancedDataGridControl();
             Content = _internalView;
             _internalView.ErrorOccurred += OnInternalError;
         }
@@ -76,26 +76,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"📊 LoadDataAsync: {data?.Count ?? 0} riadkov");
-
                 if (!_isInitialized)
                 {
-                    System.Diagnostics.Debug.WriteLine("⚠️ Komponent nie je inicializovaný, spúšťam automatickú inicializáciu...");
                     await AutoInitializeFromDataAsync(data);
                 }
 
-                if (data == null || data.Count == 0)
-                {
-                    await LoadDataAsync(new DataTable());
-                    return;
-                }
-
+                // Delegovanie na EnhancedDataGridControl
                 await _internalView.LoadDataAsync(data);
-                System.Diagnostics.Debug.WriteLine("✅ LoadDataAsync úspešne dokončené");
+
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ LoadDataAsync chyba: {ex.Message}");
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
                 throw;
             }
@@ -492,9 +483,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
             try
             {
-                if (_internalView == null)
-                    return new DataTable();
-
                 return await _internalView.ExportToDataTableAsync();
             }
             catch (Exception ex)
@@ -510,15 +498,39 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 
             try
             {
-                if (_internalView == null)
-                    return false;
-
                 return await _internalView.ValidateAllRowsAsync();
             }
             catch (Exception ex)
             {
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
                 return false;
+            }
+        }
+
+        // Copy/Paste delegovanie na EnhancedDataGridControl
+        public async Task CopySelectedCellsAsync()
+        {
+            ThrowIfDisposed();
+            try
+            {
+                await _internalView.ViewModel?.CopySelectedCellsAsync();
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "CopySelectedCellsAsync"));
+            }
+        }
+
+        public async Task PasteFromClipboardAsync()
+        {
+            ThrowIfDisposed();
+            try
+            {
+                await _internalView.ViewModel?.PasteFromClipboardAsync();
+            }
+            catch (Exception ex)
+            {
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "PasteFromClipboardAsync"));
             }
         }
 

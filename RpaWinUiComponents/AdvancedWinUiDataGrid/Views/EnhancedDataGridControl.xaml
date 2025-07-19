@@ -1,5 +1,5 @@
-<!-- KOMPLETNÝ EnhancedDataGridControl.xaml s opraveným zobrazením buniek -->
 <!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
+<!-- KOMPLETNÝ OPRAVENÝ XAML bez tooltips a s ItemsRepeater -->
 
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.EnhancedDataGridControl"
@@ -17,7 +17,6 @@
         <!-- CONVERTERS -->
         <!-- =============================================== -->
 
-        <!-- BoolToVisibilityConverter s Inverse support -->
         <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:ObjectToStringConverter x:Key="ObjectToStringConverter"/>
         <converters:ValidationErrorToBrushConverter x:Key="ValidationErrorToBrushConverter"/>
@@ -72,11 +71,11 @@
         </Style>
 
         <!-- =============================================== -->
-        <!-- ROW TEMPLATE s OPRAVENÝM zobrazením buniek -->
+        <!-- ROW TEMPLATE s ItemsRepeater BEZ TOOLTIPS -->
         <!-- =============================================== -->
 
         <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
-            <Border Background="{Binding IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}}"
+            <Border Background="{x:Bind IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}, Mode=OneWay}"
                     BorderBrush="#DEE2E6" 
                     BorderThickness="1,0,1,1">
 
@@ -92,31 +91,28 @@
                                     Width="150"
                                     MinWidth="80">
 
-                                <!-- KĽÚČOVÁ OPRAVA: Grid s display a edit mode -->
                                 <Grid>
-                                    <!-- DISPLAY MODE: TextBlock pre zobrazenie hodnoty (vždy viditeľný) -->
+                                    <!-- DISPLAY MODE: TextBlock pre zobrazenie hodnoty -->
                                     <TextBlock x:Name="DisplayTextBlock"
                                                Text="{x:Bind DisplayValue, Mode=OneWay}"
                                                Style="{StaticResource CellDisplayTextStyle}"
                                                Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
                                                DoubleTapped="OnCellDoubleTapped"
-                                               Tapped="OnCellTapped"
-                                               RightTapped="OnCellRightTapped"/>
+                                               Tapped="OnCellTapped"/>
 
-                                    <!-- EDIT MODE: TextBox pre editáciu (viditeľný len pri editácii) -->
+                                    <!-- EDIT MODE: TextBox pre editáciu -->
                                     <TextBox x:Name="EditTextBox"
                                              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CellEditTextBoxStyle}"
                                              BorderBrush="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource ValidationErrorToBrushConverter}}"
-                                             IsReadOnly="{x:Bind IsReadOnly}"
+                                             IsReadOnly="{x:Bind IsReadOnly, Mode=OneWay}"
                                              Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                                              GotFocus="OnCellGotFocus"
                                              LostFocus="OnCellLostFocus"
                                              KeyDown="OnCellKeyDown"
-                                             TextChanged="OnCellTextChanged"
-                                             ToolTipService.ToolTip="{x:Bind ValidationErrorsText, Mode=OneWay}"/>
+                                             TextChanged="OnCellTextChanged"/>
 
-                                    <!-- VALIDATION ERROR INDICATOR -->
+                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny, BEZ tooltip -->
                                     <Border x:Name="ValidationBorder"
                                             BorderBrush="Red"
                                             BorderThickness="2"
@@ -151,11 +147,11 @@
                        VerticalAlignment="Center"
                        Spacing="16">
                 <ProgressRing Width="48" Height="48" IsActive="True"/>
-                <TextBlock Text="{Binding LoadingMessage}" 
+                <TextBlock Text="Načítava sa..." 
                           FontSize="16" 
                           Foreground="#7F8C8D"
                           HorizontalAlignment="Center"/>
-                <ProgressBar Value="{Binding LoadingProgress}"
+                <ProgressBar Value="0"
                             Maximum="100"
                             Width="200"
                             Height="4"/>
@@ -192,7 +188,8 @@
                            FontWeight="Bold" 
                            Foreground="#2C3E50"
                            VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding LoadingMessage, FallbackValue=' - Ready'}"
+                <TextBlock x:Name="LoadingMessageText"
+                           Text=" - Ready"
                            FontSize="14"
                            Foreground="#7F8C8D"
                            VerticalAlignment="Center"
@@ -201,20 +198,32 @@
         </Border>
 
         <!-- =============================================== -->
-        <!-- MAIN CONTENT s LOADING STATE -->
+        <!-- MAIN CONTENT -->
         <!-- =============================================== -->
 
         <Grid Grid.Row="1">
             <!-- Loading Panel -->
-            <ContentPresenter ContentTemplate="{StaticResource LoadingTemplate}"
-                             Content="{x:Bind}"
-                             Visibility="{x:Bind IsLoading, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}"
-                             HorizontalAlignment="Center"
-                             VerticalAlignment="Center"/>
+            <StackPanel x:Name="LoadingPanel"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Spacing="16"
+                       Visibility="Collapsed">
+                <ProgressRing Width="48" Height="48" IsActive="True"/>
+                <TextBlock x:Name="LoadingMessageTextBlock"
+                          Text="Načítava sa DataGrid..."
+                          FontSize="16"
+                          Foreground="#7F8C8D"
+                          HorizontalAlignment="Center"/>
+                <ProgressBar x:Name="LoadingProgressBar"
+                            Value="0"
+                            Maximum="100"
+                            Width="200"
+                            Height="4"/>
+            </StackPanel>
 
             <!-- Main DataGrid -->
             <ScrollViewer x:Name="MainScrollViewer"
-                          Visibility="{x:Bind IsLoading, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse, Mode=OneWay}"
+                          Visibility="Visible"
                           ZoomMode="Disabled"
                           HorizontalScrollMode="Auto"
                           VerticalScrollMode="Auto"
@@ -229,7 +238,7 @@
                             BorderBrush="#DEE2E6" 
                             BorderThickness="1"
                             CornerRadius="4,4,0,0">
-                        <ItemsRepeater ItemsSource="{x:Bind ViewModel.Columns, Mode=OneWay}">
+                        <ItemsRepeater x:Name="HeaderItemsRepeater">
                             <ItemsRepeater.Layout>
                                 <StackLayout Orientation="Horizontal"/>
                             </ItemsRepeater.Layout>
@@ -252,8 +261,8 @@
                         </ItemsRepeater>
                     </Border>
 
-                    <!-- DATA ROWS s OPRAVENÝM template -->
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Rows, Mode=OneWay}"
+                    <!-- DATA ROWS s ItemsRepeater -->
+                    <ItemsRepeater x:Name="DataRowsItemsRepeater"
                                   ItemTemplate="{StaticResource RowTemplate}">
                         <ItemsRepeater.Layout>
                             <StackLayout/>
@@ -267,7 +276,7 @@
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Spacing="16"
-                       Visibility="{x:Bind ViewModel.Rows.Count, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse, Mode=OneWay}">
+                       Visibility="Collapsed">
                 <TextBlock Text="📄 Žiadne dáta" 
                           FontSize="24" 
                           FontWeight="Bold" 
@@ -297,36 +306,38 @@
                 <StackPanel Grid.Column="0" 
                            Orientation="Horizontal" 
                            Spacing="24">
-                    <TextBlock Text="{x:Bind ViewModel.ValidationStatus, Mode=OneWay, FallbackValue='Ready'}" 
+                    <TextBlock x:Name="ValidationStatusText" 
+                              Text="Ready" 
                               Foreground="White" 
                               FontWeight="SemiBold"
                               VerticalAlignment="Center"/>
 
-                    <TextBlock Foreground="#BDC3C7" 
+                    <TextBlock x:Name="RowCountText"
+                              Foreground="#BDC3C7" 
                               FontSize="12"
-                              VerticalAlignment="Center">
-                        <Run Text="Riadky: "/>
-                        <Run Text="{x:Bind ViewModel.Rows.Count, Mode=OneWay}"/>
-                    </TextBlock>
+                              VerticalAlignment="Center"
+                              Text="0 riadkov"/>
 
-                    <!-- VALIDATION PROGRESS (OPRAVENÉ s ProgressToPercentageConverter) -->
-                    <StackPanel Orientation="Horizontal" 
+                    <!-- VALIDATION PROGRESS -->
+                    <StackPanel x:Name="ValidationProgressPanel"
+                               Orientation="Horizontal" 
                                Spacing="8"
-                               Visibility="{x:Bind ViewModel.IsValidating, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
+                               Visibility="Collapsed">
                         <TextBlock Text="Validácia:" 
                                   Foreground="#F39C12" 
                                   FontSize="12"
                                   VerticalAlignment="Center"/>
-                        <ProgressBar Value="{x:Bind ViewModel.ValidationProgress, Mode=OneWay}"
+                        <ProgressBar x:Name="ValidationProgressBar"
+                                    Value="0"
                                     Maximum="100"
                                     Width="100"
                                     Height="4"
                                     VerticalAlignment="Center"/>
-                        <!-- OPRAVENÝ TextBlock - použitý váš ProgressToPercentageConverter -->
-                        <TextBlock Foreground="#F39C12" 
+                        <TextBlock x:Name="ValidationProgressText"
+                                   Foreground="#F39C12" 
                                    FontSize="11"
                                    VerticalAlignment="Center"
-                                   Text="{Binding ViewModel.ValidationProgress, Mode=OneWay, Converter={StaticResource ProgressToPercentageConverter}}"/>
+                                   Text="0%"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -334,8 +345,8 @@
                 <StackPanel Grid.Column="1" 
                            Orientation="Horizontal" 
                            Spacing="16">
-                    <ToggleButton Content="⌨️ Shortcuts"
-                                 IsChecked="{x:Bind ViewModel.IsKeyboardShortcutsVisible, Mode=TwoWay}"
+                    <ToggleButton x:Name="KeyboardShortcutsToggle"
+                                 Content="⌨️ Shortcuts"
                                  FontSize="11"
                                  Padding="8,4"/>
                 </StackPanel>
@@ -346,7 +357,8 @@
         <!-- KEYBOARD SHORTCUTS PANEL -->
         <!-- =============================================== -->
 
-        <Border Grid.Row="1"
+        <Border x:Name="KeyboardShortcutsPanel"
+                Grid.Row="1"
                 Grid.RowSpan="2"
                 Background="#2C3E50"
                 Opacity="0.95"
@@ -355,7 +367,7 @@
                 CornerRadius="8,0,0,0"
                 Padding="16"
                 Margin="0,0,0,60"
-                Visibility="{x:Bind ViewModel.IsKeyboardShortcutsVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
+                Visibility="Collapsed">
             <StackPanel Spacing="8">
                 <TextBlock Text="⌨️ Klávesové skratky" 
                           FontWeight="Bold" 
