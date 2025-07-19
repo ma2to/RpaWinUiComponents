@@ -1,4 +1,4 @@
-﻿// EnhancedDataGridControl.xaml.cs - OPRAVENÝ FALLBACK BEZ TOOLTIPS
+﻿// EnhancedDataGridControl.xaml.cs - OPRAVENÝ BEZ DataGridContainer
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,7 +16,6 @@ using Windows.System;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration;
-using RpaWinUiComponents.AdvancedWinUiDataGrid.Converters;
 
 // Používame interné typy
 using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
@@ -35,7 +34,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private bool _isInitialized = false;
         private bool _isUsingFallback = false;
 
-        // OPRAVA: Loading states ako fields namiesto properties
+        // Loading states
         private bool _isLoading = false;
         private double _loadingProgress = 0;
         private string _loadingMessage = "Pripravuje sa...";
@@ -136,6 +135,157 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
+        #region OPRAVENÁ UI LOGIKA - BEZ DataGridContainer
+
+        /// <summary>
+        /// OPRAVA: UpdateUI metóda bez hľadania neexistujúceho DataGridContainer
+        /// </summary>
+        private void UpdateUI()
+        {
+            try
+            {
+                if (_isUsingFallback)
+                {
+                    // V fallback móde používaj fallback metódy
+                    if (ViewModel?.Columns != null && ViewModel.Rows != null)
+                    {
+                        UpdateFallbackHeader(ViewModel.Columns.ToList());
+                        UpdateFallbackData(ViewModel.Rows.ToList(), ViewModel.Columns.ToList());
+                    }
+                    return;
+                }
+
+                // OPRAVA: Používaj správne elementy ktoré existujú v XAML
+                // Update header - používaj HeaderItemsRepeater ktorý existuje
+                if (ViewModel?.Columns != null && HeaderItemsRepeater != null)
+                {
+                    HeaderItemsRepeater.ItemsSource = ViewModel.Columns;
+                    _logger.LogDebug("✅ Header updated with {ColumnCount} columns", ViewModel.Columns.Count);
+                }
+
+                // Update data rows - používaj DataRowsItemsRepeater ktorý existuje  
+                if (ViewModel?.Rows != null && DataRowsItemsRepeater != null)
+                {
+                    DataRowsItemsRepeater.ItemsSource = ViewModel.Rows;
+                    _logger.LogDebug("✅ Data rows updated with {RowCount} rows", ViewModel.Rows.Count);
+                }
+
+                // Update visibility states
+                UpdateVisibilityStates();
+
+                // Update status
+                UpdateStatusDisplay();
+
+                _logger.LogDebug("✅ UI updated successfully (normal mode)");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating UI");
+                HandleError(ex, "UpdateUI");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA: UpdateVisibilityStates bez DataGridContainer
+        /// </summary>
+        private void UpdateVisibilityStates()
+        {
+            try
+            {
+                if (ViewModel?.Rows == null) return;
+
+                var hasData = ViewModel.Rows.Any(r => !r.IsEmpty);
+
+                // Show/hide empty state panel
+                if (EmptyStatePanel != null)
+                {
+                    EmptyStatePanel.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
+                }
+
+                // Show/hide main content
+                if (MainScrollViewer != null)
+                {
+                    MainScrollViewer.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
+                }
+
+                _logger.LogDebug("✅ Visibility states updated - HasData: {HasData}", hasData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating visibility states");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA: OnControlLoaded bez hľadania DataGridContainer
+        /// </summary>
+        private void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _logger.LogDebug("🔧 EnhancedDataGridControl loaded, checking XAML elements...");
+
+                // OPRAVA: Skontroluj existujúce elementy namiesto neexistujúceho DataGridContainer
+                CheckAndCreateFallbackIfNeeded();
+
+                // Subscribe to ViewModel changes if available
+                if (ViewModel != null)
+                {
+                    UpdateUI();
+                }
+
+                _logger.LogDebug("✅ EnhancedDataGridControl loaded successfully (fallback: {IsUsingFallback})", _isUsingFallback);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error during control loaded");
+
+                // Emergency fallback
+                CreateEnhancedFallbackUI();
+                _isUsingFallback = true;
+
+                HandleError(ex, "OnControlLoaded");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA: CheckAndCreateFallbackIfNeeded bez DataGridContainer
+        /// </summary>
+        private void CheckAndCreateFallbackIfNeeded()
+        {
+            try
+            {
+                // OPRAVA: Kontroluj existujúce elementy namiesto neexistujúceho DataGridContainer
+                bool xamlElementsExist = HeaderItemsRepeater != null &&
+                                        DataRowsItemsRepeater != null &&
+                                        MainScrollViewer != null &&
+                                        EmptyStatePanel != null;
+
+                if (!xamlElementsExist)
+                {
+                    _logger.LogWarning("❌ XAML elements not found, creating fallback UI");
+                    _logger.LogDebug("Element check: HeaderItemsRepeater={HeaderExists}, DataRowsItemsRepeater={DataRowsExists}, MainScrollViewer={ScrollExists}, EmptyStatePanel={EmptyExists}",
+                        HeaderItemsRepeater != null, DataRowsItemsRepeater != null, MainScrollViewer != null, EmptyStatePanel != null);
+
+                    CreateEnhancedFallbackUI();
+                    _isUsingFallback = true;
+                }
+                else
+                {
+                    _logger.LogDebug("✅ All XAML elements found, using normal mode");
+                    _isUsingFallback = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking XAML elements, falling back to fallback UI");
+                CreateEnhancedFallbackUI();
+                _isUsingFallback = true;
+            }
+        }
+
+        #endregion
+
         #region ENHANCED FALLBACK UI - BEZ TOOLTIPS
 
         /// <summary>
@@ -153,19 +303,19 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _fallbackMainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Content
                 _fallbackMainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) }); // Status
 
-                // KĽÚČOVÉ: Vypnutie tooltips na main container
+                // KĽÚČOVÉ: Vypnutie tooltips na main container - WinUI 3 spôsob
                 ToolTipService.SetToolTip(_fallbackMainGrid, null);
 
                 // Title bar
                 var titleBorder = new Border
                 {
                     Background = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
-                    Padding = new Thickness(16, 12,16,12),
+                    Padding = new Thickness(16, 12, 16, 12),
                     BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                     BorderThickness = new Thickness(0, 0, 0, 1)
                 };
 
-                // KĽÚČOVÉ: Vypnutie tooltips na title
+                // KĽÚČOVÉ: Vypnutie tooltips na title - WinUI 3 spôsob
                 ToolTipService.SetToolTip(titleBorder, null);
 
                 var titleText = new TextBlock
@@ -176,7 +326,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Foreground = new SolidColorBrush(Microsoft.UI.Colors.DarkBlue)
                 };
 
-                // KĽÚČOVÉ: Vypnutie tooltips na title text
+                // KĽÚČOVÉ: Vypnutie tooltips na title text - WinUI 3 spôsob
                 ToolTipService.SetToolTip(titleText, null);
 
                 titleBorder.Child = titleText;
@@ -195,7 +345,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Padding = new Thickness(8)
                 };
 
-                // KĽÚČOVÉ: Vypnutie tooltips na scroll viewer
+                // KĽÚČOVÉ: Vypnutie tooltips na scroll viewer - WinUI 3 spôsob
                 ToolTipService.SetToolTip(_fallbackScrollViewer, null);
 
                 // Main data container
@@ -228,7 +378,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 var statusBorder = new Border
                 {
                     Background = new SolidColorBrush(Microsoft.UI.Colors.DarkSlateGray),
-                    Padding = new Thickness(16, 10,16,10)
+                    Padding = new Thickness(16, 10, 16, 10)
                 };
                 ToolTipService.SetToolTip(statusBorder, null);
 
@@ -264,7 +414,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Margin = new Thickness(20)
                 };
 
-                // KĽÚČOVÉ: Vypnutie tooltips aj na simple fallback
+                // KĽÚČOVÉ: Vypnutie tooltips aj na simple fallback - WinUI 3 spôsob
                 ToolTipService.SetToolTip(simpleText, null);
 
                 this.Content = simpleText;
@@ -290,12 +440,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         Background = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
                         BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                         BorderThickness = new Thickness(1),
-                        Padding = new Thickness(8, 10,8,10),
+                        Padding = new Thickness(8, 10, 8, 10),
                         Width = column.Width,
                         MinWidth = column.MinWidth
                     };
 
-                    // KĽÚČOVÉ: Vypnutie tooltips na header border
+                    // KĽÚČOVÉ: Vypnutie tooltips na header border - WinUI 3 spôsob
                     ToolTipService.SetToolTip(headerBorder, null);
 
                     var headerText = new TextBlock
@@ -309,7 +459,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         TextTrimming = TextTrimming.CharacterEllipsis
                     };
 
-                    // KĽÚČOVÉ: Vypnutie tooltips na header text
+                    // KĽÚČOVÉ: Vypnutie tooltips na header text - WinUI 3 spôsob
                     ToolTipService.SetToolTip(headerText, null);
 
                     headerBorder.Child = headerText;
@@ -349,7 +499,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         BorderThickness = new Thickness(1, 0, 1, 1)
                     };
 
-                    // KĽÚČOVÉ: Vypnutie tooltips na row border
+                    // KĽÚČOVÉ: Vypnutie tooltips na row border - WinUI 3 spôsob
                     ToolTipService.SetToolTip(rowBorder, null);
 
                     var rowPanel = new StackPanel { Orientation = Orientation.Horizontal };
@@ -361,12 +511,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         {
                             BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.LightGray),
                             BorderThickness = new Thickness(1),
-                            Padding = new Thickness(8, 6,8,6),
+                            Padding = new Thickness(8, 6, 8, 6),
                             Width = column.Width,
                             MinWidth = column.MinWidth
                         };
 
-                        // KĽÚČOVÉ: Vypnutie tooltips na cell border
+                        // KĽÚČOVÉ: Vypnutie tooltips na cell border - WinUI 3 spôsob
                         ToolTipService.SetToolTip(cellBorder, null);
 
                         var cellViewModel = row.GetCell(column.Name);
@@ -384,7 +534,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                             TextTrimming = TextTrimming.CharacterEllipsis
                         };
 
-                        // NAJDÔLEŽITEJŠIE: Vypnutie tooltips na cell text
+                        // NAJDÔLEŽITEJŠIE: Vypnutie tooltips na cell text - WinUI 3 spôsob
                         ToolTipService.SetToolTip(cellText, null);
 
                         // Validation error styling BEZ TOOLTIP
@@ -394,7 +544,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                             cellBorder.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Red);
                             cellBorder.BorderThickness = new Thickness(2);
 
-                            // KĽÚČOVÉ: ŽIADNY TOOLTIP pre validation errors
+                            // KĽÚČOVÉ: ŽIADNY TOOLTIP pre validation errors v fallback móde
                             // Validation errors sa zobrazia len v ValidAlerts stĺpci
                         }
 
@@ -459,15 +609,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // Update UI (aj fallback)
                 UpdateUI();
 
-                if (_isUsingFallback)
-                {
-                    UpdateFallbackHeader(columns ?? new List<InternalColumnDefinition>());
-                    if (_viewModel.Rows?.Count > 0)
-                    {
-                        UpdateFallbackData(_viewModel.Rows.ToList(), columns ?? new List<InternalColumnDefinition>());
-                    }
-                }
-
                 await Task.Delay(200); // Dať čas na UI update
 
                 LoadingProgress = 100;
@@ -514,11 +655,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 {
                     await ViewModel.LoadDataAsync(data ?? new List<Dictionary<string, object?>>());
 
-                    // Update fallback UI ak je potrebné
-                    if (_isUsingFallback && ViewModel.Columns?.Count > 0)
-                    {
-                        UpdateFallbackData(ViewModel.Rows.ToList(), ViewModel.Columns.ToList());
-                    }
+                    // Update UI after loading
+                    UpdateUI();
                 }
 
                 LoadingMessage = "Validácia dokončená";
@@ -543,7 +681,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        // Ostatné metódy nezmenené...
         public async Task LoadDataAsync(DataTable dataTable)
         {
             try
@@ -576,11 +713,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     var result = await ViewModel.ValidateAllRowsAsync();
                     LoadingMessage = result ? "Všetky riadky sú validné" : "Nájdené validačné chyby";
 
-                    // Update fallback UI po validácii
-                    if (_isUsingFallback && ViewModel.Columns?.Count > 0)
-                    {
-                        UpdateFallbackData(ViewModel.Rows.ToList(), ViewModel.Columns.ToList());
-                    }
+                    // Update UI po validácii
+                    UpdateUI();
 
                     _logger.LogInformation("Validation completed: all valid = {AllValid}", result);
 
@@ -623,12 +757,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 if (ViewModel != null)
                 {
                     await ViewModel.ClearAllDataAsync();
-
-                    // Clear fallback UI
-                    if (_isUsingFallback && _fallbackDataContainer != null)
-                    {
-                        _fallbackDataContainer.Children.Clear();
-                    }
+                    UpdateUI();
                 }
 
                 LoadingMessage = "Všetky dáta vymazané";
@@ -656,12 +785,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 try
                 {
                     await ViewModel.RemoveEmptyRowsAsync();
-
-                    // Update fallback UI
-                    if (_isUsingFallback && ViewModel.Columns?.Count > 0)
-                    {
-                        UpdateFallbackData(ViewModel.Rows.ToList(), ViewModel.Columns.ToList());
-                    }
+                    UpdateUI();
 
                     LoadingMessage = "Prázdne riadky odstránené";
                     await Task.Delay(500);
@@ -708,35 +832,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region Helper Methods (unchanged pero s podporou fallback)
-
-        private void UpdateUI()
-        {
-            try
-            {
-                if (_isUsingFallback) return; // Fallback UI sa aktualizuje samostatne
-
-                // Update header
-                if (ViewModel?.Columns != null && HeaderItemsRepeater != null)
-                {
-                    HeaderItemsRepeater.ItemsSource = ViewModel.Columns;
-                }
-
-                // Update data rows
-                if (ViewModel?.Rows != null && DataRowsItemsRepeater != null)
-                {
-                    DataRowsItemsRepeater.ItemsSource = ViewModel.Rows;
-                }
-
-                // Update status
-                UpdateStatusDisplay();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating UI");
-                HandleError(ex, "UpdateUI");
-            }
-        }
+        #region Helper Methods
 
         private void UpdateStatusDisplay()
         {
@@ -772,7 +868,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        // Ostatné helper metódy zostávajú nezmenené...
         private List<Dictionary<string, object?>> ConvertDataTableToDictionaries(DataTable dataTable)
         {
             var result = new List<Dictionary<string, object?>>();
@@ -812,7 +907,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 columns.Add(new InternalColumnDefinition("Stĺpec2", typeof(string)) { Header = "Stĺpec 2", Width = 150 });
             }
 
-            // Vytvor základné validačné pravidlá
             var rules = new List<InternalValidationRule>();
             foreach (var col in columns)
             {
@@ -865,38 +959,91 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        // Memory management, error handling, keyboard navigation, event handlers zostávajú nezmenené...
-        // (skrátené kvôli dlhému kódu, ale sú identické s pôvodnou verziou)
+        private void MonitorMemoryUsage(object? state)
+        {
+            try
+            {
+                var totalMemory = GC.GetTotalMemory(false);
+                if (totalMemory > 100 * 1024 * 1024) // 100MB threshold
+                {
+                    _ = TriggerMemoryCleanup();
+                }
+            }
+            catch { }
+        }
+
+        private async Task TriggerMemoryCleanup()
+        {
+            await Task.Run(() =>
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+            });
+        }
+
+        private void HandleError(Exception ex, string operation)
+        {
+            _logger?.LogError(ex, "Error in operation: {Operation}", operation);
+            ErrorOccurred?.Invoke(this, new ComponentErrorEventArgs(ex, operation));
+        }
+
+        // Keyboard handling methods
+        private void OnKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e) { }
+        private async Task HandleCopyAsync() { }
+        private async Task HandlePasteAsync() { }
+        private void HandleSelectAll() { }
+        private async Task HandleRefreshAsync() { }
+        private void HandleDeleteSelected() { }
+
+        // XAML Event Handlers
+        private void OnCellDoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e) { }
+        private void OnCellTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e) { }
+        private void OnCellGotFocus(object sender, RoutedEventArgs e) { }
+        private void OnCellLostFocus(object sender, RoutedEventArgs e) { }
+        private void OnCellKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e) { }
+        private void OnCellTextChanged(object sender, TextChangedEventArgs e) { }
+
+        private void OnControlUnloaded(object sender, RoutedEventArgs e)
+        {
+            Dispose();
+        }
+
+        private void SubscribeToViewModel(AdvancedDataGridViewModel viewModel)
+        {
+            if (viewModel != null)
+            {
+                viewModel.PropertyChanged += OnViewModelPropertyChanged;
+                viewModel.ErrorOccurred += OnViewModelErrorOccurred;
+            }
+        }
+
+        private void UnsubscribeFromViewModel(AdvancedDataGridViewModel viewModel)
+        {
+            if (viewModel != null)
+            {
+                viewModel.PropertyChanged -= OnViewModelPropertyChanged;
+                viewModel.ErrorOccurred -= OnViewModelErrorOccurred;
+            }
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AdvancedDataGridViewModel.Rows) ||
+                e.PropertyName == nameof(AdvancedDataGridViewModel.Columns))
+            {
+                UpdateUI();
+            }
+        }
+
+        private void OnViewModelErrorOccurred(object? sender, ComponentErrorEventArgs e)
+        {
+            HandleError(e.Exception, e.Operation);
+        }
 
         #endregion
 
-        #region IDisposable & INotifyPropertyChanged (unchanged)
-
-        private void MonitorMemoryUsage(object? state) { /* Nezmenené */ }
-        private async Task TriggerMemoryCleanup() { /* Nezmenené */ }
-        private void HandleError(Exception ex, string operation) { /* Nezmenené */ }
-        private void OnKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e) { /* Nezmenené */ }
-        private async Task HandleCopyAsync() { /* Nezmenené */ }
-        private async Task HandlePasteAsync() { /* Nezmenené */ }
-        private void HandleSelectAll() { /* Nezmenené */ }
-        private async Task HandleRefreshAsync() { /* Nezmenené */ }
-        private void HandleDeleteSelected() { /* Nezmenené */ }
-
-        // XAML Event Handlers - nezmenené pre normálny mód
-        private void OnCellDoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e) { /* Nezmenené */ }
-        private void OnCellTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e) { /* Nezmenené */ }
-        private void OnCellGotFocus(object sender, RoutedEventArgs e) { /* Nezmenené */ }
-        private void OnCellLostFocus(object sender, RoutedEventArgs e) { /* Nezmenené */ }
-        private void OnCellKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e) { /* Nezmenené */ }
-        private void OnCellTextChanged(object sender, TextChangedEventArgs e) { /* Nezmenené */ }
-
-        private void OnControlLoaded(object sender, RoutedEventArgs e) { /* Nezmenené */ }
-        private void OnControlUnloaded(object sender, RoutedEventArgs e) { /* Nezmenené */ }
-
-        private void SubscribeToViewModel(AdvancedDataGridViewModel viewModel) { /* Nezmenené */ }
-        private void UnsubscribeFromViewModel(AdvancedDataGridViewModel viewModel) { /* Nezmenené */ }
-        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e) { /* Nezmenené */ }
-        private void OnViewModelErrorOccurred(object? sender, ComponentErrorEventArgs e) { /* Nezmenené */ }
+        #region IDisposable & INotifyPropertyChanged
 
         public void Dispose()
         {

@@ -1,5 +1,5 @@
 <!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
-<!-- OPRAVENÉ: Explicitne vypnuté WinUI 3 automatic validation tooltips -->
+<!-- OPRAVENÉ: WinUI 3 correct tooltip disabling syntax -->
 
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.EnhancedDataGridControl"
@@ -24,7 +24,7 @@
         <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
 
         <!-- =============================================== -->
-        <!-- STYLES - OPRAVENÉ pre vypnutie tooltips -->
+        <!-- STYLES - OPRAVENÉ pre WinUI 3 tooltip syntax -->
         <!-- =============================================== -->
 
         <!-- Cell Border Style -->
@@ -34,7 +34,7 @@
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="White"/>
-            <!-- OPRAVENÉ: Vypnutie tooltips na Border level -->
+            <!-- OPRAVENÉ: WinUI 3 correct syntax for disabling tooltips -->
             <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
@@ -45,6 +45,7 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,10"/>
             <Setter Property="MinHeight" Value="45"/>
+            <!-- OPRAVENÉ: WinUI 3 correct syntax -->
             <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
@@ -57,7 +58,7 @@
             <Setter Property="Foreground" Value="Black"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <!-- OPRAVENÉ: Len ToolTip property, IsEnabled neexistuje v WinUI 3 -->
+            <!-- OPRAVENÉ: WinUI 3 correct syntax -->
             <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
@@ -73,8 +74,7 @@
             <Setter Property="Padding" Value="6,4"/>
             <Setter Property="AcceptsReturn" Value="False"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
-
-            <!-- 🚫 KĽÚČOVÉ: Vypnutie WinUI 3 automatic validation tooltips -->
+            <!-- 🚫 KĽÚČOVÉ: WinUI 3 correct syntax for disabling automatic validation tooltips -->
             <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
         </Style>
 
@@ -102,7 +102,7 @@
                                     ToolTipService.ToolTip="{x:Null}">
 
                                 <Grid ToolTipService.ToolTip="{x:Null}">
-                                    <!-- DISPLAY MODE: TextBlock pre zobrazenie hodnoty -->
+                                    <!-- DISPLAY MODE: TextBlock pre zobrazenie hodnoty - ŽIADNE TOOLTIPS -->
                                     <TextBlock x:Name="DisplayTextBlock"
                                                Text="{x:Bind DisplayValue, Mode=OneWay}"
                                                Style="{StaticResource CellDisplayTextStyle}"
@@ -111,7 +111,7 @@
                                                Tapped="OnCellTapped"
                                                ToolTipService.ToolTip="{x:Null}"/>
 
-                                    <!-- EDIT MODE: TextBox pre editáciu - BEZ TOOLTIPS -->
+                                    <!-- EDIT MODE: TextBox pre editáciu - ŽIADNE TOOLTIPS -->
                                     <TextBox x:Name="EditTextBox"
                                              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CellEditTextBoxStyle}"
@@ -124,7 +124,7 @@
                                              TextChanged="OnCellTextChanged"
                                              ToolTipService.ToolTip="{x:Null}"/>
 
-                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny, BEZ tooltip -->
+                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny, ŽIADNE TOOLTIPS -->
                                     <Border x:Name="ValidationBorder"
                                             BorderBrush="Red"
                                             BorderThickness="2"
@@ -135,7 +135,7 @@
                                             Opacity="0.7"
                                             ToolTipService.ToolTip="{x:Null}"/>
 
-                                    <!-- FOCUS INDICATOR -->
+                                    <!-- FOCUS INDICATOR - ŽIADNE TOOLTIPS -->
                                     <Rectangle x:Name="FocusIndicator"
                                                Stroke="#007ACC"
                                                StrokeThickness="2"
@@ -268,7 +268,8 @@
                                                   Foreground="#495057"
                                                   VerticalAlignment="Center"
                                                   HorizontalAlignment="Center"
-                                                  TextTrimming="CharacterEllipsis"/>
+                                                  TextTrimming="CharacterEllipsis"
+                                                  ToolTipService.ToolTip="{x:Null}"/>
                                     </Border>
                                 </DataTemplate>
                             </ItemsRepeater.ItemTemplate>
