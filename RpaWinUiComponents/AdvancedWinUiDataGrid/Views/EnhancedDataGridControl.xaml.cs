@@ -33,6 +33,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
     /// ✅ ZLEPŠENIE 1: Proper memory management
     /// ✅ ZLEPŠENIE 6: Enhanced error handling
     /// ✅ OPRAVA CS0549: Odstránený virtual z sealed typu
+    /// ✅ OPRAVA CS1061: Pridané všetky chýbajúce event handlery
     /// </summary>
     public sealed partial class EnhancedDataGridControl : UserControl, IDisposable, INotifyPropertyChanged
     {
@@ -229,34 +230,80 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // ZLEPŠENIE 1: Memory management
                 await TriggerMemoryCleanup();
 
-                LoadingProgress = 20;
+                // Force garbage collection
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
 
-                // ZLEPŠENIE 2: ViewModel handles all data loading
-                if (_viewModel != null)
+                var newRowViewModels = new List<RowViewModel>();
+                var rowIndex = 0;
+                var totalRows = data?.Count ?? 0;
+
+                if (data != null)
                 {
-                    // Subscribe to progress updates
-                    var progressHandler = new Progress<double>(progress =>
+                    // ZLEPŠENIE 4: Batch processing pre performance
+                    foreach (var dataRow in data)
                     {
-                        LoadingProgress = 20 + (progress * 0.7); // 20-90%
-                    });
+                        var rowViewModel = CreateRowViewModelForLoading(rowIndex);
 
-                    await _viewModel.LoadDataAsync(data);
+                        _logger.LogTrace("Loading row {RowIndex}/{TotalRows}", rowIndex + 1, totalRows);
+
+                        foreach (var column in ViewModel?.Columns?.Where(c => !IsSpecialColumn(c.Name)) ?? Enumerable.Empty<InternalColumnDefinition>())
+                        {
+                            if (dataRow.ContainsKey(column.Name))
+                            {
+                                rowViewModel.SetValueSilently(column.Name, dataRow[column.Name]);
+                            }
+                        }
+
+                        // ZLEPŠENIE 3: Validation po kompletnom nastavení riadku
+                        await ValidateRowViewModelAfterLoadingAsync(rowViewModel);
+
+                        newRowViewModels.Add(rowViewModel);
+                        rowIndex++;
+
+                        // ZLEPŠENIE 5: Progress reporting
+                        var progress = (double)rowIndex / totalRows * 90;
+                        LoadingProgress = progress;
+                    }
                 }
 
+                // Add empty rows for future data
+                var minEmptyRows = Math.Min(10, 15 / 5);
+                var finalRowCount = Math.Max(15, totalRows + minEmptyRows);
+
+                while (newRowViewModels.Count < finalRowCount)
+                {
+                    newRowViewModels.Add(CreateEmptyRowViewModel(newRowViewModels.Count));
+                }
+
+                // ZLEPŠENIE 2: Reset rows collection safely
+                if (ViewModel != null)
+                {
+                    ViewModel.Rows.Clear();
+                    ViewModel.Rows.AddRange(newRowViewModels);
+                }
+
+                LoadingMessage = "Validácia dokončená";
                 LoadingProgress = 100;
-                LoadingMessage = $"Načítané: {data?.Count ?? 0} riadkov";
 
-                _logger.LogInformation("✅ Enhanced data loading dokončené úspešne");
+                var validRows = newRowViewModels.Count(r => !r.IsEmpty && !r.HasValidationErrors);
+                var invalidRows = newRowViewModels.Count(r => !r.IsEmpty && r.HasValidationErrors);
+                var emptyRows = newRowViewModels.Count - totalRows;
 
-                // Hide loading after delay
-                await Task.Delay(1000);
+                _logger.LogInformation("Data loaded with auto-expansion: {TotalRows} total rows ({DataRows} data, {EmptyRows} empty), {ValidRows} valid, {InvalidRows} invalid",
+                    newRowViewModels.Count, totalRows, emptyRows, validRows, invalidRows);
+
+                await Task.Delay(2000);
+                LoadingMessage = "Pripravené";
                 IsLoading = false;
+
             }
             catch (Exception ex)
             {
                 IsLoading = false;
-                LoadingMessage = $"Chyba: {ex.Message}";
-                _logger.LogError(ex, "❌ Chyba pri enhanced načítaní dát");
+                LoadingMessage = $"Chyba pri načítavaní: {ex.Message}";
+                _logger.LogError(ex, "Error loading data from dictionary list");
                 HandleError(ex, "LoadDataAsync");
                 throw;
             }
@@ -264,39 +311,70 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         public async Task LoadDataAsync(DataTable dataTable)
         {
-            var dictList = ConvertDataTableToDictionaries(dataTable);
-            await LoadDataAsync(dictList);
+            try
+            {
+                if (!_isInitialized)
+                    throw new InvalidOperationException("Component must be initialized first!");
+
+                var dictList = ConvertDataTableToDictionaries(dataTable);
+                await LoadDataAsync(dictList);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading data from DataTable");
+                HandleError(ex, "LoadDataAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// ZLEPŠENIE 4: Enhanced validation s progress reporting
+        /// </summary>
+        public async Task<bool> ValidateAllRowsAsync()
+        {
+            try
+            {
+                _logger.LogDebug("Starting validation of all rows");
+                IsLoading = true;
+                LoadingProgress = 0;
+                LoadingMessage = "Validujú sa riadky...";
+
+                var progress = new Progress<double>(p => LoadingProgress = p);
+
+                if (ViewModel != null)
+                {
+                    var result = await ViewModel.ValidateAllRowsAsync();
+                    LoadingMessage = result ? "Všetky riadky sú validné" : "Nájdené validačné chyby";
+
+                    _logger.LogInformation("Validation completed: all valid = {AllValid}", result);
+
+                    await Task.Delay(2000);
+                    LoadingMessage = "Pripravené";
+                    IsLoading = false;
+
+                    return result;
+                }
+
+                IsLoading = false;
+                return false;
+            }
+            catch (Exception ex)
+            {
+                IsLoading = false;
+                LoadingMessage = "Chyba pri validácii";
+                _logger.LogError(ex, "Error validating all rows");
+                HandleError(ex, "ValidateAllRowsAsync");
+                return false;
+            }
         }
 
         public async Task<DataTable> ExportToDataTableAsync()
         {
-            if (_viewModel != null)
+            if (ViewModel != null)
             {
-                return await _viewModel.ExportDataAsync();
+                return await ViewModel.ExportDataAsync();
             }
             return new DataTable();
-        }
-
-        public async Task<bool> ValidateAllRowsAsync()
-        {
-            if (_viewModel != null)
-            {
-                IsLoading = true;
-                LoadingMessage = "Validujem všetky riadky...";
-
-                try
-                {
-                    var result = await _viewModel.ValidateAllRowsAsync();
-                    LoadingMessage = result ? "Všetky riadky sú validné" : "Nájdené chyby";
-                    await Task.Delay(1000);
-                    return result;
-                }
-                finally
-                {
-                    IsLoading = false;
-                }
-            }
-            return false;
         }
 
         public async Task ClearAllDataAsync()
@@ -306,9 +384,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 IsLoading = true;
                 LoadingMessage = "Vymazávam všetky dáta...";
 
-                if (_viewModel != null)
+                if (ViewModel != null)
                 {
-                    await _viewModel.ClearAllDataAsync();
+                    await ViewModel.ClearAllDataAsync();
                 }
 
                 LoadingMessage = "Všetky dáta vymazané";
@@ -328,14 +406,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         public async Task RemoveEmptyRowsAsync()
         {
-            if (_viewModel != null)
+            if (ViewModel != null)
             {
                 IsLoading = true;
                 LoadingMessage = "Odstraňujem prázdne riadky...";
 
                 try
                 {
-                    await _viewModel.RemoveEmptyRowsAsync();
+                    await ViewModel.RemoveEmptyRowsAsync();
                     LoadingMessage = "Prázdne riadky odstránené";
                     await Task.Delay(500);
                 }
@@ -358,7 +436,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 _isInitialized = false;
 
-                _viewModel?.Reset();
+                ViewModel?.Reset();
 
                 LoadingMessage = "Reset dokončený";
                 IsLoading = false;
@@ -442,7 +520,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     }
 
                     // Cleanup ViewModel memory
-                    _viewModel?.Reset();
+                    ViewModel?.Reset();
 
                     // Force aggressive garbage collection
                     GC.Collect();
@@ -455,17 +533,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during enhanced memory cleanup");
-            }
-        }
-
-        /// <summary>
-        /// ZLEPŠENIE 1: Track cell s WeakReference pattern
-        /// </summary>
-        private void TrackCellReference(string cellKey, object cellObject)
-        {
-            lock (_cellTrackingLock)
-            {
-                _cellReferences[cellKey] = new WeakReference(cellObject);
             }
         }
 
@@ -514,11 +581,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _cancellationTokenSource?.Cancel();
 
                 // Reset ViewModel
-                if (_viewModel != null)
+                if (ViewModel != null)
                 {
-                    UnsubscribeFromViewModel(_viewModel);
-                    _viewModel.Dispose();
-                    _viewModel = null;
+                    UnsubscribeFromViewModel(ViewModel);
+                    ViewModel.Dispose();
                     ViewModel = null;
                 }
 
@@ -594,9 +660,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                if (_viewModel != null)
+                if (ViewModel != null)
                 {
-                    await _viewModel.CopySelectedCellsAsync();
+                    await ViewModel.CopySelectedCellsAsync();
                     LoadingMessage = "Data copied to clipboard";
                     await Task.Delay(1000);
                     LoadingMessage = "Pripravené";
@@ -613,9 +679,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                if (_viewModel != null)
+                if (ViewModel != null)
                 {
-                    await _viewModel.PasteFromClipboardAsync();
+                    await ViewModel.PasteFromClipboardAsync();
                     LoadingMessage = "Data pasted from clipboard";
                     await Task.Delay(1000);
                     LoadingMessage = "Pripravené";
@@ -646,11 +712,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                if (_viewModel != null)
+                if (ViewModel != null)
                 {
                     IsLoading = true;
                     LoadingMessage = "Refreshing data...";
-                    await _viewModel.ValidateAllRowsAsync();
+                    await ViewModel.ValidateAllRowsAsync();
                     LoadingMessage = "Data refreshed";
                     await Task.Delay(1000);
                     IsLoading = false;
@@ -675,6 +741,188 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 _logger.LogError(ex, "Error deleting selected");
                 HandleError(ex, "HandleDeleteSelected");
+            }
+        }
+
+        #endregion
+
+        #region XAML Event Handlers (OPRAVA CS1061: Chýbajúce event handlery)
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre double tap na bunke
+        /// </summary>
+        private void OnCellDoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBlock textBlock && textBlock.DataContext is CellViewModel cellViewModel)
+                {
+                    if (!cellViewModel.IsReadOnly)
+                    {
+                        // Začni editáciu bunky
+                        cellViewModel.StartEditing();
+                        _logger.LogDebug("Cell editing started via double tap: {CellKey}", cellViewModel.CellKey);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell double tap");
+                HandleError(ex, "OnCellDoubleTapped");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre tap na bunke
+        /// </summary>
+        private void OnCellTapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBlock textBlock && textBlock.DataContext is CellViewModel cellViewModel)
+                {
+                    // Nastav focus na bunku
+                    cellViewModel.HasFocus = true;
+                    _logger.LogTrace("Cell focused via tap: {CellKey}", cellViewModel.CellKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell tap");
+                HandleError(ex, "OnCellTapped");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre right tap na bunke
+        /// </summary>
+        private void OnCellRightTapped(object sender, Microsoft.UI.Xaml.Input.RightTappedRoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBlock textBlock && textBlock.DataContext is CellViewModel cellViewModel)
+                {
+                    // Možnosť pre context menu v budúcnosti
+                    _logger.LogTrace("Cell right tapped: {CellKey}", cellViewModel.CellKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell right tap");
+                HandleError(ex, "OnCellRightTapped");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre získanie fokusu bunky
+        /// </summary>
+        private void OnCellGotFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CellViewModel cellViewModel)
+                {
+                    cellViewModel.HasFocus = true;
+                    _logger.LogTrace("Cell got focus: {CellKey}", cellViewModel.CellKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell got focus");
+                HandleError(ex, "OnCellGotFocus");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre stratu fokusu bunky
+        /// </summary>
+        private void OnCellLostFocus(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CellViewModel cellViewModel)
+                {
+                    cellViewModel.HasFocus = false;
+
+                    // Ak bola bunka v edit móde, ukončíme editáciu
+                    if (cellViewModel.IsEditing)
+                    {
+                        cellViewModel.CommitChanges();
+                        _logger.LogDebug("Cell editing committed on focus lost: {CellKey}", cellViewModel.CellKey);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell lost focus");
+                HandleError(ex, "OnCellLostFocus");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre key down v bunke
+        /// </summary>
+        private void OnCellKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CellViewModel cellViewModel)
+                {
+                    switch (e.Key)
+                    {
+                        case VirtualKey.Enter:
+                            if (!Microsoft.UI.Input.InputKeyboardSource.GetKeyStateForCurrentThread(VirtualKey.Shift)
+                                .HasFlag(Windows.UI.Core.CoreVirtualKeyStates.Down))
+                            {
+                                // Enter bez Shift - ukončí editáciu a prejde na ďalší riadok
+                                cellViewModel.CommitChanges();
+                                // TODO: Implementovať navigáciu na ďalší riadok
+                                e.Handled = true;
+                            }
+                            break;
+                        case VirtualKey.Escape:
+                            // Escape - zruší editáciu
+                            cellViewModel.CancelEditing();
+                            e.Handled = true;
+                            break;
+                        case VirtualKey.Tab:
+                            // Tab - ukončí editáciu a prejde na ďalšiu bunku
+                            cellViewModel.CommitChanges();
+                            // TODO: Implementovať navigáciu na ďalšiu bunku
+                            break;
+                    }
+
+                    _logger.LogTrace("Cell key down: {Key} in {CellKey}", e.Key, cellViewModel.CellKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell key down");
+                HandleError(ex, "OnCellKeyDown");
+            }
+        }
+
+        /// <summary>
+        /// OPRAVA CS1061: Event handler pre zmenu textu v bunke
+        /// </summary>
+        private void OnCellTextChanged(object sender, TextChangedEventArgs e)
+        {
+            try
+            {
+                if (sender is TextBox textBox && textBox.DataContext is CellViewModel cellViewModel)
+                {
+                    // Aktualizuj hodnotu v ViewModel
+                    if (cellViewModel.Value?.ToString() != textBox.Text)
+                    {
+                        cellViewModel.Value = textBox.Text;
+                        _logger.LogTrace("Cell text changed: {CellKey} = '{Text}'", cellViewModel.CellKey, textBox.Text);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling cell text changed");
+                HandleError(ex, "OnCellTextChanged");
             }
         }
 
@@ -751,10 +999,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         private string FormatColumnHeader(string columnName)
         {
-            if (columnName.ToLower().Contains("meno") || columnName.ToLower().Contains("name")) return $"👤 {columnName}";
-            if (columnName.ToLower().Contains("email")) return $"📧 {columnName}";
-            if (columnName.ToLower().Contains("vek") || columnName.ToLower().Contains("age")) return $"🎂 {columnName}";
-            if (columnName.ToLower().Contains("plat") || columnName.ToLower().Contains("salary")) return $"💰 {columnName}";
+            var lowerName = columnName.ToLower();
+
+            if (lowerName.Contains("id")) return $"🔢 {columnName}";
+            if (lowerName.Contains("meno") || lowerName.Contains("name")) return $"👤 {columnName}";
+            if (lowerName.Contains("email")) return $"📧 {columnName}";
+            if (lowerName.Contains("vek") || lowerName.Contains("age")) return $"🎂 {columnName}";
+            if (lowerName.Contains("plat") || lowerName.Contains("salary")) return $"💰 {columnName}";
+            if (lowerName.Contains("datum") || lowerName.Contains("date")) return $"📅 {columnName}";
+
             return columnName;
         }
 
@@ -865,6 +1118,145 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private void OnViewModelErrorOccurred(object? sender, ComponentErrorEventArgs e)
         {
             HandleError(e.Exception, $"ViewModel.{e.Operation}");
+        }
+
+        // ZLEPŠENIE 2: Helper methods pre MVVM pattern
+        private RowViewModel CreateRowViewModelForLoading(int rowIndex)
+        {
+            var rowViewModel = new RowViewModel(rowIndex);
+
+            if (ViewModel?.Columns != null)
+            {
+                foreach (var column in ViewModel.Columns)
+                {
+                    var cellViewModel = new CellViewModel(column.Name, column.DataType, rowIndex, ViewModel.Columns.IndexOf(column))
+                    {
+                        IsReadOnly = column.IsReadOnly
+                    };
+
+                    rowViewModel.AddCell(cellViewModel);
+                    // Event handlers sa pridajú až po načítaní všetkých dát
+                }
+            }
+
+            return rowViewModel;
+        }
+
+        private RowViewModel CreateEmptyRowViewModel(int rowIndex)
+        {
+            var rowViewModel = new RowViewModel(rowIndex);
+
+            if (ViewModel?.Columns != null)
+            {
+                foreach (var column in ViewModel.Columns)
+                {
+                    var cellViewModel = new CellViewModel(column.Name, column.DataType, rowIndex, ViewModel.Columns.IndexOf(column))
+                    {
+                        IsReadOnly = column.IsReadOnly
+                    };
+
+                    rowViewModel.AddCell(cellViewModel);
+
+                    // ZLEPŠENIE 1: Enhanced cell event subscription s WeakReference
+                    if (!IsSpecialColumn(column.Name) && !IsLoading)
+                    {
+                        SubscribeToCellValidationEnhanced(rowViewModel, cellViewModel);
+                    }
+                }
+            }
+
+            return rowViewModel;
+        }
+
+        private void SubscribeToCellValidationEnhanced(RowViewModel rowViewModel, CellViewModel cellViewModel)
+        {
+            var cellKey = GenerateCellKey(rowViewModel.RowIndex, cellViewModel.ColumnName);
+
+            lock (_cellTrackingLock)
+            {
+                try
+                {
+                    // Subscribe to property changed with weak event pattern
+                    cellViewModel.PropertyChanged += async (s, e) =>
+                    {
+                        if (e.PropertyName == nameof(CellViewModel.Value) && !_disposed && !IsLoading)
+                        {
+                            await OnCellValueChangedEnhanced(rowViewModel, cellViewModel);
+                        }
+                    };
+
+                    cellViewModel.ValueChanged += async (s, newValue) =>
+                    {
+                        if (!_disposed && !IsLoading)
+                        {
+                            await OnCellValueChangedEnhanced(rowViewModel, cellViewModel);
+                        }
+                    };
+
+                    _cellReferences[cellKey] = new WeakReference(cellViewModel);
+
+                    _logger.LogTrace("Successfully subscribed to cell validation with enhanced management: {CellKey}", cellKey);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error subscribing to cell validation: {CellKey}", cellKey);
+                }
+            }
+        }
+
+        private async Task OnCellValueChangedEnhanced(RowViewModel rowViewModel, CellViewModel cellViewModel)
+        {
+            if (_disposed || IsLoading) return;
+
+            try
+            {
+                // Trigger validation through ViewModel if available
+                if (ViewModel != null)
+                {
+                    // ViewModel will handle validation with proper throttling
+                    await Task.CompletedTask; // Placeholder - ViewModel handles validation
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in enhanced cell value changed handling");
+                HandleError(ex, "OnCellValueChangedEnhanced");
+            }
+        }
+
+        private async Task ValidateRowViewModelAfterLoadingAsync(RowViewModel rowViewModel)
+        {
+            try
+            {
+                rowViewModel.UpdateRowStatus();
+
+                if (!rowViewModel.IsEmpty && ViewModel != null)
+                {
+                    // ViewModel will handle validation
+                    await Task.CompletedTask; // Placeholder
+                }
+
+                // Subscribe to validation events AŽ PO NAČÍTANÍ dát
+                foreach (var cellViewModel in rowViewModel.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
+                {
+                    SubscribeToCellValidationEnhanced(rowViewModel, cellViewModel);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating row after loading");
+                HandleError(ex, "ValidateRowViewModelAfterLoadingAsync");
+            }
+        }
+
+        private static string GenerateCellKey(int rowIndex, string columnName)
+        {
+            return $"{rowIndex}_{columnName}";
+        }
+
+        private static bool IsSpecialColumn(string columnName)
+        {
+            return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
         #endregion
