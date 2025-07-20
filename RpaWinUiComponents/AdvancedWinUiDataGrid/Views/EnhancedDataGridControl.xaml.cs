@@ -144,7 +144,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                _logger?.LogWarning("📋 Creating enhanced fallback UI with better colors and no tooltips...");
+                _logger?.LogWarning("📋 Creating enhanced fallback UI with WinUI 3 tooltip syntax...");
 
                 // Main container
                 _fallbackMainGrid = new Grid();
@@ -152,8 +152,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 _fallbackMainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) }); // Content
                 _fallbackMainGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Auto) }); // Status
 
-                // 🚫 KRITICKÉ: Vypnutie tooltips na main container
-                ToolTipService.SetIsEnabled(_fallbackMainGrid, false);
+                // ✅ WinUI 3: Správny spôsob vypnutia tooltips
                 ToolTipService.SetToolTip(_fallbackMainGrid, null);
 
                 // Title bar
@@ -164,16 +163,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                     BorderThickness = new Thickness(0, 0, 0, 1)
                 };
-                ToolTipService.SetIsEnabled(titleBorder, false);
+                ToolTipService.SetToolTip(titleBorder, null);
 
                 var titleText = new TextBlock
                 {
-                    Text = "🎯 Enhanced RpaWinUiComponents DataGrid (Fallback Mode - No Tooltips)",
+                    Text = "🎯 Enhanced RpaWinUiComponents DataGrid (Fallback Mode - WinUI 3)",
                     FontSize = 18,
                     FontWeight = Microsoft.UI.Text.FontWeights.Bold,
                     Foreground = new SolidColorBrush(Microsoft.UI.Colors.DarkBlue)
                 };
-                ToolTipService.SetIsEnabled(titleText, false);
+                ToolTipService.SetToolTip(titleText, null);
 
                 titleBorder.Child = titleText;
                 Grid.SetRow(titleBorder, 0);
@@ -190,11 +189,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Background = new SolidColorBrush(Microsoft.UI.Colors.White),
                     Padding = new Thickness(8)
                 };
-                ToolTipService.SetIsEnabled(_fallbackScrollViewer, false);
+                ToolTipService.SetToolTip(_fallbackScrollViewer, null);
 
                 // Main data container
                 var mainContainer = new StackPanel();
-                ToolTipService.SetIsEnabled(mainContainer, false);
+                ToolTipService.SetToolTip(mainContainer, null);
 
                 // Header container
                 _fallbackHeaderContainer = new Border
@@ -205,11 +204,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     CornerRadius = new CornerRadius(4, 4, 0, 0),
                     Padding = new Thickness(8)
                 };
-                ToolTipService.SetIsEnabled(_fallbackHeaderContainer, false);
+                ToolTipService.SetToolTip(_fallbackHeaderContainer, null);
 
                 // Data container
                 _fallbackDataContainer = new StackPanel();
-                ToolTipService.SetIsEnabled(_fallbackDataContainer, false);
+                ToolTipService.SetToolTip(_fallbackDataContainer, null);
 
                 mainContainer.Children.Add(_fallbackHeaderContainer);
                 mainContainer.Children.Add(_fallbackDataContainer);
@@ -224,15 +223,15 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Background = new SolidColorBrush(Microsoft.UI.Colors.DarkSlateGray),
                     Padding = new Thickness(16, 10, 16, 10)
                 };
-                ToolTipService.SetIsEnabled(statusBorder, false);
+                ToolTipService.SetToolTip(statusBorder, null);
 
                 var statusText = new TextBlock
                 {
-                    Text = "Ready (Fallback Mode - No Tooltips, Better Colors)",
+                    Text = "Ready (Fallback Mode - WinUI 3 Tooltips Fixed)",
                     Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
                 };
-                ToolTipService.SetIsEnabled(statusText, false);
+                ToolTipService.SetToolTip(statusText, null);
 
                 statusBorder.Child = statusText;
                 Grid.SetRow(statusBorder, 2);
@@ -241,7 +240,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // Set as content
                 this.Content = _fallbackMainGrid;
 
-                _logger?.LogInformation("✅ Enhanced fallback UI created successfully with better colors and no tooltips");
+                _logger?.LogInformation("✅ Enhanced fallback UI created with WinUI 3 tooltip syntax");
             }
             catch (Exception ex)
             {
@@ -250,7 +249,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 // Ultra-simple fallback
                 var simpleText = new TextBlock
                 {
-                    Text = "⚠️ Enhanced RpaWinUiComponents DataGrid\nFallback Mode - XAML parsing failed\nNo Tooltips, Better Colors",
+                    Text = "⚠️ Enhanced RpaWinUiComponents DataGrid\nFallback Mode - WinUI 3 Fixed\nNo Tooltips, Better Colors",
                     FontSize = 14,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -258,7 +257,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     Margin = new Thickness(20),
                     Foreground = new SolidColorBrush(Microsoft.UI.Colors.DarkRed) // 🔧 Lepšia farba
                 };
-                ToolTipService.SetIsEnabled(simpleText, false);
+                ToolTipService.SetToolTip(simpleText, null);
 
                 this.Content = simpleText;
             }
@@ -274,7 +273,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             try
             {
                 var headerPanel = new StackPanel { Orientation = Orientation.Horizontal };
-                ToolTipService.SetIsEnabled(headerPanel, false);
+                ToolTipService.SetToolTip(headerPanel, null);
 
                 foreach (var column in columns)
                 {
@@ -287,7 +286,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         Width = column.Width,
                         MinWidth = column.MinWidth
                     };
-                    ToolTipService.SetIsEnabled(headerBorder, false);
+                    ToolTipService.SetToolTip(headerBorder, null);
 
                     var headerText = new TextBlock
                     {
@@ -299,14 +298,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         HorizontalAlignment = HorizontalAlignment.Center,
                         TextTrimming = TextTrimming.CharacterEllipsis
                     };
-                    ToolTipService.SetIsEnabled(headerText, false);
+                    ToolTipService.SetToolTip(headerText, null);
 
                     headerBorder.Child = headerText;
                     headerPanel.Children.Add(headerBorder);
                 }
 
                 _fallbackHeaderContainer.Child = headerPanel;
-                _logger?.LogDebug("✅ Fallback header updated without tooltips");
+                _logger?.LogDebug("✅ Fallback header updated with WinUI 3 syntax");
             }
             catch (Exception ex)
             {
@@ -337,10 +336,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                         BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Gray),
                         BorderThickness = new Thickness(1, 0, 1, 1)
                     };
-                    ToolTipService.SetIsEnabled(rowBorder, false);
+                    ToolTipService.SetToolTip(rowBorder, null);
 
                     var rowPanel = new StackPanel { Orientation = Orientation.Horizontal };
-                    ToolTipService.SetIsEnabled(rowPanel, false);
+                    ToolTipService.SetToolTip(rowPanel, null);
 
                     foreach (var column in columns)
                     {
@@ -352,7 +351,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                             Width = column.Width,
                             MinWidth = column.MinWidth
                         };
-                        ToolTipService.SetIsEnabled(cellBorder, false);
+                        ToolTipService.SetToolTip(cellBorder, null);
 
                         var cellViewModel = row.GetCell(column.Name);
 
@@ -369,7 +368,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                             TextWrapping = TextWrapping.NoWrap,
                             TextTrimming = TextTrimming.CharacterEllipsis
                         };
-                        ToolTipService.SetIsEnabled(cellText, false);
+                        ToolTipService.SetToolTip(cellText, null);
 
                         // Validation error styling BEZ TOOLTIP
                         if (cellViewModel?.HasValidationErrors == true)
@@ -378,7 +377,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                             cellBorder.BorderBrush = new SolidColorBrush(Microsoft.UI.Colors.Red);
                             cellBorder.BorderThickness = new Thickness(2);
 
-                            // 🚫 KĽÚČOVÉ: ŽIADNY TOOLTIP pre validation errors v fallback móde
+                            // ✅ WinUI 3: ŽIADNY TOOLTIP pre validation errors v fallback móde
                             // Validation errors sa zobrazia len v ValidAlerts stĺpci
                         }
 
@@ -390,7 +389,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     _fallbackDataContainer.Children.Add(rowBorder);
                 }
 
-                _logger?.LogDebug("✅ Fallback data updated with better colors and no tooltips: {RowCount} rows", nonEmptyRows.Count);
+                _logger?.LogDebug("✅ Fallback data updated with WinUI 3 syntax: {RowCount} rows", nonEmptyRows.Count);
             }
             catch (Exception ex)
             {

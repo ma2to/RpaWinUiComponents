@@ -1,5 +1,5 @@
 <!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
-<!-- OPRAVENÉ: ÚPLNE VYPNUTÉ TOOLTIPS + lepšie farby textu -->
+<!-- OPRAVENÉ: SPRÁVNA WinUI 3 syntax pre tooltips + lepšie farby -->
 
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.EnhancedDataGridControl"
@@ -24,7 +24,7 @@
         <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
 
         <!-- =============================================== -->
-        <!-- STYLES - ÚPLNE VYPNUTÉ TOOLTIPS -->
+        <!-- STYLES - SPRÁVNA WinUI 3 syntax pre tooltips -->
         <!-- =============================================== -->
 
         <!-- Cell Border Style -->
@@ -34,9 +34,8 @@
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="White"/>
-            <!-- 🚫 KRITICKÉ: Úplne vypnuté tooltips -->
-            <Setter Property="ToolTipService.IsEnabled" Value="False"/>
-            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
+            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
+            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- Header Cell Style -->
@@ -46,9 +45,8 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,10"/>
             <Setter Property="MinHeight" Value="45"/>
-            <!-- 🚫 KRITICKÉ: Úplne vypnuté tooltips -->
-            <Setter Property="ToolTipService.IsEnabled" Value="False"/>
-            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
+            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
+            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- Display TextBlock Style - OPRAVENÉ FARBY + BEZ TOOLTIPS -->
@@ -61,12 +59,11 @@
             <Setter Property="Foreground" Value="#212529"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <!-- 🚫 KRITICKÉ: Úplne vypnuté tooltips -->
-            <Setter Property="ToolTipService.IsEnabled" Value="False"/>
-            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
+            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
+            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
-        <!-- Edit TextBox Style - KRITICKÉ VYPNUTIE VALIDATION TOOLTIPS -->
+        <!-- Edit TextBox Style - OPRAVENÁ syntax pre WinUI 3 -->
         <Style x:Key="CellEditTextBoxStyle" TargetType="TextBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
@@ -79,27 +76,23 @@
             <Setter Property="Padding" Value="6,4"/>
             <Setter Property="AcceptsReturn" Value="False"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
-            <!-- 🚫 NAJKRITICKEJŠIE: Úplne vypnuté automatic validation tooltips -->
-            <Setter Property="ToolTipService.IsEnabled" Value="False"/>
-            <Setter Property="ToolTipService.ToolTip" Value="{x:Null}"/>
-            <Setter Property="ToolTipService.ShowOnDisabled" Value="False"/>
-            <Setter Property="ToolTipService.ShowOnKeyboardFocus" Value="False"/>
+            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
+            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- =============================================== -->
-        <!-- ROW TEMPLATE s ItemsRepeater - ÚPLNE BEZ TOOLTIPS -->
+        <!-- ROW TEMPLATE s ItemsRepeater - OPRAVENÁ syntax -->
         <!-- =============================================== -->
 
         <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
             <Border Background="{x:Bind IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}, Mode=OneWay}"
                     BorderBrush="#DEE2E6" 
                     BorderThickness="1,0,1,1"
-                    ToolTipService.IsEnabled="False"
-                    ToolTipService.ToolTip="{x:Null}">
+                    ToolTip="{x:Null}">
 
                 <!-- ItemsRepeater pre cells v riadku -->
                 <ItemsRepeater ItemsSource="{x:Bind Cells}"
-                               ToolTipService.IsEnabled="False">
+                               ToolTip="{x:Null}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal"/>
                     </ItemsRepeater.Layout>
@@ -109,11 +102,9 @@
                             <Border Style="{StaticResource OptimizedCellStyle}"
                                     Width="150"
                                     MinWidth="80"
-                                    ToolTipService.IsEnabled="False"
-                                    ToolTipService.ToolTip="{x:Null}">
+                                    ToolTip="{x:Null}">
 
-                                <Grid ToolTipService.IsEnabled="False"
-                                      ToolTipService.ToolTip="{x:Null}">
+                                <Grid ToolTip="{x:Null}">
 
                                     <!-- DISPLAY MODE: TextBlock - ŽIADNE TOOLTIPS, lepšie farby -->
                                     <TextBlock x:Name="DisplayTextBlock"
@@ -122,10 +113,9 @@
                                                Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
                                                DoubleTapped="OnCellDoubleTapped"
                                                Tapped="OnCellTapped"
-                                               ToolTipService.IsEnabled="False"
-                                               ToolTipService.ToolTip="{x:Null}"/>
+                                               ToolTip="{x:Null}"/>
 
-                                    <!-- EDIT MODE: TextBox - KRITICKÉ VYPNUTIE VALIDATION TOOLTIPS -->
+                                    <!-- EDIT MODE: TextBox - OPRAVENÁ syntax pre WinUI 3 -->
                                     <TextBox x:Name="EditTextBox"
                                              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CellEditTextBoxStyle}"
@@ -136,10 +126,7 @@
                                              LostFocus="OnCellLostFocus"
                                              KeyDown="OnCellKeyDown"
                                              TextChanged="OnCellTextChanged"
-                                             ToolTipService.IsEnabled="False"
-                                             ToolTipService.ToolTip="{x:Null}"
-                                             ToolTipService.ShowOnDisabled="False"
-                                             ToolTipService.ShowOnKeyboardFocus="False"/>
+                                             ToolTip="{x:Null}"/>
 
                                     <!-- VALIDATION ERROR INDICATOR - len vizuálny, ŽIADNE TOOLTIPS -->
                                     <Border x:Name="ValidationBorder"
@@ -150,8 +137,7 @@
                                             Visibility="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                                             IsHitTestVisible="False"
                                             Opacity="0.7"
-                                            ToolTipService.IsEnabled="False"
-                                            ToolTipService.ToolTip="{x:Null}"/>
+                                            ToolTip="{x:Null}"/>
 
                                     <!-- FOCUS INDICATOR - ŽIADNE TOOLTIPS -->
                                     <Rectangle x:Name="FocusIndicator"
@@ -161,8 +147,7 @@
                                                Fill="Transparent"
                                                Visibility="{x:Bind HasFocus, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                                                IsHitTestVisible="False"
-                                               ToolTipService.IsEnabled="False"
-                                               ToolTipService.ToolTip="{x:Null}"/>
+                                               ToolTip="{x:Null}"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -179,28 +164,28 @@
             <StackPanel HorizontalAlignment="Center" 
                        VerticalAlignment="Center"
                        Spacing="16"
-                       ToolTipService.IsEnabled="False">
+                       ToolTip="{x:Null}">
                 <ProgressRing Width="48" Height="48" IsActive="True"
-                              ToolTipService.IsEnabled="False"/>
+                              ToolTip="{x:Null}"/>
                 <TextBlock Text="Načítava sa..." 
                           FontSize="16" 
                           Foreground="#7F8C8D"
                           HorizontalAlignment="Center"
-                          ToolTipService.IsEnabled="False"/>
+                          ToolTip="{x:Null}"/>
                 <ProgressBar Value="0"
                             Maximum="100"
                             Width="200"
                             Height="4"
-                            ToolTipService.IsEnabled="False"/>
+                            ToolTip="{x:Null}"/>
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
 
     <!-- =============================================== -->
-    <!-- MAIN LAYOUT - BEZ TOOLTIPS -->
+    <!-- MAIN LAYOUT - OPRAVENÁ syntax -->
     <!-- =============================================== -->
 
-    <Grid ToolTipService.IsEnabled="False">
+    <Grid ToolTip="{x:Null}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -219,22 +204,22 @@
                 BorderBrush="#DEE2E6" 
                 BorderThickness="0,0,0,1" 
                 Padding="16,12"
-                ToolTipService.IsEnabled="False">
+                ToolTip="{x:Null}">
             <StackPanel Orientation="Horizontal"
-                        ToolTipService.IsEnabled="False">
+                        ToolTip="{x:Null}">
                 <TextBlock Text="🎯 Enhanced RpaWinUiComponents DataGrid" 
                            FontSize="18" 
                            FontWeight="Bold" 
                            Foreground="#2C3E50"
                            VerticalAlignment="Center"
-                           ToolTipService.IsEnabled="False"/>
+                           ToolTip="{x:Null}"/>
                 <TextBlock x:Name="LoadingMessageText"
                            Text=" - Ready"
                            FontSize="14"
                            Foreground="#7F8C8D"
                            VerticalAlignment="Center"
                            Margin="16,0,0,0"
-                           ToolTipService.IsEnabled="False"/>
+                           ToolTip="{x:Null}"/>
             </StackPanel>
         </Border>
 
@@ -242,28 +227,28 @@
         <!-- MAIN CONTENT -->
         <!-- =============================================== -->
 
-        <Grid Grid.Row="1" ToolTipService.IsEnabled="False">
+        <Grid Grid.Row="1" ToolTip="{x:Null}">
             <!-- Loading Panel -->
             <StackPanel x:Name="LoadingPanel"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Spacing="16"
                        Visibility="Collapsed"
-                       ToolTipService.IsEnabled="False">
+                       ToolTip="{x:Null}">
                 <ProgressRing Width="48" Height="48" IsActive="True"
-                              ToolTipService.IsEnabled="False"/>
+                              ToolTip="{x:Null}"/>
                 <TextBlock x:Name="LoadingMessageTextBlock"
                           Text="Načítava sa DataGrid..."
                           FontSize="16"
                           Foreground="#7F8C8D"
                           HorizontalAlignment="Center"
-                          ToolTipService.IsEnabled="False"/>
+                          ToolTip="{x:Null}"/>
                 <ProgressBar x:Name="LoadingProgressBar"
                             Value="0"
                             Maximum="100"
                             Width="200"
                             Height="4"
-                            ToolTipService.IsEnabled="False"/>
+                            ToolTip="{x:Null}"/>
             </StackPanel>
 
             <!-- Main DataGrid -->
@@ -276,17 +261,17 @@
                           VerticalScrollBarVisibility="Auto"
                           Background="White"
                           Padding="8"
-                          ToolTipService.IsEnabled="False">
+                          ToolTip="{x:Null}">
 
-                <StackPanel ToolTipService.IsEnabled="False">
+                <StackPanel ToolTip="{x:Null}">
                     <!-- HEADER ROW -->
                     <Border Background="#F8F9FA" 
                             BorderBrush="#DEE2E6" 
                             BorderThickness="1"
                             CornerRadius="4,4,0,0"
-                            ToolTipService.IsEnabled="False">
+                            ToolTip="{x:Null}">
                         <ItemsRepeater x:Name="HeaderItemsRepeater"
-                                       ToolTipService.IsEnabled="False">
+                                       ToolTip="{x:Null}">
                             <ItemsRepeater.Layout>
                                 <StackLayout Orientation="Horizontal"/>
                             </ItemsRepeater.Layout>
@@ -296,7 +281,7 @@
                                     <Border Style="{StaticResource HeaderCellStyle}"
                                             Width="{Binding Width}"
                                             MinWidth="{Binding MinWidth}"
-                                            ToolTipService.IsEnabled="False">
+                                            ToolTip="{x:Null}">
                                         <TextBlock Text="{Binding Header}"
                                                   FontWeight="SemiBold"
                                                   FontSize="12"
@@ -304,7 +289,7 @@
                                                   VerticalAlignment="Center"
                                                   HorizontalAlignment="Center"
                                                   TextTrimming="CharacterEllipsis"
-                                                  ToolTipService.IsEnabled="False"/>
+                                                  ToolTip="{x:Null}"/>
                                     </Border>
                                 </DataTemplate>
                             </ItemsRepeater.ItemTemplate>
@@ -314,7 +299,7 @@
                     <!-- DATA ROWS s ItemsRepeater -->
                     <ItemsRepeater x:Name="DataRowsItemsRepeater"
                                   ItemTemplate="{StaticResource RowTemplate}"
-                                  ToolTipService.IsEnabled="False">
+                                  ToolTip="{x:Null}">
                         <ItemsRepeater.Layout>
                             <StackLayout/>
                         </ItemsRepeater.Layout>
@@ -328,18 +313,18 @@
                        VerticalAlignment="Center"
                        Spacing="16"
                        Visibility="Collapsed"
-                       ToolTipService.IsEnabled="False">
+                       ToolTip="{x:Null}">
                 <TextBlock Text="📄 Žiadne dáta" 
                           FontSize="24" 
                           FontWeight="Bold" 
                           Foreground="#BDC3C7"
                           HorizontalAlignment="Center"
-                          ToolTipService.IsEnabled="False"/>
+                          ToolTip="{x:Null}"/>
                 <TextBlock Text="Použite LoadDataAsync() na načítanie dát" 
                           FontSize="14" 
                           Foreground="#95A5A6"
                           HorizontalAlignment="Center"
-                          ToolTipService.IsEnabled="False"/>
+                          ToolTip="{x:Null}"/>
             </StackPanel>
         </Grid>
 
@@ -350,8 +335,8 @@
         <Border Grid.Row="2" 
                 Background="#34495E" 
                 Padding="16,10"
-                ToolTipService.IsEnabled="False">
-            <Grid ToolTipService.IsEnabled="False">
+                ToolTip="{x:Null}">
+            <Grid ToolTip="{x:Null}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -361,45 +346,45 @@
                 <StackPanel Grid.Column="0" 
                            Orientation="Horizontal" 
                            Spacing="24"
-                           ToolTipService.IsEnabled="False">
+                           ToolTip="{x:Null}">
                     <TextBlock x:Name="ValidationStatusText" 
                               Text="Ready" 
                               Foreground="White" 
                               FontWeight="SemiBold"
                               VerticalAlignment="Center"
-                              ToolTipService.IsEnabled="False"/>
+                              ToolTip="{x:Null}"/>
 
                     <TextBlock x:Name="RowCountText"
                               Foreground="#BDC3C7" 
                               FontSize="12"
                               VerticalAlignment="Center"
                               Text="0 riadkov"
-                              ToolTipService.IsEnabled="False"/>
+                              ToolTip="{x:Null}"/>
 
                     <!-- VALIDATION PROGRESS -->
                     <StackPanel x:Name="ValidationProgressPanel"
                                Orientation="Horizontal" 
                                Spacing="8"
                                Visibility="Collapsed"
-                               ToolTipService.IsEnabled="False">
+                               ToolTip="{x:Null}">
                         <TextBlock Text="Validácia:" 
                                   Foreground="#F39C12" 
                                   FontSize="12"
                                   VerticalAlignment="Center"
-                                  ToolTipService.IsEnabled="False"/>
+                                  ToolTip="{x:Null}"/>
                         <ProgressBar x:Name="ValidationProgressBar"
                                     Value="0"
                                     Maximum="100"
                                     Width="100"
                                     Height="4"
                                     VerticalAlignment="Center"
-                                    ToolTipService.IsEnabled="False"/>
+                                    ToolTip="{x:Null}"/>
                         <TextBlock x:Name="ValidationProgressText"
                                    Foreground="#F39C12" 
                                    FontSize="11"
                                    VerticalAlignment="Center"
                                    Text="0%"
-                                   ToolTipService.IsEnabled="False"/>
+                                   ToolTip="{x:Null}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -407,12 +392,12 @@
                 <StackPanel Grid.Column="1" 
                            Orientation="Horizontal" 
                            Spacing="16"
-                           ToolTipService.IsEnabled="False">
+                           ToolTip="{x:Null}">
                     <ToggleButton x:Name="KeyboardShortcutsToggle"
                                  Content="⌨️ Shortcuts"
                                  FontSize="11"
                                  Padding="8,4"
-                                 ToolTipService.IsEnabled="False"/>
+                                 ToolTip="{x:Null}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -432,31 +417,31 @@
                 Padding="16"
                 Margin="0,0,0,60"
                 Visibility="Collapsed"
-                ToolTipService.IsEnabled="False">
-            <StackPanel Spacing="8" ToolTipService.IsEnabled="False">
+                ToolTip="{x:Null}">
+            <StackPanel Spacing="8" ToolTip="{x:Null}">
                 <TextBlock Text="⌨️ Klávesové skratky" 
                           FontWeight="Bold" 
                           Foreground="White" 
                           FontSize="14"
-                          ToolTipService.IsEnabled="False"/>
+                          ToolTip="{x:Null}"/>
 
-                <StackPanel Spacing="4" ToolTipService.IsEnabled="False">
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTipService.IsEnabled="False">
+                <StackPanel Spacing="4" ToolTip="{x:Null}">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
                         <Run Text="Double-click" Foreground="White"/> - Editácia bunky
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTipService.IsEnabled="False">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
                         <Run Text="Enter" Foreground="White"/> - Potvrdenie
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTipService.IsEnabled="False">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
                         <Run Text="ESC" Foreground="White"/> - Zrušenie
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTipService.IsEnabled="False">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
                         <Run Text="F2" Foreground="White"/> - Editácia
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTipService.IsEnabled="False">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
                         <Run Text="Tab" Foreground="White"/> - Navigácia
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTipService.IsEnabled="False">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
                         <Run Text="Ctrl+C/V" Foreground="White"/> - Copy/Paste
                     </TextBlock>
                 </StackPanel>
