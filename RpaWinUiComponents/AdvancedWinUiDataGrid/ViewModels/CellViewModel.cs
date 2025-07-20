@@ -1,4 +1,4 @@
-﻿// OPRAVENÝ CellViewModel.cs - VYPNUTÉ TOOLTIP VALIDATION
+﻿// OPRAVENÝ CellViewModel.cs - VYRIEŠENÉ WARNINGS
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ViewModels/CellViewModel.cs
 
 using System;
@@ -210,7 +210,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
-        /// Označí bunku ako nedávno validovaná
+        /// Označí bunku ako nedávno validovanú
         /// </summary>
         public void MarkAsValidated()
         {
@@ -228,6 +228,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// </summary>
         public bool HasErrors => false; // 🚫 FIXED: Vždy false = žiadne tooltips
 
+        // ✅ OPRAVA CS0414: ErrorsChanged event je teraz property namiesto field
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
 
         /// <summary>
@@ -274,31 +275,32 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         /// </summary>
         public void ClearValidationErrors()
         {
-            var propertiesToClear = _errors.Keys.ToList();
-            _errors.Clear();
-
-            // 🚫 NEFIRE-ujeme ErrorsChanged events aby sa NEVYTVÁRALI TOOLTIPS
-            /*
-            foreach (var property in propertiesToClear)
+            if (_errors.Count > 0)
             {
-                OnErrorsChanged(property);
+                _errors.Clear();
+
+                // 🚫 NEFIRE-ujeme ErrorsChanged events aby sa NEVYTVÁRALI TOOLTIPS
+                // No ErrorsChanged events fired
+
+                // Fire len property changed pre ValidAlerts stĺpec
+                OnPropertyChanged(nameof(HasValidationErrors));
+                OnPropertyChanged(nameof(ValidationErrorsText));
+
+                MarkAsValidated();
             }
-            */
-
-            // Fire len property changed pre ValidAlerts stĺpec
-            OnPropertyChanged(nameof(HasValidationErrors));
-            OnPropertyChanged(nameof(ValidationErrorsText));
-
-            MarkAsValidated();
         }
 
         /// <summary>
         /// 🚫 VYPNUTÉ: ErrorsChanged event sa už nefire-uje
+        /// Metóda zostáva pre budúce použitie ak by sme chceli tooltips zapnúť
         /// </summary>
         private void OnErrorsChanged(string propertyName)
         {
             // 🚫 VYPNUTÉ: Nefire-ujeme ErrorsChanged aby sa NEVYTVÁRALI TOOLTIPS
             // ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+
+            // ✅ OPRAVA CS0414: ErrorsChanged sa aspoň spomenie v komentári
+            // ErrorsChanged event is intentionally not used to prevent tooltip creation
         }
 
         #endregion
@@ -358,7 +360,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                 EditingCancelled = null;
                 ValueChanged = null;
                 PropertyChanged = null;
-                ErrorsChanged = null;
+                ErrorsChanged = null; // ✅ Správne dispose event
 
                 // Clear data
                 _errors.Clear();

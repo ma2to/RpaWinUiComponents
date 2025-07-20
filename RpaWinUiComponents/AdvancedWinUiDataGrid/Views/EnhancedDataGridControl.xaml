@@ -1,5 +1,5 @@
 <!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
-<!-- OPRAVENÉ: SPRÁVNA WinUI 3 syntax pre tooltips + lepšie farby -->
+<!-- OPRAVENÉ: SPRÁVNA WinUI 3 syntax - ŽIADNE TOOLTIPS -->
 
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.EnhancedDataGridControl"
@@ -24,7 +24,7 @@
         <converters:ProgressToPercentageConverter x:Key="ProgressToPercentageConverter"/>
 
         <!-- =============================================== -->
-        <!-- STYLES - SPRÁVNA WinUI 3 syntax pre tooltips -->
+        <!-- STYLES - BEZ TOOLTIPS -->
         <!-- =============================================== -->
 
         <!-- Cell Border Style -->
@@ -34,8 +34,6 @@
             <Setter Property="BorderBrush" Value="#DEE2E6"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Background" Value="White"/>
-            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
-            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- Header Cell Style -->
@@ -45,25 +43,20 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="8,10"/>
             <Setter Property="MinHeight" Value="45"/>
-            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
-            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
-        <!-- Display TextBlock Style - OPRAVENÉ FARBY + BEZ TOOLTIPS -->
+        <!-- Display TextBlock Style - OPRAVENÉ FARBY -->
         <Style x:Key="CellDisplayTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Padding" Value="8,6"/>
-            <!-- 🔧 OPRAVA: Tmavšia farba pre lepšiu čitateľnosť -->
             <Setter Property="Foreground" Value="#212529"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
-            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
-        <!-- Edit TextBox Style - OPRAVENÁ syntax pre WinUI 3 -->
+        <!-- Edit TextBox Style -->
         <Style x:Key="CellEditTextBoxStyle" TargetType="TextBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
@@ -71,28 +64,23 @@
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="BorderBrush" Value="#007ACC"/>
             <Setter Property="Background" Value="White"/>
-            <!-- 🔧 OPRAVA: Tmavšia farba pre lepšiu čitateľnosť -->
             <Setter Property="Foreground" Value="#212529"/>
             <Setter Property="Padding" Value="6,4"/>
             <Setter Property="AcceptsReturn" Value="False"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
-            <!-- ✅ WinUI 3: Správny spôsob vypnutia tooltips -->
-            <Setter Property="ToolTip" Value="{x:Null}"/>
         </Style>
 
         <!-- =============================================== -->
-        <!-- ROW TEMPLATE s ItemsRepeater - OPRAVENÁ syntax -->
+        <!-- ROW TEMPLATE s ItemsRepeater -->
         <!-- =============================================== -->
 
         <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
             <Border Background="{x:Bind IsEvenRow, Converter={StaticResource AlternatingRowBackgroundConverter}, Mode=OneWay}"
                     BorderBrush="#DEE2E6" 
-                    BorderThickness="1,0,1,1"
-                    ToolTip="{x:Null}">
+                    BorderThickness="1,0,1,1">
 
                 <!-- ItemsRepeater pre cells v riadku -->
-                <ItemsRepeater ItemsSource="{x:Bind Cells}"
-                               ToolTip="{x:Null}">
+                <ItemsRepeater ItemsSource="{x:Bind Cells}">
                     <ItemsRepeater.Layout>
                         <StackLayout Orientation="Horizontal"/>
                     </ItemsRepeater.Layout>
@@ -101,21 +89,18 @@
                         <DataTemplate x:DataType="viewmodels:CellViewModel">
                             <Border Style="{StaticResource OptimizedCellStyle}"
                                     Width="150"
-                                    MinWidth="80"
-                                    ToolTip="{x:Null}">
+                                    MinWidth="80">
 
-                                <Grid ToolTip="{x:Null}">
-
-                                    <!-- DISPLAY MODE: TextBlock - ŽIADNE TOOLTIPS, lepšie farby -->
+                                <Grid>
+                                    <!-- DISPLAY MODE: TextBlock -->
                                     <TextBlock x:Name="DisplayTextBlock"
                                                Text="{x:Bind DisplayValue, Mode=OneWay}"
                                                Style="{StaticResource CellDisplayTextStyle}"
                                                Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
                                                DoubleTapped="OnCellDoubleTapped"
-                                               Tapped="OnCellTapped"
-                                               ToolTip="{x:Null}"/>
+                                               Tapped="OnCellTapped"/>
 
-                                    <!-- EDIT MODE: TextBox - OPRAVENÁ syntax pre WinUI 3 -->
+                                    <!-- EDIT MODE: TextBox -->
                                     <TextBox x:Name="EditTextBox"
                                              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CellEditTextBoxStyle}"
@@ -125,10 +110,9 @@
                                              GotFocus="OnCellGotFocus"
                                              LostFocus="OnCellLostFocus"
                                              KeyDown="OnCellKeyDown"
-                                             TextChanged="OnCellTextChanged"
-                                             ToolTip="{x:Null}"/>
+                                             TextChanged="OnCellTextChanged"/>
 
-                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny, ŽIADNE TOOLTIPS -->
+                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny -->
                                     <Border x:Name="ValidationBorder"
                                             BorderBrush="Red"
                                             BorderThickness="2"
@@ -136,18 +120,16 @@
                                             CornerRadius="2"
                                             Visibility="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                                             IsHitTestVisible="False"
-                                            Opacity="0.7"
-                                            ToolTip="{x:Null}"/>
+                                            Opacity="0.7"/>
 
-                                    <!-- FOCUS INDICATOR - ŽIADNE TOOLTIPS -->
+                                    <!-- FOCUS INDICATOR -->
                                     <Rectangle x:Name="FocusIndicator"
                                                Stroke="#007ACC"
                                                StrokeThickness="2"
                                                StrokeDashArray="2,2"
                                                Fill="Transparent"
                                                Visibility="{x:Bind HasFocus, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
-                                               IsHitTestVisible="False"
-                                               ToolTip="{x:Null}"/>
+                                               IsHitTestVisible="False"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -163,29 +145,25 @@
         <DataTemplate x:Key="LoadingTemplate">
             <StackPanel HorizontalAlignment="Center" 
                        VerticalAlignment="Center"
-                       Spacing="16"
-                       ToolTip="{x:Null}">
-                <ProgressRing Width="48" Height="48" IsActive="True"
-                              ToolTip="{x:Null}"/>
+                       Spacing="16">
+                <ProgressRing Width="48" Height="48" IsActive="True"/>
                 <TextBlock Text="Načítava sa..." 
                           FontSize="16" 
                           Foreground="#7F8C8D"
-                          HorizontalAlignment="Center"
-                          ToolTip="{x:Null}"/>
+                          HorizontalAlignment="Center"/>
                 <ProgressBar Value="0"
                             Maximum="100"
                             Width="200"
-                            Height="4"
-                            ToolTip="{x:Null}"/>
+                            Height="4"/>
             </StackPanel>
         </DataTemplate>
     </UserControl.Resources>
 
     <!-- =============================================== -->
-    <!-- MAIN LAYOUT - OPRAVENÁ syntax -->
+    <!-- MAIN LAYOUT -->
     <!-- =============================================== -->
 
-    <Grid ToolTip="{x:Null}">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <!-- Header -->
@@ -203,23 +181,19 @@
                 Background="#F8F9FA" 
                 BorderBrush="#DEE2E6" 
                 BorderThickness="0,0,0,1" 
-                Padding="16,12"
-                ToolTip="{x:Null}">
-            <StackPanel Orientation="Horizontal"
-                        ToolTip="{x:Null}">
+                Padding="16,12">
+            <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🎯 Enhanced RpaWinUiComponents DataGrid" 
                            FontSize="18" 
                            FontWeight="Bold" 
                            Foreground="#2C3E50"
-                           VerticalAlignment="Center"
-                           ToolTip="{x:Null}"/>
+                           VerticalAlignment="Center"/>
                 <TextBlock x:Name="LoadingMessageText"
                            Text=" - Ready"
                            FontSize="14"
                            Foreground="#7F8C8D"
                            VerticalAlignment="Center"
-                           Margin="16,0,0,0"
-                           ToolTip="{x:Null}"/>
+                           Margin="16,0,0,0"/>
             </StackPanel>
         </Border>
 
@@ -227,28 +201,24 @@
         <!-- MAIN CONTENT -->
         <!-- =============================================== -->
 
-        <Grid Grid.Row="1" ToolTip="{x:Null}">
+        <Grid Grid.Row="1">
             <!-- Loading Panel -->
             <StackPanel x:Name="LoadingPanel"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Spacing="16"
-                       Visibility="Collapsed"
-                       ToolTip="{x:Null}">
-                <ProgressRing Width="48" Height="48" IsActive="True"
-                              ToolTip="{x:Null}"/>
+                       Visibility="Collapsed">
+                <ProgressRing Width="48" Height="48" IsActive="True"/>
                 <TextBlock x:Name="LoadingMessageTextBlock"
                           Text="Načítava sa DataGrid..."
                           FontSize="16"
                           Foreground="#7F8C8D"
-                          HorizontalAlignment="Center"
-                          ToolTip="{x:Null}"/>
+                          HorizontalAlignment="Center"/>
                 <ProgressBar x:Name="LoadingProgressBar"
                             Value="0"
                             Maximum="100"
                             Width="200"
-                            Height="4"
-                            ToolTip="{x:Null}"/>
+                            Height="4"/>
             </StackPanel>
 
             <!-- Main DataGrid -->
@@ -260,18 +230,15 @@
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Background="White"
-                          Padding="8"
-                          ToolTip="{x:Null}">
+                          Padding="8">
 
-                <StackPanel ToolTip="{x:Null}">
+                <StackPanel>
                     <!-- HEADER ROW -->
                     <Border Background="#F8F9FA" 
                             BorderBrush="#DEE2E6" 
                             BorderThickness="1"
-                            CornerRadius="4,4,0,0"
-                            ToolTip="{x:Null}">
-                        <ItemsRepeater x:Name="HeaderItemsRepeater"
-                                       ToolTip="{x:Null}">
+                            CornerRadius="4,4,0,0">
+                        <ItemsRepeater x:Name="HeaderItemsRepeater">
                             <ItemsRepeater.Layout>
                                 <StackLayout Orientation="Horizontal"/>
                             </ItemsRepeater.Layout>
@@ -280,16 +247,14 @@
                                 <DataTemplate>
                                     <Border Style="{StaticResource HeaderCellStyle}"
                                             Width="{Binding Width}"
-                                            MinWidth="{Binding MinWidth}"
-                                            ToolTip="{x:Null}">
+                                            MinWidth="{Binding MinWidth}">
                                         <TextBlock Text="{Binding Header}"
                                                   FontWeight="SemiBold"
                                                   FontSize="12"
                                                   Foreground="#495057"
                                                   VerticalAlignment="Center"
                                                   HorizontalAlignment="Center"
-                                                  TextTrimming="CharacterEllipsis"
-                                                  ToolTip="{x:Null}"/>
+                                                  TextTrimming="CharacterEllipsis"/>
                                     </Border>
                                 </DataTemplate>
                             </ItemsRepeater.ItemTemplate>
@@ -298,8 +263,7 @@
 
                     <!-- DATA ROWS s ItemsRepeater -->
                     <ItemsRepeater x:Name="DataRowsItemsRepeater"
-                                  ItemTemplate="{StaticResource RowTemplate}"
-                                  ToolTip="{x:Null}">
+                                  ItemTemplate="{StaticResource RowTemplate}">
                         <ItemsRepeater.Layout>
                             <StackLayout/>
                         </ItemsRepeater.Layout>
@@ -312,19 +276,16 @@
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        Spacing="16"
-                       Visibility="Collapsed"
-                       ToolTip="{x:Null}">
+                       Visibility="Collapsed">
                 <TextBlock Text="📄 Žiadne dáta" 
                           FontSize="24" 
                           FontWeight="Bold" 
                           Foreground="#BDC3C7"
-                          HorizontalAlignment="Center"
-                          ToolTip="{x:Null}"/>
+                          HorizontalAlignment="Center"/>
                 <TextBlock Text="Použite LoadDataAsync() na načítanie dát" 
                           FontSize="14" 
                           Foreground="#95A5A6"
-                          HorizontalAlignment="Center"
-                          ToolTip="{x:Null}"/>
+                          HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
 
@@ -334,9 +295,8 @@
 
         <Border Grid.Row="2" 
                 Background="#34495E" 
-                Padding="16,10"
-                ToolTip="{x:Null}">
-            <Grid ToolTip="{x:Null}">
+                Padding="16,10">
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -345,59 +305,50 @@
                 <!-- Status Info -->
                 <StackPanel Grid.Column="0" 
                            Orientation="Horizontal" 
-                           Spacing="24"
-                           ToolTip="{x:Null}">
+                           Spacing="24">
                     <TextBlock x:Name="ValidationStatusText" 
                               Text="Ready" 
                               Foreground="White" 
                               FontWeight="SemiBold"
-                              VerticalAlignment="Center"
-                              ToolTip="{x:Null}"/>
+                              VerticalAlignment="Center"/>
 
                     <TextBlock x:Name="RowCountText"
                               Foreground="#BDC3C7" 
                               FontSize="12"
                               VerticalAlignment="Center"
-                              Text="0 riadkov"
-                              ToolTip="{x:Null}"/>
+                              Text="0 riadkov"/>
 
                     <!-- VALIDATION PROGRESS -->
                     <StackPanel x:Name="ValidationProgressPanel"
                                Orientation="Horizontal" 
                                Spacing="8"
-                               Visibility="Collapsed"
-                               ToolTip="{x:Null}">
+                               Visibility="Collapsed">
                         <TextBlock Text="Validácia:" 
                                   Foreground="#F39C12" 
                                   FontSize="12"
-                                  VerticalAlignment="Center"
-                                  ToolTip="{x:Null}"/>
+                                  VerticalAlignment="Center"/>
                         <ProgressBar x:Name="ValidationProgressBar"
                                     Value="0"
                                     Maximum="100"
                                     Width="100"
                                     Height="4"
-                                    VerticalAlignment="Center"
-                                    ToolTip="{x:Null}"/>
+                                    VerticalAlignment="Center"/>
                         <TextBlock x:Name="ValidationProgressText"
                                    Foreground="#F39C12" 
                                    FontSize="11"
                                    VerticalAlignment="Center"
-                                   Text="0%"
-                                   ToolTip="{x:Null}"/>
+                                   Text="0%"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Keyboard Shortcuts Info -->
                 <StackPanel Grid.Column="1" 
                            Orientation="Horizontal" 
-                           Spacing="16"
-                           ToolTip="{x:Null}">
+                           Spacing="16">
                     <ToggleButton x:Name="KeyboardShortcutsToggle"
                                  Content="⌨️ Shortcuts"
                                  FontSize="11"
-                                 Padding="8,4"
-                                 ToolTip="{x:Null}"/>
+                                 Padding="8,4"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -416,32 +367,30 @@
                 CornerRadius="8,0,0,0"
                 Padding="16"
                 Margin="0,0,0,60"
-                Visibility="Collapsed"
-                ToolTip="{x:Null}">
-            <StackPanel Spacing="8" ToolTip="{x:Null}">
+                Visibility="Collapsed">
+            <StackPanel Spacing="8">
                 <TextBlock Text="⌨️ Klávesové skratky" 
                           FontWeight="Bold" 
                           Foreground="White" 
-                          FontSize="14"
-                          ToolTip="{x:Null}"/>
+                          FontSize="14"/>
 
-                <StackPanel Spacing="4" ToolTip="{x:Null}">
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
+                <StackPanel Spacing="4">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="Double-click" Foreground="White"/> - Editácia bunky
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="Enter" Foreground="White"/> - Potvrdenie
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="ESC" Foreground="White"/> - Zrušenie
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="F2" Foreground="White"/> - Editácia
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="Tab" Foreground="White"/> - Navigácia
                     </TextBlock>
-                    <TextBlock Foreground="#BDC3C7" FontSize="11" ToolTip="{x:Null}">
+                    <TextBlock Foreground="#BDC3C7" FontSize="11">
                         <Run Text="Ctrl+C/V" Foreground="White"/> - Copy/Paste
                     </TextBlock>
                 </StackPanel>
