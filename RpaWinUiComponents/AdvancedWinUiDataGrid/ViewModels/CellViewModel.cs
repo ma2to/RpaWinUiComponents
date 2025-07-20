@@ -1,4 +1,4 @@
-﻿// KROK 1: Opravenie CellViewModel.cs - Odstránenie duplikovanej RowViewModel definície
+﻿// OPRAVENÝ CellViewModel.cs - VYPNUTÉ TOOLTIP VALIDATION
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/ViewModels/CellViewModel.cs
 
 using System;
@@ -11,8 +11,8 @@ using System.Runtime.CompilerServices;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// Enhanced ViewModel pre jednu bunku s proper INotifyDataErrorInfo validation pattern
-    /// OPRAVA CS0101: Odstránená duplikovaná RowViewModel definícia z tohto súboru
+    /// Enhanced ViewModel pre jednu bunku s VYPNUTÝMI tooltip validáciami
+    /// OPRAVA: INotifyDataErrorInfo NEVRÁTI errors pre tooltips - len pre ValidAlerts stĺpec
     /// </summary>
     public class CellViewModel : INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
     {
@@ -118,7 +118,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         public bool HasValidationErrors => _errors.Count > 0;
 
         /// <summary>
-        /// Text validačných chýb pre zobrazenie
+        /// Text validačných chýb pre zobrazenie - LEN PRE ValidAlerts stĺpec
         /// </summary>
         public string ValidationErrorsText =>
             string.Join("; ", _errors.SelectMany(kvp => kvp.Value));
@@ -210,7 +210,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         }
 
         /// <summary>
-        /// Označí bunku ako nedávno validovanú
+        /// Označí bunku ako nedávno validovaná
         /// </summary>
         public void MarkAsValidated()
         {
@@ -220,22 +220,28 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region INotifyDataErrorInfo Implementation
+        #region OPRAVENÉ INotifyDataErrorInfo Implementation - BEZ TOOLTIP SUPPORT
 
-        public bool HasErrors => _errors.Count > 0;
+        /// <summary>
+        /// 🚫 KRITICKÁ OPRAVA: VŽDY vráti FALSE aby sa NEVYTVÁRALI TOOLTIPS
+        /// Validation errors sa zobrazia len v ValidAlerts stĺpci cez ValidationErrorsText property
+        /// </summary>
+        public bool HasErrors => false; // 🚫 FIXED: Vždy false = žiadne tooltips
 
         public event EventHandler<DataErrorsChangedEventArgs>? ErrorsChanged;
 
+        /// <summary>
+        /// 🚫 KRITICKÁ OPRAVA: VŽDY vráti prázdnu kolekciu aby sa NEVYTVÁRALI TOOLTIPS
+        /// Validation errors sa zobrazia len v ValidAlerts stĺpci
+        /// </summary>
         public IEnumerable GetErrors(string? propertyName)
         {
-            if (string.IsNullOrEmpty(propertyName))
-                return _errors.SelectMany(kvp => kvp.Value);
-
-            return _errors.TryGetValue(propertyName, out var errors) ? errors : Enumerable.Empty<string>();
+            // 🚫 FIXED: Vždy vráti prázdnu kolekciu = žiadne tooltips
+            return Enumerable.Empty<string>();
         }
 
         /// <summary>
-        /// Nastaví validačné chyby pre property
+        /// Nastaví validačné chyby pre property - INTERNÉ pre ValidAlerts stĺpec
         /// </summary>
         public void SetValidationErrors(string propertyName, IEnumerable<string> errors)
         {
@@ -245,15 +251,18 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             {
                 if (_errors.Remove(propertyName))
                 {
-                    OnErrorsChanged(propertyName);
+                    // 🚫 NEFIRE-ujeme ErrorsChanged aby sa NEVYTVÁRALI TOOLTIPS
+                    // OnErrorsChanged(propertyName);
                 }
             }
             else
             {
                 _errors[propertyName] = errorList;
-                OnErrorsChanged(propertyName);
+                // 🚫 NEFIRE-ujeme ErrorsChanged aby sa NEVYTVÁRALI TOOLTIPS
+                // OnErrorsChanged(propertyName);
             }
 
+            // Fire len property changed pre ValidAlerts stĺpec
             OnPropertyChanged(nameof(HasValidationErrors));
             OnPropertyChanged(nameof(ValidationErrorsText));
 
@@ -268,20 +277,28 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             var propertiesToClear = _errors.Keys.ToList();
             _errors.Clear();
 
+            // 🚫 NEFIRE-ujeme ErrorsChanged events aby sa NEVYTVÁRALI TOOLTIPS
+            /*
             foreach (var property in propertiesToClear)
             {
                 OnErrorsChanged(property);
             }
+            */
 
+            // Fire len property changed pre ValidAlerts stĺpec
             OnPropertyChanged(nameof(HasValidationErrors));
             OnPropertyChanged(nameof(ValidationErrorsText));
 
             MarkAsValidated();
         }
 
+        /// <summary>
+        /// 🚫 VYPNUTÉ: ErrorsChanged event sa už nefire-uje
+        /// </summary>
         private void OnErrorsChanged(string propertyName)
         {
-            ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
+            // 🚫 VYPNUTÉ: Nefire-ujeme ErrorsChanged aby sa NEVYTVÁRALI TOOLTIPS
+            // ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(propertyName));
         }
 
         #endregion
@@ -369,7 +386,4 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             return $"Cell[{RowIndex},{ColumnIndex}] {ColumnName}: {DisplayValue} (Errors: {_errors.Count})";
         }
     }
-
-    // OPRAVA CS0101: RowViewModel definitívne ODSTRÁNENÁ z tohto súboru
-    // RowViewModel má svoju vlastnú trieda v RowViewModel.cs
 }
