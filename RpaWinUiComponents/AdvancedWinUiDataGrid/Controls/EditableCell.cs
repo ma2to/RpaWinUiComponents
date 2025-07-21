@@ -1,4 +1,4 @@
-﻿// OPRAVA 3,5: Custom EditableCell Control s Proper Validation + UI/UX
+﻿// OPRAVENÝ EditableCell.cs - INTERNAL TRIEDA
 // SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Controls/EditableCell.cs
 
 using System;
@@ -12,14 +12,15 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
 {
     /// <summary>
+    /// ✅ OPRAVA: INTERNAL Custom control - nie je súčasťou PUBLIC API
     /// Custom control pre editovateľnú bunku s proper validation support
-    /// OPRAVA: Nahradí manuálne TextBox vytváranie za proper control s validation
+    /// Táto trieda je INTERNAL a nie je viditeľná v NuGet package
     /// </summary>
     [TemplatePart(Name = "PART_DisplayText", Type = typeof(TextBlock))]
     [TemplatePart(Name = "PART_EditText", Type = typeof(TextBox))]
     [TemplatePart(Name = "PART_RootBorder", Type = typeof(Border))]
     [TemplatePart(Name = "PART_ValidationBorder", Type = typeof(Border))]
-    public sealed class EditableCell : Control
+    internal sealed class EditableCell : Control  // ✅ CHANGED: public -> internal
     {
         private TextBlock? _displayText;
         private TextBox? _editText;
@@ -70,7 +71,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
 
         #endregion
 
-        #region Events (OPRAVA 5: Better Focus Management)
+        #region Events (Better Focus Management)
 
         public event EventHandler<CellViewModel>? EditingStarted;
         public event EventHandler<CellViewModel>? EditingCompleted;
@@ -83,7 +84,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
         {
             DefaultStyleKey = typeof(EditableCell);
 
-            // OPRAVA 5: Keyboard support zachované
+            // Keyboard support
             this.KeyDown += OnKeyDown;
             this.DoubleTapped += OnDoubleTapped;
             this.Tapped += OnTapped;
@@ -123,13 +124,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
             UpdateDisplayValue();
         }
 
-        #region Event Handlers (OPRAVA 5: Proper Keyboard Navigation)
+        #region Event Handlers (Proper Keyboard Navigation)
 
         private void OnKeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (CellViewModel == null) return;
 
-            // ZACHOVANÉ: Všetky klávesové skratky
             switch (e.Key)
             {
                 case VirtualKey.F2:
@@ -237,7 +237,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
         {
             if (_editText != null && CellViewModel != null && IsEditing)
             {
-                // ZACHOVANÉ: Real-time validation trigger
                 CellViewModel.Value = _editText.Text;
             }
         }
@@ -426,7 +425,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
         {
             if (!_isTemplateApplied) return;
 
-            // OPRAVA 3: Proper Visual States
             var stateName = IsEditing ? "Editing" : "Normal";
             VisualStateManager.GoToState(this, stateName, true);
 
@@ -444,21 +442,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
             var hasErrors = CellViewModel?.HasValidationErrors == true;
             HasValidationError = hasErrors;
 
-            // OPRAVA 3: Proper validation visual feedback
             var validationState = hasErrors ? "ValidationError" : "Valid";
             VisualStateManager.GoToState(this, validationState, true);
-
-            // ❌ ODSTRÁNENÉ: Update tooltip with validation errors
-            /*
-            if (hasErrors && !string.IsNullOrEmpty(CellViewModel?.ValidationErrorsText))
-            {
-                ToolTipService.SetToolTip(this, CellViewModel.ValidationErrorsText);
-            }
-            else
-            {
-                ToolTipService.SetToolTip(this, null);
-            }
-            */
 
             // Update validation border
             if (_validationBorder != null)

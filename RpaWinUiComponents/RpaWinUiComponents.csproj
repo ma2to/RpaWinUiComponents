@@ -1,5 +1,4 @@
-﻿<!-- AKTUALIZOVANÝ RpaWinUiComponents.csproj - v1.0.19 -->
-<!-- OPRAVY: Odstránené DataGridContainer warnings + tooltips -->
+﻿<!-- OPRAVENÝ RpaWinUiComponents.csproj - v1.0.20 - FIXED XBF generation -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -7,8 +6,8 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <!-- ✅ AKTUALIZOVANÁ VERZIA -->
-    <PackageVersion>1.0.19</PackageVersion>
+    <!-- ✅ NOVÁ VERZIA -->
+    <PackageVersion>1.0.20</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- XAML nastavenia -->
@@ -16,12 +15,15 @@
     <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 
-    <!-- XBF generation -->
+    <!-- ✅ OPRAVENÉ XBF generation settings -->
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
     <DisableXbfGeneratedMain>true</DisableXbfGeneratedMain>
     <GenerateXbf>true</GenerateXbf>
     <EnableXbfGeneration>true</EnableXbfGeneration>
     <IncludeXbfInPackage>true</IncludeXbfInPackage>
+    <!-- ✅ PRIDANÉ: Force XBF generation -->
+    <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
+    <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
 
     <!-- Windows App SDK settings -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
@@ -33,30 +35,61 @@
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
-  <!-- Explicitné .cs súbory -->
+  <!-- ✅ OPRAVENÉ: Explicitné .cs súbory - INTERNAL triedy -->
   <ItemGroup>
-    <!-- ✅ LEN EnhancedDataGridControl -->
+    <!-- Main control -->
     <Compile Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml.cs" />
+    
+    <!-- Global files -->
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
-    <Compile Include="AdvancedWinUiDataGrid\**\*.cs" Exclude="AdvancedWinUiDataGrid\Views\*.xaml.cs" />
+    
+    <!-- ✅ OPRAVENÉ: Include len PUBLIC API súbory -->
+    <Compile Include="AdvancedWinUiDataGrid\AdvancedWinUiDataGridControl.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\ColumnDefinition.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\ValidationRule.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\ThrottlingConfig.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\ServiceCollectionExtensions.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\PublicApiExport.cs" />
+    
+    <!-- ✅ INTERNAL services a komponenty -->
+    <Compile Include="AdvancedWinUiDataGrid\Services\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\ViewModels\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Models\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Commands\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Converters\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Collections\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Events\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Helpers\**\*.cs" />
+    <Compile Include="AdvancedWinUiDataGrid\Configuration\**\*.cs" />
+    
+    <!-- ❌ VYLÚČENÉ: EditableCell a ostatné internal controls -->
+    <!-- <Compile Include="AdvancedWinUiDataGrid\Controls\**\*.cs" /> -->
   </ItemGroup>
 
+  <!-- ✅ FIXED: Removed XAML files that don't exist or shouldn't be public -->
   <ItemGroup>
-    <!-- ✅ LEN EnhancedDataGridControl XAML -->
     <None Remove="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml" />
+    <!-- ❌ REMOVED: EditableCell.xaml - internal component -->
+    <!-- <None Remove="AdvancedWinUiDataGrid\Themes\EditableCell.xaml" /> -->
   </ItemGroup>
 
-  <!-- XAML súbory ako Page -->
+  <!-- ✅ OPRAVENÉ: LEN potrebné XAML súbory -->
   <ItemGroup>
+    <!-- Generic themes -->
     <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <!-- ✅ LEN EnhancedDataGridControl -->
+    
+    <!-- Main control -->
     <Page Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
+    
+    <!-- ❌ REMOVED: EditableCell.xaml je internal, nebude v package -->
+    <!-- <Page Include="AdvancedWinUiDataGrid\Themes\EditableCell.xaml"> -->
   </ItemGroup>
 
   <!-- Dependencies - nezmenené -->
@@ -76,13 +109,13 @@
 
   <!-- ✅ AKTUALIZOVANÉ Package metadata -->
   <PropertyGroup>
-    <Title>RpaWinUiComponents - Advanced DataGrid FIXED</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s ItemsRepeater, OPRAVENÝ v1.0.19 - bez tooltips a DataGridContainer warnings</Description>
+    <Title>RpaWinUiComponents - Advanced DataGrid CLEAN API</Title>
+    <Description>Pokročilý WinUI 3 DataGrid komponent, OPRAVENÝ v1.0.20 - čistý PUBLIC API, správna XBF generation</Description>
     <Authors>RPA Solutions</Authors>
     <!-- ✅ AKTUALIZOVANÉ Release notes -->
-    <PackageReleaseNotes>v1.0.19: OPRAVENÉ - Odstránené DataGridContainer warnings z EnhancedDataGridControl.xaml.cs, odstránené všetky tooltip definície z XAML súborov, opravené názvy elementov. Žiadne warnings v output, žiadne tooltips v bunkách.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.20: MAJOR FIX - Opravená XBF generation pre XAML súbory, vyčistený PUBLIC API (EditableCell je teraz internal), iba potrebné triedy sú exportované do NuGet package</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/yourusername/RpaWinUiComponents</RepositoryUrl>
-    <PackageTags>WinUI3;DataGrid;Validation;Copy;Paste;ItemsRepeater;Fixed</PackageTags>
+    <PackageTags>WinUI3;DataGrid;Validation;Copy;Paste;CleanAPI;Fixed</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
