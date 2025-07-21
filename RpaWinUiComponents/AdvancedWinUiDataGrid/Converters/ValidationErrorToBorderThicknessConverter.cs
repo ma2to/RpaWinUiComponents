@@ -5,7 +5,7 @@ using System;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Converters
 {
-    public class ValidationErrorToBorderThicknessConverter : IValueConverter
+    internal class ValidationErrorToBorderThicknessConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

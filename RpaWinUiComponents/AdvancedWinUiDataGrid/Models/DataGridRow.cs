@@ -10,7 +10,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
     /// <summary>
     /// Model pre jeden riadok v DataGrid
     /// </summary>
-    public class DataGridRow : INotifyPropertyChanged
+    internal class DataGridRow : INotifyPropertyChanged
     {
         private Dictionary<string, DataGridCell> _cells = new();
         private bool _hasValidationErrors;

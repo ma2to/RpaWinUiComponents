@@ -6,7 +6,7 @@ using System;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Converters
 {
-    public class ProgressToPercentageConverter : IValueConverter
+    internal class ProgressToPercentageConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

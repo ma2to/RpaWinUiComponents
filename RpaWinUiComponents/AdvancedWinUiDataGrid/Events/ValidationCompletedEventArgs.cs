@@ -6,7 +6,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
 {
-    public class ValidationCompletedEventArgs : EventArgs
+    internal class ValidationCompletedEventArgs : EventArgs
     {
         public DataGridRow? Row { get; init; }
         public DataGridCell? Cell { get; init; }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Commands
 {
-    public class AsyncRelayCommand : ICommand
+    internal class AsyncRelayCommand : ICommand
     {
         private readonly Func<Task> _executeAsync;
         private readonly Func<bool>? _canExecute;

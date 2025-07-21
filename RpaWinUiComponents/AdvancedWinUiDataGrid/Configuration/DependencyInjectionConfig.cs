@@ -12,7 +12,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
     /// <summary>
     /// Konfigurácia Dependency Injection pre AdvancedWinUiDataGrid
     /// </summary>
-    public static class DependencyInjectionConfig
+    internal static class DependencyInjectionConfig
     {
         private static IServiceProvider? _serviceProvider;
 
@@ -204,7 +204,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Configuration
     /// <summary>
     /// Implementácia IDataGridLoggerProvider pre produkčné použitie
     /// </summary>
-    public class DataGridLoggerProvider : IDataGridLoggerProvider
+    internal class DataGridLoggerProvider : IDataGridLoggerProvider
     {
         private readonly ILoggerFactory? _loggerFactory;
 

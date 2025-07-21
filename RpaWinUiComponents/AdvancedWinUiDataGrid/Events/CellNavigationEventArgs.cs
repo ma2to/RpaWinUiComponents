@@ -4,7 +4,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
 {
-    public class CellNavigationEventArgs : EventArgs
+    internal class CellNavigationEventArgs : EventArgs
     {
         public int OldRowIndex { get; init; }
         public int OldColumnIndex { get; init; }

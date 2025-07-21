@@ -8,7 +8,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
     /// <summary>
     /// Výsledok validácie bunky alebo riadku
     /// </summary>
-    public class ValidationResult
+    internal class ValidationResult
     {
         public bool IsValid { get; init; }
         public List<string> ErrorMessages { get; init; } = new();

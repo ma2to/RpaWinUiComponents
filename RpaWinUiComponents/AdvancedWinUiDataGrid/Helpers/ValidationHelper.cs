@@ -11,7 +11,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers
     /// <summary>
     /// Pomocné metódy pre tvorbu validačných pravidiel
     /// </summary>
-    public static class ValidationHelper
+    internal static class ValidationHelper
     {
         /// <summary>
         /// Vytvorí pravidlo pre povinné pole

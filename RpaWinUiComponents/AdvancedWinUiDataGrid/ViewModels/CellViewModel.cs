@@ -14,7 +14,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
     /// Enhanced ViewModel pre jednu bunku s VYPNUTÝMI tooltip validáciami
     /// OPRAVA: INotifyDataErrorInfo NEVRÁTI errors pre tooltips - len pre ValidAlerts stĺpec
     /// </summary>
-    public class CellViewModel : INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
+    internal class CellViewModel : INotifyPropertyChanged, INotifyDataErrorInfo, IDisposable
     {
         private object? _value;
         private object? _originalValue;

@@ -5,7 +5,7 @@ using Microsoft.UI.Dispatching;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Commands
 {
-    public class RelayCommand : ICommand
+    internal class RelayCommand : ICommand
     {
         private readonly Action _execute;
         private readonly Func<bool>? _canExecute;

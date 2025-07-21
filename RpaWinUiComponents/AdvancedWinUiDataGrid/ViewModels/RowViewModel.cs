@@ -19,7 +19,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
     /// ZLEPŠENIE 4: Performance optimizations s virtualizáciou
     /// OPRAVA CS0122: UpdateRowStatus je teraz public
     /// </summary>
-    public class RowViewModel : INotifyPropertyChanged, IDisposable
+    internal class RowViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly ObservableRangeCollection<CellViewModel> _cells = new();
         private readonly Dictionary<string, CellViewModel> _cellLookup = new();

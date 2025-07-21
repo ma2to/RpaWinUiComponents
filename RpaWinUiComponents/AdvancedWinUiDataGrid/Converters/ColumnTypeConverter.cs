@@ -8,7 +8,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Converters
     /// <summary>
     /// Converter ktorý rozpozná typ stĺpca a vráti Visibility pre príslušný UI element
     /// </summary>
-    public class ColumnTypeConverter : IValueConverter
+    internal class ColumnTypeConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

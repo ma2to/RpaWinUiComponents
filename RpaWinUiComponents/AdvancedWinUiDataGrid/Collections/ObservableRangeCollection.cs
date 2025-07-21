@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Collections
 {
-    public class ObservableRangeCollection<T> : ObservableCollection<T>
+    internal class ObservableRangeCollection<T> : ObservableCollection<T>
     {
         private bool _suppressNotification = false;
 

@@ -3,7 +3,7 @@ using System;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
 {
-    public class DataChangeEventArgs : EventArgs
+    internal class DataChangeEventArgs : EventArgs
     {
         public DataChangeType ChangeType { get; init; }
         public object? ChangedData { get; init; }

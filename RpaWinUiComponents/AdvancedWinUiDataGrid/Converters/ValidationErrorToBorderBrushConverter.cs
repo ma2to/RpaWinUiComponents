@@ -6,7 +6,7 @@ using System;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Converters
 {
-    public class ValidationErrorToBorderBrushConverter : IValueConverter
+    internal class ValidationErrorToBorderBrushConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

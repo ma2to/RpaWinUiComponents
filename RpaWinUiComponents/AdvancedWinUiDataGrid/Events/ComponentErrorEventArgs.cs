@@ -3,7 +3,7 @@ using System;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
 {
-    public class ComponentErrorEventArgs : EventArgs
+    internal class ComponentErrorEventArgs : EventArgs
     {
         public Exception Exception { get; }
         public string Operation { get; }

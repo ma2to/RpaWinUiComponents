@@ -10,7 +10,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Models
     /// <summary>
     /// Model pre jednu bunku v DataGrid
     /// </summary>
-    public class DataGridCell : INotifyPropertyChanged
+    internal class DataGridCell : INotifyPropertyChanged
     {
         private object? _value;
         private object? _originalValue;

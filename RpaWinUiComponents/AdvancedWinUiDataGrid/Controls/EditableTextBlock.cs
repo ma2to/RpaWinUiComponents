@@ -11,7 +11,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Controls
     /// <summary>
     /// Custom control ktorý umožňuje prepínanie medzi TextBlock a TextBox pre in-place editing
     /// </summary>
-    public sealed class EditableTextBlock : Control
+    internal sealed class EditableTextBlock : Control
     {
         private TextBlock? _textBlock;
         private TextBox? _textBox;

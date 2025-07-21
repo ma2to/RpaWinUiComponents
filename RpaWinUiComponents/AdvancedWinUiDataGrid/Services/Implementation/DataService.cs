@@ -13,7 +13,7 @@ using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefiniti
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
-    public class DataService : IDataService
+    internal class DataService : IDataService
     {
         private readonly ILogger<DataService> _logger;
         private List<DataGridRow> _rows = new();

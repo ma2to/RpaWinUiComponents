@@ -4,7 +4,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Helpers
     /// <summary>
     /// Jednoduchý helper pre debug logging
     /// </summary>
-    public static class DebugHelper
+    internal static class DebugHelper
     {
         /// <summary>
         /// Či je debug logging povolený
