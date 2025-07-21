@@ -3,7 +3,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.18</RpaWinUiComponentsVersion>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.19</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
   <!-- ✅ ZÁKLADNÁ KONTROLA: Nie sme v samom RpaWinUiComponents projekte -->

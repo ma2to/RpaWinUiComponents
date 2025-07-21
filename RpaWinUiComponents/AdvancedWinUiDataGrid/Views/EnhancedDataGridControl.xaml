@@ -1,6 +1,4 @@
-<!-- SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml -->
-<!-- OPRAVENÉ: SPRÁVNA WinUI 3 syntax - ŽIADNE TOOLTIPS -->
-
+<!-- OPRAVENÝ EnhancedDataGridControl.xaml - ODSTRÁNENÉ TOOLTIPS a opravené element names -->
 <UserControl
     x:Class="RpaWinUiComponents.AdvancedWinUiDataGrid.Views.EnhancedDataGridControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -45,7 +43,7 @@
             <Setter Property="MinHeight" Value="45"/>
         </Style>
 
-        <!-- Display TextBlock Style - OPRAVENÉ FARBY -->
+        <!-- Display TextBlock Style - OPRAVENÉ FARBY, BEZ TOOLTIPS -->
         <Style x:Key="CellDisplayTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -54,9 +52,10 @@
             <Setter Property="Foreground" Value="#212529"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+            <!-- ❌ ODSTRÁNENÉ: ToolTip definície -->
         </Style>
 
-        <!-- Edit TextBox Style -->
+        <!-- Edit TextBox Style - BEZ TOOLTIPS -->
         <Style x:Key="CellEditTextBoxStyle" TargetType="TextBox">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="VerticalAlignment" Value="Stretch"/>
@@ -68,10 +67,11 @@
             <Setter Property="Padding" Value="6,4"/>
             <Setter Property="AcceptsReturn" Value="False"/>
             <Setter Property="TextWrapping" Value="NoWrap"/>
+            <!-- ❌ ODSTRÁNENÉ: ToolTip definície -->
         </Style>
 
         <!-- =============================================== -->
-        <!-- ROW TEMPLATE s ItemsRepeater -->
+        <!-- ROW TEMPLATE s ItemsRepeater - BEZ TOOLTIPS -->
         <!-- =============================================== -->
 
         <DataTemplate x:Key="RowTemplate" x:DataType="viewmodels:RowViewModel">
@@ -90,17 +90,20 @@
                             <Border Style="{StaticResource OptimizedCellStyle}"
                                     Width="150"
                                     MinWidth="80">
+                                <!-- ❌ KRITICKÁ OPRAVA: ODSTRÁNENÉ ToolTipService.ToolTip bindíngy -->
 
                                 <Grid>
-                                    <!-- DISPLAY MODE: TextBlock -->
+                                    <!-- DISPLAY MODE: TextBlock - BEZ TOOLTIPS -->
                                     <TextBlock x:Name="DisplayTextBlock"
                                                Text="{x:Bind DisplayValue, Mode=OneWay}"
                                                Style="{StaticResource CellDisplayTextStyle}"
                                                Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
                                                DoubleTapped="OnCellDoubleTapped"
-                                               Tapped="OnCellTapped"/>
+                                               Tapped="OnCellTapped">
+                                        <!-- ❌ ODSTRÁNENÉ: ToolTipService.ToolTip="{x:Bind ValidationErrorsText, Mode=OneWay}" -->
+                                    </TextBlock>
 
-                                    <!-- EDIT MODE: TextBox -->
+                                    <!-- EDIT MODE: TextBox - BEZ TOOLTIPS -->
                                     <TextBox x:Name="EditTextBox"
                                              Text="{x:Bind Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource CellEditTextBoxStyle}"
@@ -110,9 +113,11 @@
                                              GotFocus="OnCellGotFocus"
                                              LostFocus="OnCellLostFocus"
                                              KeyDown="OnCellKeyDown"
-                                             TextChanged="OnCellTextChanged"/>
+                                             TextChanged="OnCellTextChanged">
+                                        <!-- ❌ ODSTRÁNENÉ: ToolTipService.ToolTip="{x:Bind ValidationErrorsText, Mode=OneWay}" -->
+                                    </TextBox>
 
-                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny -->
+                                    <!-- VALIDATION ERROR INDICATOR - len vizuálny, BEZ TOOLTIPS -->
                                     <Border x:Name="ValidationBorder"
                                             BorderBrush="Red"
                                             BorderThickness="2"
@@ -120,7 +125,9 @@
                                             CornerRadius="2"
                                             Visibility="{x:Bind HasValidationErrors, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
                                             IsHitTestVisible="False"
-                                            Opacity="0.7"/>
+                                            Opacity="0.7">
+                                        <!-- ❌ ODSTRÁNENÉ: ToolTipService.ToolTip="{x:Bind ValidationErrorsText, Mode=OneWay}" -->
+                                    </Border>
 
                                     <!-- FOCUS INDICATOR -->
                                     <Rectangle x:Name="FocusIndicator"
@@ -139,7 +146,7 @@
         </DataTemplate>
 
         <!-- =============================================== -->
-        <!-- LOADING TEMPLATE -->
+        <!-- LOADING TEMPLATE - BEZ TOOLTIPS -->
         <!-- =============================================== -->
 
         <DataTemplate x:Key="LoadingTemplate">
@@ -238,6 +245,7 @@
                             BorderBrush="#DEE2E6" 
                             BorderThickness="1"
                             CornerRadius="4,4,0,0">
+                        <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                         <ItemsRepeater x:Name="HeaderItemsRepeater">
                             <ItemsRepeater.Layout>
                                 <StackLayout Orientation="Horizontal"/>
@@ -254,7 +262,9 @@
                                                   Foreground="#495057"
                                                   VerticalAlignment="Center"
                                                   HorizontalAlignment="Center"
-                                                  TextTrimming="CharacterEllipsis"/>
+                                                  TextTrimming="CharacterEllipsis">
+                                            <!-- ❌ ODSTRÁNENÉ: ToolTip definície -->
+                                        </TextBlock>
                                     </Border>
                                 </DataTemplate>
                             </ItemsRepeater.ItemTemplate>
@@ -262,6 +272,7 @@
                     </Border>
 
                     <!-- DATA ROWS s ItemsRepeater -->
+                    <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                     <ItemsRepeater x:Name="DataRowsItemsRepeater"
                                   ItemTemplate="{StaticResource RowTemplate}">
                         <ItemsRepeater.Layout>
@@ -272,6 +283,7 @@
             </ScrollViewer>
 
             <!-- EMPTY STATE -->
+            <!-- ✅ OPRAVENÉ: Správny názov elementu -->
             <StackPanel x:Name="EmptyStatePanel"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
@@ -306,12 +318,14 @@
                 <StackPanel Grid.Column="0" 
                            Orientation="Horizontal" 
                            Spacing="24">
+                    <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                     <TextBlock x:Name="ValidationStatusText" 
                               Text="Ready" 
                               Foreground="White" 
                               FontWeight="SemiBold"
                               VerticalAlignment="Center"/>
 
+                    <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                     <TextBlock x:Name="RowCountText"
                               Foreground="#BDC3C7" 
                               FontSize="12"
@@ -354,7 +368,7 @@
         </Border>
 
         <!-- =============================================== -->
-        <!-- KEYBOARD SHORTCUTS PANEL -->
+        <!-- KEYBOARD SHORTCUTS PANEL - BEZ TOOLTIPS -->
         <!-- =============================================== -->
 
         <Border x:Name="KeyboardShortcutsPanel"

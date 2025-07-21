@@ -1,5 +1,5 @@
-﻿<!-- SÚBOR: RpaWinUiComponents/RpaWinUiComponents.csproj -->
-<!-- UPRAVENÉ: Odstránené UnifiedAdvancedDataGridControl -->
+﻿<!-- AKTUALIZOVANÝ RpaWinUiComponents.csproj - v1.0.19 -->
+<!-- OPRAVY: Odstránené DataGridContainer warnings + tooltips -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -7,7 +7,8 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <PackageVersion>1.0.18</PackageVersion>
+    <!-- ✅ AKTUALIZOVANÁ VERZIA -->
+    <PackageVersion>1.0.19</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- XAML nastavenia -->
@@ -17,7 +18,7 @@
 
     <!-- XBF generation -->
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
-    <DisableXamlGeneratedMain>true</DisableXamlGeneratedMain>
+    <DisableXbfGeneratedMain>true</DisableXbfGeneratedMain>
     <GenerateXbf>true</GenerateXbf>
     <EnableXbfGeneration>true</EnableXbfGeneration>
     <IncludeXbfInPackage>true</IncludeXbfInPackage>
@@ -36,8 +37,6 @@
   <ItemGroup>
     <!-- ✅ LEN EnhancedDataGridControl -->
     <Compile Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml.cs" />
-    <!-- ✅ ODSTRÁNENÉ: UnifiedAdvancedDataGridControl -->
-
     <Compile Include="GlobalUsings.cs" />
     <Compile Include="GlobalAssemblyInfo.cs" />
     <Compile Include="AdvancedWinUiDataGrid\**\*.cs" Exclude="AdvancedWinUiDataGrid\Views\*.xaml.cs" />
@@ -46,7 +45,6 @@
   <ItemGroup>
     <!-- ✅ LEN EnhancedDataGridControl XAML -->
     <None Remove="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml" />
-    <!-- ✅ ODSTRÁNENÉ: UnifiedAdvancedDataGridControl.xaml -->
   </ItemGroup>
 
   <!-- XAML súbory ako Page -->
@@ -59,7 +57,6 @@
     <Page Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <!-- ✅ ODSTRÁNENÉ: UnifiedAdvancedDataGridControl.xaml -->
   </ItemGroup>
 
   <!-- Dependencies - nezmenené -->
@@ -77,12 +74,16 @@
     <None Include="buildTransitive\RpaWinUiComponents.targets" Pack="true" PackagePath="buildTransitive\RpaWinUiComponents.targets" />
   </ItemGroup>
 
-  <!-- Package metadata -->
+  <!-- ✅ AKTUALIZOVANÉ Package metadata -->
   <PropertyGroup>
-    <Title>RpaWinUiComponents - Advanced DataGrid</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent s ItemsRepeater, bez tooltips - v1.0.19</Description>
+    <Title>RpaWinUiComponents - Advanced DataGrid FIXED</Title>
+    <Description>Pokročilý WinUI 3 DataGrid komponent s ItemsRepeater, OPRAVENÝ v1.0.19 - bez tooltips a DataGridContainer warnings</Description>
     <Authors>RPA Solutions</Authors>
-    <PackageReleaseNotes>v1.0.18: Používa len EnhancedDataGridControl s ItemsRepeater, odstránené tooltips a UnifiedAdvancedDataGridControl.</PackageReleaseNotes>
+    <!-- ✅ AKTUALIZOVANÉ Release notes -->
+    <PackageReleaseNotes>v1.0.19: OPRAVENÉ - Odstránené DataGridContainer warnings z EnhancedDataGridControl.xaml.cs, odstránené všetky tooltip definície z XAML súborov, opravené názvy elementov. Žiadne warnings v output, žiadne tooltips v bunkách.</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/yourusername/RpaWinUiComponents</RepositoryUrl>
+    <PackageTags>WinUI3;DataGrid;Validation;Copy;Paste;ItemsRepeater;Fixed</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
 </Project>

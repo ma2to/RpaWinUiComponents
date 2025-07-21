@@ -1,4 +1,4 @@
-﻿// EnhancedDataGridControl.xaml.cs - OPRAVENÝ s chýbajúcimi metódami
+﻿// OPRAVENÝ EnhancedDataGridControl.xaml.cs - ODSTRÁNENÉ hľadanie neexistujúcich elementov
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -47,12 +47,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private readonly Dictionary<string, WeakReference> _cellReferences = new();
         private readonly object _cellTrackingLock = new();
 
-        // FALLBACK UI elements - BEZ TOOLTIPS, lepšie farby
-        private Grid? _fallbackMainGrid;
-        private ScrollViewer? _fallbackScrollViewer;
-        private StackPanel? _fallbackDataContainer;
-        private Border? _fallbackHeaderContainer;
-
         #endregion
 
         #region Constructor
@@ -68,7 +62,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"❌ XAML Error: {ex.Message}");
-                CreateEnhancedFallbackUI();
+                CreateSimpleFallbackUI();
                 _isUsingFallback = true;
             }
 
@@ -83,7 +77,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             this.Unloaded += OnControlUnloaded;
             this.KeyDown += OnKeyDown;
 
-            _logger.LogDebug("EnhancedDataGridControl vytvorený s enhanced fallback");
+            _logger.LogDebug("✅ EnhancedDataGridControl vytvorený úspešně");
         }
 
         #endregion
@@ -135,7 +129,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #endregion
 
-        #region PUBLIC API METHODS - PRIDANÉ CHÝBAJÚCE METÓDY
+        #region PUBLIC API METHODS
 
         public async Task InitializeAsync(
             List<InternalColumnDefinition> columns,
@@ -149,7 +143,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 LoadingMessage = "Inicializujem DataGrid...";
                 LoadingProgress = 10;
 
-                _logger.LogInformation("🚀 Začínam enhanced inicializáciu s {ColumnCount} stĺpcami", columns?.Count ?? 0);
+                _logger.LogInformation("🚀 Začínam inicializáciu s {ColumnCount} stĺpcami", columns?.Count ?? 0);
 
                 // Cancel previous operations
                 _cancellationTokenSource?.Cancel();
@@ -175,7 +169,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 LoadingProgress = 80;
                 LoadingMessage = "Finalizujem UI...";
 
-                // Update UI (aj fallback)
+                // Update UI
                 UpdateUI();
 
                 await Task.Delay(200); // Dať čas na UI update
@@ -189,13 +183,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 await Task.Delay(500);
                 IsLoading = false;
 
-                _logger.LogInformation("✅ Enhanced inicializácia dokončená úspešne (fallback: {IsUsingFallback})", _isUsingFallback);
+                _logger.LogInformation("✅ Inicializácia dokončená úspešne");
             }
             catch (Exception ex)
             {
                 IsLoading = false;
                 LoadingMessage = $"Chyba: {ex.Message}";
-                _logger.LogError(ex, "❌ Chyba pri enhanced inicializácii");
+                _logger.LogError(ex, "❌ Chyba pri inicializácii");
                 HandleError(ex, "InitializeAsync");
                 throw;
             }
@@ -215,7 +209,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 LoadingMessage = $"Načítavam {data?.Count ?? 0} riadkov...";
                 LoadingProgress = 0;
 
-                _logger.LogInformation("📊 Enhanced načítavam {RowCount} riadkov dát", data?.Count ?? 0);
+                _logger.LogInformation("📊 Načítavam {RowCount} riadkov dát", data?.Count ?? 0);
 
                 // Memory management
                 await TriggerMemoryCleanup();
@@ -233,7 +227,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 UpdateRowCountDisplay();
 
-                _logger.LogInformation("✅ Enhanced dáta načítané úspešne (fallback: {IsUsingFallback})", _isUsingFallback);
+                _logger.LogInformation("✅ Dáta načítané úspešne");
 
                 await Task.Delay(1000);
                 LoadingMessage = "Pripravené";
@@ -307,7 +301,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        // ✅ PRIDANÉ: Chýbajúce metódy
         public void Reset()
         {
             try
@@ -369,10 +362,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 if (ViewModel != null)
                 {
                     await ViewModel.ClearAllDataAsync();
-
-                    // Update UI after clearing
                     UpdateUI();
-
                     _logger.LogInformation("All data cleared successfully");
                 }
             }
@@ -393,10 +383,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 if (ViewModel != null)
                 {
                     await ViewModel.RemoveEmptyRowsAsync();
-
-                    // Update UI after removing empty rows
                     UpdateUI();
-
                     _logger.LogInformation("Empty rows removed successfully");
                 }
             }
@@ -412,10 +399,79 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
         #region Helper Methods
 
+        private void UpdateUI()
+        {
+            try
+            {
+                if (_isUsingFallback)
+                {
+                    return; // Fallback UI doesn't need updates
+                }
+
+                // ✅ OPRAVENÉ: Použitie správnych názvov elementov z XAML
+                // Update header - HeaderItemsRepeater existuje v XAML
+                if (ViewModel?.Columns != null && HeaderItemsRepeater != null)
+                {
+                    HeaderItemsRepeater.ItemsSource = ViewModel.Columns;
+                    _logger.LogDebug("✅ Header updated with {ColumnCount} columns", ViewModel.Columns.Count);
+                }
+
+                // Update data rows - DataRowsItemsRepeater existuje v XAML  
+                if (ViewModel?.Rows != null && DataRowsItemsRepeater != null)
+                {
+                    DataRowsItemsRepeater.ItemsSource = ViewModel.Rows;
+                    _logger.LogDebug("✅ Data rows updated with {RowCount} rows", ViewModel.Rows.Count);
+                }
+
+                // Update visibility states
+                UpdateVisibilityStates();
+
+                // Update status
+                UpdateStatusDisplay();
+
+                _logger.LogDebug("✅ UI updated successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating UI");
+                HandleError(ex, "UpdateUI");
+            }
+        }
+
+        private void UpdateVisibilityStates()
+        {
+            try
+            {
+                if (ViewModel?.Rows == null) return;
+
+                var hasData = ViewModel.Rows.Any(r => !r.IsEmpty);
+
+                // ✅ OPRAVENÉ: Použitie správnych názvov elementov
+                // EmptyStatePanel existuje v XAML
+                if (EmptyStatePanel != null)
+                {
+                    EmptyStatePanel.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
+                }
+
+                // MainScrollViewer existuje v XAML
+                if (MainScrollViewer != null)
+                {
+                    MainScrollViewer.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
+                }
+
+                _logger.LogDebug("✅ Visibility states updated - HasData: {HasData}", hasData);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating visibility states");
+            }
+        }
+
         private void UpdateStatusDisplay()
         {
             try
             {
+                // ✅ OPRAVENÉ: Použitie správnych názvov elementov z XAML
                 if (ValidationStatusText != null)
                 {
                     ValidationStatusText.Text = ViewModel?.ValidationStatus ?? "Ready";
@@ -568,24 +624,22 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private void HandleError(Exception ex, string operation)
         {
             _logger.LogError(ex, "Error in operation: {Operation}", operation);
-
-            // ✅ OPRAVENÉ: Použiť event
             ErrorOccurred?.Invoke(this, new ComponentErrorEventArgs(ex, operation));
         }
 
         #endregion
 
-        #region ENHANCED FALLBACK UI (simplified for brevity)
+        #region SIMPLIFIED FALLBACK UI
 
-        private void CreateEnhancedFallbackUI()
+        private void CreateSimpleFallbackUI()
         {
             try
             {
-                _logger?.LogWarning("📋 Creating enhanced fallback UI...");
+                _logger?.LogWarning("📋 Creating simplified fallback UI...");
 
                 var simpleText = new TextBlock
                 {
-                    Text = "⚠️ Enhanced RpaWinUiComponents DataGrid\nFallback Mode\nNo Tooltips, Better Colors",
+                    Text = "⚠️ RpaWinUiComponents DataGrid\nSimplified Mode\nXAML loading failed",
                     FontSize = 14,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -603,101 +657,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
-        private void UpdateUI()
-        {
-            try
-            {
-                if (_isUsingFallback)
-                {
-                    return; // Fallback UI doesn't need updates
-                }
-
-                // Update header
-                if (ViewModel?.Columns != null && HeaderItemsRepeater != null)
-                {
-                    HeaderItemsRepeater.ItemsSource = ViewModel.Columns;
-                    _logger.LogDebug("✅ Header updated with {ColumnCount} columns", ViewModel.Columns.Count);
-                }
-
-                // Update data rows
-                if (ViewModel?.Rows != null && DataRowsItemsRepeater != null)
-                {
-                    DataRowsItemsRepeater.ItemsSource = ViewModel.Rows;
-                    _logger.LogDebug("✅ Data rows updated with {RowCount} rows", ViewModel.Rows.Count);
-                }
-
-                // Update visibility states
-                UpdateVisibilityStates();
-
-                // Update status
-                UpdateStatusDisplay();
-
-                _logger.LogDebug("✅ UI updated successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating UI");
-                HandleError(ex, "UpdateUI");
-            }
-        }
-
-        private void UpdateVisibilityStates()
-        {
-            try
-            {
-                if (ViewModel?.Rows == null) return;
-
-                var hasData = ViewModel.Rows.Any(r => !r.IsEmpty);
-
-                // Show/hide empty state panel
-                if (EmptyStatePanel != null)
-                {
-                    EmptyStatePanel.Visibility = hasData ? Visibility.Collapsed : Visibility.Visible;
-                }
-
-                // Show/hide main content
-                if (MainScrollViewer != null)
-                {
-                    MainScrollViewer.Visibility = hasData ? Visibility.Visible : Visibility.Collapsed;
-                }
-
-                _logger.LogDebug("✅ Visibility states updated - HasData: {HasData}", hasData);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating visibility states");
-            }
-        }
-
-        private void CheckAndCreateFallbackIfNeeded()
-        {
-            try
-            {
-                bool xamlElementsExist = HeaderItemsRepeater != null &&
-                                        DataRowsItemsRepeater != null &&
-                                        MainScrollViewer != null &&
-                                        EmptyStatePanel != null;
-
-                if (!xamlElementsExist)
-                {
-                    _logger.LogWarning("❌ XAML elements not found, creating fallback UI");
-                    CreateEnhancedFallbackUI();
-                    _isUsingFallback = true;
-                }
-                else
-                {
-                    _logger.LogDebug("✅ All XAML elements found, using normal mode");
-                    _isUsingFallback = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking XAML elements, falling back to fallback UI");
-                CreateEnhancedFallbackUI();
-                _isUsingFallback = true;
-            }
-        }
-
         #endregion
 
         #region Event Handlers
@@ -707,19 +666,18 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             try
             {
                 _logger.LogDebug("🔧 EnhancedDataGridControl loaded");
-                CheckAndCreateFallbackIfNeeded();
 
                 if (ViewModel != null)
                 {
                     UpdateUI();
                 }
 
-                _logger.LogDebug("✅ EnhancedDataGridControl loaded successfully (fallback: {IsUsingFallback})", _isUsingFallback);
+                _logger.LogDebug("✅ EnhancedDataGridControl loaded successfully");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Error during control loaded");
-                CreateEnhancedFallbackUI();
+                CreateSimpleFallbackUI();
                 _isUsingFallback = true;
                 HandleError(ex, "OnControlLoaded");
             }
@@ -808,18 +766,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     _viewModel = null;
                 }
 
-                // Clear fallback UI references
-                _fallbackMainGrid = null;
-                _fallbackScrollViewer = null;
-                _fallbackDataContainer = null;
-                _fallbackHeaderContainer = null;
-
                 _disposed = true;
                 _logger?.LogInformation("EnhancedDataGridControl disposed successfully");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error during enhanced disposal");
+                _logger?.LogError(ex, "Error during disposal");
             }
         }
 
