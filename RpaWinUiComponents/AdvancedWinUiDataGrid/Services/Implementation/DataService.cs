@@ -1,4 +1,4 @@
-﻿//Services/Implementation/DataService.cs - FINÁLNE OPRAVENÝ na internal
+﻿//Services/Implementation/DataService.cs - OPRAVENÝ: INTERNAL s correct event args
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,11 +8,13 @@ using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
+using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
+using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// OPRAVENÉ: INTERNAL class - nie je súčasťou public API
+    /// OPRAVENÉ: INTERNAL class s correct event signatures
     /// </summary>
     internal class DataService : IDataService
     {
@@ -22,7 +24,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private bool _isInitialized = false;
 
         /// <summary>
-        /// OPRAVENÉ: Internal event args
+        /// OPRAVENÉ: Správne internal event signatures
         /// </summary>
         public event EventHandler<InternalDataChangeEventArgs>? DataChanged;
         public event EventHandler<InternalComponentErrorEventArgs>? ErrorOccurred;
@@ -39,12 +41,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _columns = columns ?? throw new ArgumentNullException(nameof(columns));
                 _rows.Clear();
 
-                initialRowCount = Math.Max(1, Math.Min(initialRowCount, 10000)); // Safety limits
+                initialRowCount = Math.Max(1, Math.Min(initialRowCount, 10000));
 
                 _logger.LogInformation("Initializing DataService with {ColumnCount} columns and {InitialRowCount} rows",
                     _columns.Count, initialRowCount);
 
-                // Create initial empty rows
                 await Task.Run(() =>
                 {
                     for (int i = 0; i < initialRowCount; i++)
@@ -115,7 +116,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     });
                 }
 
-                // Replace current rows with loaded data
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
@@ -177,7 +177,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     });
                 }
 
-                // Replace current rows with loaded data
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
@@ -205,14 +204,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 var dataTable = new DataTable();
 
-                // Add columns (exclude special columns)
                 foreach (var column in _columns.Where(c => !IsSpecialColumn(c.Name)))
                 {
                     var dataType = Nullable.GetUnderlyingType(column.DataType) ?? column.DataType;
                     dataTable.Columns.Add(column.Name, dataType);
                 }
 
-                // Add rows (only non-empty rows)
                 await Task.Run(() =>
                 {
                     foreach (var row in _rows.Where(r => !r.IsEmpty))
@@ -285,10 +282,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     var dataRows = _rows.Where(r => !r.IsEmpty).ToList();
                     var removedCount = _rows.Count - dataRows.Count;
 
-                    // Keep data rows and recreate indexes
                     for (int i = 0; i < dataRows.Count; i++)
                     {
-                        // Update row index for consistency
                         var updatedRow = new DataGridRow(i);
                         foreach (var cell in dataRows[i].Cells.Values)
                         {
@@ -316,8 +311,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     AffectedRowCount = result.RemovedCount
                 });
 
-                _logger.LogInformation("Removed {RemovedCount} empty rows, {DataRowCount} data rows remain",
-                    result.RemovedCount, result.DataRows.Count);
+                _logger.LogInformation("Removed {RemovedCount} empty rows", result.RemovedCount);
             }
             catch (Exception ex)
             {
@@ -366,11 +360,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     AffectedRowCount = result.Count
                 });
 
-                _logger.LogInformation("Removed {RowCount} rows by condition for column: {ColumnName}", result.Count, columnName);
+                _logger.LogInformation("Removed {RowCount} rows by condition", result.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error removing rows by condition for column: {ColumnName}", columnName);
+                _logger.LogError(ex, "Error removing rows by condition");
                 OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
                 throw;
             }
@@ -397,7 +391,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                             if (cell != null && !rule.Validate(cell.Value, row))
                             {
                                 rowsToRemove.Add(row);
-                                break; // One failed rule is enough to remove the row
+                                break;
                             }
                         }
                     }
@@ -467,17 +461,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
-        /// <summary>
-        /// OPRAVENÉ: Internal event args
-        /// </summary>
         protected virtual void OnDataChanged(InternalDataChangeEventArgs e)
         {
             DataChanged?.Invoke(this, e);
         }
 
-        /// <summary>
-        /// OPRAVENÉ: Internal event args
-        /// </summary>
         protected virtual void OnErrorOccurred(InternalComponentErrorEventArgs e)
         {
             ErrorOccurred?.Invoke(this, e);
