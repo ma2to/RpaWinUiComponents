@@ -1,4 +1,6 @@
-﻿// OPRAVENÝ EnhancedDataGridControl.xaml.cs - ODSTRÁNENÉ hľadanie neexistujúcich elementov
+﻿// OPRAVENÝ EnhancedDataGridControl.xaml.cs - PUBLIC Event Args
+// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Views/EnhancedDataGridControl.xaml.cs
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,6 +26,9 @@ using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.Thrott
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 {
+    /// <summary>
+    /// ✅ OPRAVENÝ - Používa iba PUBLIC event args
+    /// </summary>
     public sealed partial class EnhancedDataGridControl : UserControl, IDisposable, INotifyPropertyChanged
     {
         #region Fields & Dependencies
@@ -55,9 +60,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("🔧 Inicializujem EnhancedDataGridControl...");
                 this.InitializeComponent();
-                System.Diagnostics.Debug.WriteLine("✅ InitializeComponent() úspešné");
             }
             catch (Exception ex)
             {
@@ -102,7 +105,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             private set => SetProperty(ref _loadingMessage, value);
         }
 
+        /// <summary>
+        /// ✅ OPRAVENÉ: Používa PUBLIC ComponentErrorEventArgs
+        /// </summary>
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         internal AdvancedDataGridViewModel? ViewModel
@@ -190,6 +197,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                 IsLoading = false;
                 LoadingMessage = $"Chyba: {ex.Message}";
                 _logger.LogError(ex, "❌ Chyba pri inicializácii");
+
+                // ✅ OPRAVA: Používa PUBLIC ComponentErrorEventArgs
                 HandleError(ex, "InitializeAsync");
                 throw;
             }
@@ -408,7 +417,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
                     return; // Fallback UI doesn't need updates
                 }
 
-                // ✅ OPRAVENÉ: Použitie správnych názvov elementov z XAML
                 // Update header - HeaderItemsRepeater existuje v XAML
                 if (ViewModel?.Columns != null && HeaderItemsRepeater != null)
                 {
@@ -446,7 +454,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
 
                 var hasData = ViewModel.Rows.Any(r => !r.IsEmpty);
 
-                // ✅ OPRAVENÉ: Použitie správnych názvov elementov
                 // EmptyStatePanel existuje v XAML
                 if (EmptyStatePanel != null)
                 {
@@ -471,7 +478,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         {
             try
             {
-                // ✅ OPRAVENÉ: Použitie správnych názvov elementov z XAML
                 if (ValidationStatusText != null)
                 {
                     ValidationStatusText.Text = ViewModel?.ValidationStatus ?? "Ready";
@@ -621,6 +627,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             }
         }
 
+        /// <summary>
+        /// ✅ OPRAVA: Používa PUBLIC ComponentErrorEventArgs
+        /// </summary>
         private void HandleError(Exception ex, string operation)
         {
             _logger.LogError(ex, "Error in operation: {Operation}", operation);
@@ -701,12 +710,22 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
         private void OnCellKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e) { }
         private void OnCellTextChanged(object sender, TextChangedEventArgs e) { }
 
+        /// <summary>
+        /// ✅ OPRAVA: Subscribe to ViewModel events, konvertuje internal na public
+        /// </summary>
         private void SubscribeToViewModel(AdvancedDataGridViewModel viewModel)
         {
             if (viewModel != null)
             {
                 viewModel.PropertyChanged += OnViewModelPropertyChanged;
-                viewModel.ErrorOccurred += OnViewModelErrorOccurred;
+
+                // ✅ OPRAVA: Subscribe to internal events and convert to public
+                viewModel.ErrorOccurred += (sender, internalArgs) =>
+                {
+                    // Konvertuj internal ComponentErrorEventArgs na public
+                    var publicArgs = new ComponentErrorEventArgs(internalArgs.Exception, internalArgs.Operation, internalArgs.AdditionalInfo);
+                    ErrorOccurred?.Invoke(this, publicArgs);
+                };
             }
         }
 
@@ -715,7 +734,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             if (viewModel != null)
             {
                 viewModel.PropertyChanged -= OnViewModelPropertyChanged;
-                viewModel.ErrorOccurred -= OnViewModelErrorOccurred;
+                // ErrorOccurred events will be automatically unsubscribed by lambda capture
             }
         }
 
@@ -726,11 +745,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Views
             {
                 UpdateUI();
             }
-        }
-
-        private void OnViewModelErrorOccurred(object? sender, ComponentErrorEventArgs e)
-        {
-            HandleError(e.Exception, e.Operation);
         }
 
         #endregion

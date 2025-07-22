@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Themes/Generic.xaml - OPRAVENÝ BEZ EditableTextBlock references -->
+<!-- OPRAVENÝ Themes/Generic.xaml - BEZ EditableTextBlock references -->
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -227,5 +227,34 @@
     <CubicEase x:Key="StandardEaseInOut" EasingMode="EaseInOut"/>
     <QuadraticEase x:Key="StandardEaseOut" EasingMode="EaseOut"/>
     <QuadraticEase x:Key="StandardEaseIn" EasingMode="EaseIn"/>
+
+    <!-- =============================================== -->
+    <!-- CLEAN CELL TEMPLATE - using standard TextBox -->
+    <!-- =============================================== -->
+
+    <DataTemplate x:Key="StandardCellTemplate">
+        <Border Style="{StaticResource DataGridCellBorderStyle}">
+            <Grid>
+                <!-- Display TextBlock -->
+                <TextBlock x:Name="CellDisplayText"
+                           Style="{StaticResource DataGridCellTextStyle}"
+                           Text="{Binding Value}"
+                           Visibility="Visible"/>
+
+                <!-- Edit TextBox (hidden by default) -->
+                <TextBox x:Name="CellEditTextBox"
+                         Style="{StaticResource DataGridCellEditTextBoxStyle}"
+                         Text="{Binding Value, Mode=TwoWay}"
+                         Visibility="Collapsed"/>
+
+                <!-- Validation Error Border -->
+                <Border x:Name="ValidationErrorBorder"
+                        BorderBrush="Red"
+                        BorderThickness="2"
+                        Visibility="{Binding HasValidationError}"
+                        IsHitTestVisible="False"/>
+            </Grid>
+        </Border>
+    </DataTemplate>
 
 </ResourceDictionary>
