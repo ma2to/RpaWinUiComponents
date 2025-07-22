@@ -1,9 +1,12 @@
-﻿//Events/CellNavigationEventArgs.cs
+﻿//Events/CellNavigationEventArgs.cs - OPRAVENÉ bez duplikátov
 using System;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
 {
+    /// <summary>
+    /// INTERNAL - Cell navigation event args
+    /// </summary>
     internal class CellNavigationEventArgs : EventArgs
     {
         public int OldRowIndex { get; init; }
@@ -15,7 +18,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
         public NavigationDirection Direction { get; init; }
     }
 
-    public enum NavigationDirection
+    /// <summary>
+    /// INTERNAL - Navigation direction enum (JEDINÁ DEFINÍCIA)
+    /// </summary>
+    internal enum NavigationDirection
     {
         None,
         Next,

@@ -1,4 +1,4 @@
-﻿//Services/Implementation/ClipboardService.cs - OPRAVA TYPOV
+﻿//Services/Implementation/ClipboardService.cs - OPRAVENÉ: INTERNAL class
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +12,11 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
-    public class ClipboardService : IClipboardService
+    /// <summary>
+    /// ✅ OPRAVA CS0051: INTERNAL class implementuje INTERNAL interface
+    /// Nie je vystavené v PUBLIC API
+    /// </summary>
+    internal class ClipboardService : IClipboardService
     {
         private readonly ILogger<ClipboardService> _logger;
 
@@ -184,6 +188,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
+        // ✅ OPRAVA CS0051: Všetky typy sú internal
         public async Task CopySelectedCellsAsync(IEnumerable<DataGridCell> selectedCells)
         {
             try
@@ -240,6 +245,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
+        // ✅ OPRAVA CS0051: Všetky typy sú internal
         public async Task<bool> PasteToPositionAsync(int startRowIndex, int startColumnIndex, List<DataGridRow> rows, List<ColumnDefinition> columns)
         {
             try

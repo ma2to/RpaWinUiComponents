@@ -1,5 +1,6 @@
-﻿// PUBLIC Event Args - NOVÝ SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Events/PublicEventArgs.cs
+﻿// Events/PublicEventArgs.cs - CLEAN PUBLIC API
 using System;
+using System.Collections.Generic;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid
 {
@@ -61,117 +62,5 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid
             TotalDuration = duration;
             ProcessedRows = processedRows;
         }
-    }
-}
-
-// INTERNAL Event Args - zostávajú internal, použité iba vnútorne
-namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
-{
-    /// <summary>
-    /// INTERNAL - nie je vystavené v PUBLIC API
-    /// </summary>
-    internal class InternalComponentErrorEventArgs : EventArgs
-    {
-        public Exception Exception { get; }
-        public string Operation { get; }
-        public string? AdditionalInfo { get; }
-        public DateTime Timestamp { get; } = DateTime.Now;
-
-        public InternalComponentErrorEventArgs(Exception exception, string operation, string? additionalInfo = null)
-        {
-            Exception = exception;
-            Operation = operation;
-            AdditionalInfo = additionalInfo;
-        }
-
-        // Konverzia na PUBLIC typ
-        public ComponentErrorEventArgs ToPublic()
-        {
-            return new ComponentErrorEventArgs(Exception, Operation, AdditionalInfo);
-        }
-    }
-
-    /// <summary>
-    /// INTERNAL - pre navigation events
-    /// </summary>
-    internal class CellNavigationEventArgs : EventArgs
-    {
-        public int OldRowIndex { get; init; }
-        public int OldColumnIndex { get; init; }
-        public int NewRowIndex { get; init; }
-        public int NewColumnIndex { get; init; }
-        public object? OldCell { get; init; }
-        public object? NewCell { get; init; }
-        public string Direction { get; init; } = string.Empty;
-    }
-
-    /// <summary>
-    /// INTERNAL - pre internal validation events
-    /// </summary>
-    internal class InternalValidationCompletedEventArgs : EventArgs
-    {
-        public object? Row { get; init; }
-        public object? Cell { get; init; }
-        public List<object> Results { get; init; } = new();
-        public bool IsValid { get; init; }
-        public TimeSpan TotalDuration { get; init; }
-        public int AsyncValidationCount { get; init; }
-
-        // Konverzia na PUBLIC typ
-        public ValidationCompletedEventArgs ToPublic()
-        {
-            return new ValidationCompletedEventArgs(
-                IsValid,
-                Results.Count(r => !IsValid),
-                TotalDuration,
-                1
-            );
-        }
-    }
-
-    /// <summary>
-    /// INTERNAL - pre data change events
-    /// </summary>
-    internal class InternalDataChangeEventArgs : EventArgs
-    {
-        public DataChangeType ChangeType { get; init; }
-        public object? ChangedData { get; init; }
-        public string? ColumnName { get; init; }
-        public int RowIndex { get; init; } = -1;
-        public int AffectedRowCount { get; init; }
-        public TimeSpan OperationDuration { get; init; }
-
-        // Konverzia na PUBLIC typ
-        public DataChangeEventArgs ToPublic()
-        {
-            return new DataChangeEventArgs(
-                ChangeType.ToString(),
-                AffectedRowCount,
-                OperationDuration
-            );
-        }
-    }
-
-    internal enum DataChangeType
-    {
-        Initialize,
-        LoadData,
-        ClearData,
-        CellValueChanged,
-        RemoveRows,
-        RemoveEmptyRows,
-        AddRows,
-        RowValidationChanged
-    }
-
-    internal enum NavigationDirection
-    {
-        None,
-        Next,
-        Previous,
-        Up,
-        Down,
-        Home,
-        End
     }
 }

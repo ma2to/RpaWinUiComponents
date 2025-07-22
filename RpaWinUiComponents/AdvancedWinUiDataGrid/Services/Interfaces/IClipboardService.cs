@@ -1,14 +1,16 @@
-﻿//Services/Interfaces/IClipboardService.cs - OPRAVA TYPOV
+﻿//Services/Interfaces/IClipboardService.cs - FINÁLNA OPRAVA: INTERNAL + ODSTRÁNENÉ DUPLIKÁTY
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-// KĽÚČOVÁ OPRAVA: Používame internal typ
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
-    public interface IClipboardService
+    /// <summary>
+    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// OPRAVENÉ: Odstránené všetky duplicitné definície
+    /// </summary>
+    internal interface IClipboardService
     {
         Task<string?> GetClipboardTextAsync();
         Task SetClipboardTextAsync(string text);
@@ -20,6 +22,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         Task CopySelectedCellsAsync(IEnumerable<DataGridCell> selectedCells);
         Task<bool> PasteToPositionAsync(int startRowIndex, int startColumnIndex, List<DataGridRow> rows, List<ColumnDefinition> columns);
 
-        event System.EventHandler<ComponentErrorEventArgs> ErrorOccurred;
+        event System.EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
     }
 }

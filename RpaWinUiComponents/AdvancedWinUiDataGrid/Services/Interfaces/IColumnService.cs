@@ -1,13 +1,14 @@
-﻿//Services/Interfaces/IColumnService.cs - OPRAVA TYPOV  
+﻿//Services/Interfaces/IColumnService.cs - FINÁLNA OPRAVA: INTERNAL
 using System;
 using System.Collections.Generic;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-// KĽÚČOVÁ OPRAVA: Používame internal typ
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
-    public interface IColumnService
+    /// <summary>
+    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// </summary>
+    internal interface IColumnService
     {
         List<ColumnDefinition> ProcessColumnDefinitions(List<ColumnDefinition> columns);
         string GenerateUniqueColumnName(string baseName, List<string> existingNames);
@@ -19,6 +20,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         List<ColumnDefinition> ReorderSpecialColumns(List<ColumnDefinition> columns);
         void ValidateColumnDefinitions(List<ColumnDefinition> columns);
 
-        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
+        event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
     }
 }

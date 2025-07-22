@@ -1,8 +1,11 @@
-﻿//Events/DataChangeEventArgs.cs
+﻿//Events/DataChangeEventArgs.cs - OPRAVENÉ bez duplikátov
 using System;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
 {
+    /// <summary>
+    /// INTERNAL - Data change event args
+    /// </summary>
     internal class DataChangeEventArgs : EventArgs
     {
         public DataChangeType ChangeType { get; init; }
@@ -13,7 +16,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
         public TimeSpan OperationDuration { get; init; }
     }
 
-    public enum DataChangeType
+    /// <summary>
+    /// INTERNAL - Data change type enum (JEDINÁ DEFINÍCIA)
+    /// </summary>
+    internal enum DataChangeType
     {
         Initialize,
         LoadData,

@@ -1,16 +1,17 @@
-﻿//Services/Interfaces/IDataService.cs - OPRAVA TYPOV
+﻿//Services/Interfaces/IDataService.cs - FINÁLNA OPRAVA: INTERNAL
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-// KĽÚČOVÁ OPRAVA: Používame internal typ
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
-    public interface IDataService
+    /// <summary>
+    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// </summary>
+    internal interface IDataService
     {
         Task InitializeAsync(List<ColumnDefinition> columns, int initialRowCount = 100);
 
@@ -27,7 +28,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         List<DataGridRow> GetRows();
         int GetRowCount();
 
-        event EventHandler<DataChangeEventArgs> DataChanged;
-        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
+        event EventHandler<InternalDataChangeEventArgs> DataChanged;
+        event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
     }
 }

@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IValidationService.cs
+﻿//Services/Interfaces/IValidationService.cs - FINÁLNA OPRAVA: INTERNAL
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,7 +8,10 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
-    public interface IValidationService
+    /// <summary>
+    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// </summary>
+    internal interface IValidationService
     {
         Task<ValidationResult> ValidateCellAsync(DataGridCell cell, DataGridRow row, CancellationToken cancellationToken = default);
         Task<List<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default);
@@ -22,7 +25,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         bool HasValidationRules(string columnName);
         int GetTotalRuleCount();
 
-        event EventHandler<ValidationCompletedEventArgs> ValidationCompleted;
-        event EventHandler<ComponentErrorEventArgs> ValidationErrorOccurred;
+        event EventHandler<InternalValidationCompletedEventArgs> ValidationCompleted;
+        event EventHandler<InternalComponentErrorEventArgs> ValidationErrorOccurred;
     }
 }

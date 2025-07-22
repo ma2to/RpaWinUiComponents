@@ -1,14 +1,15 @@
-﻿//Services/Interfaces/INavigationService.cs - OPRAVA TYPOV
+﻿//Services/Interfaces/INavigationService.cs - FINÁLNA OPRAVA: INTERNAL
 using System;
 using System.Collections.Generic;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
-// KĽÚČOVÁ OPRAVA: Používame internal typ
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
-    public interface INavigationService
+    /// <summary>
+    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// </summary>
+    internal interface INavigationService
     {
         void Initialize(List<DataGridRow> rows, List<ColumnDefinition> columns);
 
@@ -23,6 +24,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         int CurrentColumnIndex { get; }
 
         event EventHandler<CellNavigationEventArgs> CellChanged;
-        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
+        event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
     }
 }
