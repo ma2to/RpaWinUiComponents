@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IColumnService.cs - OPRAVENÉ
+﻿// SÚBOR: Services/Interfaces/IColumnService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
@@ -7,6 +7,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
     /// INTERNAL interface - nie je súčasťou public API
+    /// ✅ OPRAVA CS0738: Používa ComponentErrorEventArgs namiesto InternalComponentErrorEventArgs
     /// </summary>
     internal interface IColumnService
     {
@@ -20,7 +21,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         List<ColumnDefinition> ReorderSpecialColumns(List<ColumnDefinition> columns);
         void ValidateColumnDefinitions(List<ColumnDefinition> columns);
 
-        // OPRAVENÉ: Správne internal event type
-        event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
+        // ✅ OPRAVA CS0738: Správny event type - ComponentErrorEventArgs
+        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
     }
 }

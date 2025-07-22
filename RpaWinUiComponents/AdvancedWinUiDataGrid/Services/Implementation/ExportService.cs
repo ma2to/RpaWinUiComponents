@@ -1,4 +1,4 @@
-﻿//Services/Implementation/ExportService.cs - OPRAVENÝ na internal typy
+﻿// SÚBOR: Services/Implementation/ExportService.cs - OPRAVENÉ
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,15 +9,17 @@ using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
-// KĽÚČOVÁ OPRAVA: Explicitný typ pre ColumnDefinition
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
-    public class ExportService : IExportService
+    /// <summary>
+    /// ✅ OPRAVA CS0738, CS0051: INTERNAL class s internal parameters
+    /// </summary>
+    internal class ExportService : IExportService
     {
         private readonly ILogger<ExportService> _logger;
 
+        // ✅ OPRAVA CS0738: Správny event type
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
 
         public ExportService(ILogger<ExportService> logger)
@@ -25,22 +27,26 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             _logger = logger;
         }
 
-        public async Task<DataTable> ExportToDataTableAsync(List<DataGridRow> rows, List<ColumnDefinition> columns, bool includeValidAlerts = false)
+        // ✅ OPRAVA CS0051: internal parameters v internal method
+        public async Task<DataTable> ExportToDataTableAsync(IEnumerable<DataGridRow> rows, IEnumerable<ColumnDefinition> columns, bool includeValidAlerts = false)
         {
             try
             {
+                var rowsList = rows?.ToList() ?? new List<DataGridRow>();
+                var columnsList = columns?.ToList() ?? new List<ColumnDefinition>();
+
                 _logger.LogDebug("Exporting {RowCount} rows with {ColumnCount} columns to DataTable, includeValidAlerts: {IncludeValidAlerts}",
-                    rows?.Count ?? 0, columns?.Count ?? 0, includeValidAlerts);
+                    rowsList.Count, columnsList.Count, includeValidAlerts);
 
                 var dataTable = new DataTable();
 
-                if (rows == null || columns == null)
+                if (rowsList.Count == 0 || columnsList.Count == 0)
                 {
-                    _logger.LogWarning("Cannot export null rows or columns");
+                    _logger.LogWarning("Cannot export empty rows or columns");
                     return dataTable;
                 }
 
-                var exportColumns = GetExportColumns(columns, includeValidAlerts);
+                var exportColumns = GetExportColumns(columnsList, includeValidAlerts);
 
                 // Create DataTable columns
                 await Task.Run(() =>
@@ -54,7 +60,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 });
 
                 // Add data rows (only non-empty rows)
-                var dataRows = rows.Where(r => !r.IsEmpty).ToList();
+                var dataRows = rowsList.Where(r => !r.IsEmpty).ToList();
 
                 await Task.Run(() =>
                 {
@@ -84,30 +90,34 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
-        public async Task<string> ExportToCsvAsync(List<DataGridRow> rows, List<ColumnDefinition> columns, bool includeValidAlerts = false)
+        // ✅ OPRAVA CS0051: internal parameters
+        public async Task<string> ExportToCsvAsync(IEnumerable<DataGridRow> rows, IEnumerable<ColumnDefinition> columns, bool includeValidAlerts = false)
         {
             try
             {
-                _logger.LogDebug("Exporting {RowCount} rows to CSV format, includeValidAlerts: {IncludeValidAlerts}",
-                    rows?.Count ?? 0, includeValidAlerts);
+                var rowsList = rows?.ToList() ?? new List<DataGridRow>();
+                var columnsList = columns?.ToList() ?? new List<ColumnDefinition>();
 
-                if (rows == null || columns == null)
+                _logger.LogDebug("Exporting {RowCount} rows to CSV format, includeValidAlerts: {IncludeValidAlerts}",
+                    rowsList.Count, includeValidAlerts);
+
+                if (rowsList.Count == 0 || columnsList.Count == 0)
                 {
-                    _logger.LogWarning("Cannot export null rows or columns to CSV");
+                    _logger.LogWarning("Cannot export empty rows or columns to CSV");
                     return string.Empty;
                 }
 
                 var result = await Task.Run(() =>
                 {
                     var sb = new StringBuilder();
-                    var exportColumns = GetExportColumns(columns, includeValidAlerts);
+                    var exportColumns = GetExportColumns(columnsList, includeValidAlerts);
 
                     // Add header row
                     var headers = exportColumns.Select(c => EscapeCsvValue(c.Header ?? c.Name));
                     sb.AppendLine(string.Join(",", headers));
 
                     // Add data rows (only non-empty rows)
-                    var dataRows = rows.Where(r => !r.IsEmpty).ToList();
+                    var dataRows = rowsList.Where(r => !r.IsEmpty).ToList();
                     foreach (var row in dataRows)
                     {
                         var values = exportColumns.Select(c =>
@@ -132,15 +142,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
-        public async Task<byte[]> ExportToExcelAsync(List<DataGridRow> rows, List<ColumnDefinition> columns, bool includeValidAlerts = false)
+        // ✅ OPRAVA CS0051: internal parameters
+        public async Task<byte[]> ExportToExcelAsync(IEnumerable<DataGridRow> rows, IEnumerable<ColumnDefinition> columns, bool includeValidAlerts = false)
         {
             try
             {
+                var rowsList = rows?.ToList() ?? new List<DataGridRow>();
+
                 _logger.LogDebug("Exporting {RowCount} rows to Excel format, includeValidAlerts: {IncludeValidAlerts}",
-                    rows?.Count ?? 0, includeValidAlerts);
+                    rowsList.Count, includeValidAlerts);
 
                 // For this implementation, we'll export as CSV and convert to bytes
-                // In a real implementation, you might want to use a library like ClosedXML or EPPlus
                 var csv = await ExportToCsvAsync(rows, columns, includeValidAlerts);
                 var result = Encoding.UTF8.GetBytes(csv);
 
@@ -155,24 +167,28 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
-        public async Task<List<Dictionary<string, object?>>> ExportToDictionariesAsync(List<DataGridRow> rows, List<ColumnDefinition> columns)
+        // ✅ OPRAVA CS0051: internal parameters  
+        public async Task<List<Dictionary<string, object?>>> ExportToDictionariesAsync(IEnumerable<DataGridRow> rows, IEnumerable<ColumnDefinition> columns)
         {
             try
             {
-                _logger.LogDebug("Exporting {RowCount} rows to dictionary list", rows?.Count ?? 0);
+                var rowsList = rows?.ToList() ?? new List<DataGridRow>();
+                var columnsList = columns?.ToList() ?? new List<ColumnDefinition>();
 
-                if (rows == null || columns == null)
+                _logger.LogDebug("Exporting {RowCount} rows to dictionary list", rowsList.Count);
+
+                if (rowsList.Count == 0 || columnsList.Count == 0)
                 {
-                    _logger.LogWarning("Cannot export null rows or columns to dictionaries");
+                    _logger.LogWarning("Cannot export empty rows or columns to dictionaries");
                     return new List<Dictionary<string, object?>>();
                 }
 
                 var result = await Task.Run(() =>
                 {
                     var dictionaries = new List<Dictionary<string, object?>>();
-                    var exportColumns = GetExportColumns(columns, false); // Exclude ValidAlerts by default
+                    var exportColumns = GetExportColumns(columnsList, false); // Exclude ValidAlerts by default
 
-                    var dataRows = rows.Where(r => !r.IsEmpty).ToList();
+                    var dataRows = rowsList.Where(r => !r.IsEmpty).ToList();
                     foreach (var row in dataRows)
                     {
                         var dict = new Dictionary<string, object?>();

@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/INavigationService.cs - OPRAVENÉ event types  
+﻿// SÚBOR: Services/Interfaces/INavigationService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
@@ -8,10 +8,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
     /// INTERNAL interface - nie je súčasťou public API
+    /// ✅ OPRAVA CS0051, CS0738: internal types, správny event type
     /// </summary>
     internal interface INavigationService
     {
-        void Initialize(List<DataGridRow> rows, List<ColumnDefinition> columns);
+        // ✅ OPRAVA CS0051: internal parameters
+        void Initialize(IEnumerable<DataGridRow> rows, IEnumerable<ColumnDefinition> columns);
 
         void MoveToNextCell();
         void MoveToPreviousCell();
@@ -24,7 +26,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         int CurrentColumnIndex { get; }
 
         event EventHandler<CellNavigationEventArgs> CellChanged;
-        // OPRAVENÉ: Správne internal event type
-        event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
+        // ✅ OPRAVA CS0738: Správny event type
+        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
     }
 }

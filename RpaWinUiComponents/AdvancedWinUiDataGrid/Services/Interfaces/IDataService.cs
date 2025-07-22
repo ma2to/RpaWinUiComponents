@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IDataService.cs - OPRAVENÉ event types
+﻿// SÚBOR: Services/Interfaces/IDataService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,10 +10,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
     /// INTERNAL interface - nie je súčasťou public API
+    /// ✅ OPRAVA CS0051: internal parameters, správne event types
     /// </summary>
     internal interface IDataService
     {
-        Task InitializeAsync(List<ColumnDefinition> columns, int initialRowCount = 100);
+        // ✅ OPRAVA CS0051: internal parameters  
+        Task InitializeAsync(IList<ColumnDefinition> columns, int initialRowCount = 100);
 
         Task LoadDataAsync(DataTable dataTable);
         Task LoadDataAsync(List<Dictionary<string, object?>> data);
@@ -22,14 +24,14 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         Task ClearAllDataAsync();
         Task RemoveEmptyRowsAsync();
         Task RemoveRowsByConditionAsync(string columnName, Func<object?, bool> condition);
-        Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules);
+        Task<int> RemoveRowsByValidationAsync(IList<ValidationRule> customRules);
 
         DataGridRow CreateEmptyRow();
-        List<DataGridRow> GetRows();
+        IList<DataGridRow> GetRows();
         int GetRowCount();
 
-        // OPRAVENÉ: Správne internal event types
-        event EventHandler<InternalDataChangeEventArgs> DataChanged;
-        event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
+        // ✅ OPRAVA CS0738: Správne event types
+        event EventHandler<DataChangeEventArgs> DataChanged;
+        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
     }
 }

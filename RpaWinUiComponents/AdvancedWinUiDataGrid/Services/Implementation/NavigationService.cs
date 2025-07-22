@@ -1,4 +1,4 @@
-﻿//Services/Implementation/NavigationService.cs - OPRAVENÝ na internal typy
+﻿// SÚBOR: Services/Implementation/NavigationService.cs - OPRAVENÉ
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,12 +6,13 @@ using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
-// KĽÚČOVÁ OPRAVA: Explicitný typ pre ColumnDefinition
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
-    public class NavigationService : INavigationService
+    /// <summary>
+    /// ✅ OPRAVA CS0738, CS0051: INTERNAL class s internal parameters
+    /// </summary>
+    internal class NavigationService : INavigationService
     {
         private readonly ILogger<NavigationService> _logger;
         private List<DataGridRow> _rows = new();
@@ -20,6 +21,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private int _currentColumnIndex = -1;
         private DataGridCell? _currentCell;
 
+        // ✅ OPRAVA CS7025, CS0053: internal event type a property type
         public event EventHandler<CellNavigationEventArgs>? CellChanged;
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
 
@@ -28,6 +30,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             _logger = logger;
         }
 
+        // ✅ OPRAVA CS0053: internal property type
         public DataGridCell? CurrentCell
         {
             get => _currentCell;
@@ -45,12 +48,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         public int CurrentRowIndex => _currentRowIndex;
         public int CurrentColumnIndex => _currentColumnIndex;
 
-        public void Initialize(List<DataGridRow> rows, List<ColumnDefinition> columns)
+        // ✅ OPRAVA CS0051: internal parameters
+        public void Initialize(IEnumerable<DataGridRow> rows, IEnumerable<ColumnDefinition> columns)
         {
             try
             {
-                _rows = rows ?? throw new ArgumentNullException(nameof(rows));
-                _columns = columns ?? throw new ArgumentNullException(nameof(columns));
+                _rows = rows?.ToList() ?? throw new ArgumentNullException(nameof(rows));
+                _columns = columns?.ToList() ?? throw new ArgumentNullException(nameof(columns));
 
                 _currentRowIndex = -1;
                 _currentColumnIndex = -1;
@@ -108,6 +112,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 _logger.LogDebug("Moved to next cell: [{Row},{Col}]", nextRowIndex, nextColumnIndex);
 
+                // ✅ OPRAVA CS0051: internal parameter type
                 OnCellChanged(new CellNavigationEventArgs
                 {
                     OldRowIndex = oldRowIndex,
@@ -323,6 +328,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
+        // ✅ OPRAVA CS0051: internal parameter type
         protected virtual void OnCellChanged(CellNavigationEventArgs e)
         {
             CellChanged?.Invoke(this, e);

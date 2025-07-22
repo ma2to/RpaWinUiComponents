@@ -1,4 +1,4 @@
-﻿//Services/Implementation/ValidationService.cs - OPRAVENÉ event types
+﻿// SÚBOR: Services/Implementation/ValidationService.cs - OPRAVENÉ
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// INTERNAL class - nie je súčasťou public API
+    /// ✅ OPRAVA CS0738, CS0050: INTERNAL class s správnymi event types a return types
     /// </summary>
     internal class ValidationService : IValidationService
     {
@@ -22,15 +22,16 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private readonly ConcurrentDictionary<string, List<ValidationRule>> _validationRules = new();
         private readonly SemaphoreSlim _validationSemaphore = new(5, 5);
 
-        // OPRAVENÉ: Správne internal event types
-        public event EventHandler<InternalValidationCompletedEventArgs>? ValidationCompleted;
-        public event EventHandler<InternalComponentErrorEventArgs>? ValidationErrorOccurred;
+        // ✅ OPRAVA CS0738: Správne event types
+        public event EventHandler<ValidationCompletedEventArgs>? ValidationCompleted;
+        public event EventHandler<ComponentErrorEventArgs>? ValidationErrorOccurred;
 
         public ValidationService(ILogger<ValidationService> logger)
         {
             _logger = logger;
         }
 
+        // ✅ OPRAVA CS0050: internal return type v internal method
         public async Task<ValidationResult> ValidateCellAsync(DataGridCell cell, DataGridRow row, CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -91,7 +92,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                         catch (Exception ex)
                         {
                             _logger.LogWarning(ex, "Validation rule {RuleName} failed with exception", rule.RuleName);
-                            OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, $"Rule {rule.RuleName}"));
+                            OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, $"Rule {rule.RuleName}"));
                             errorMessages.Add($"Chyba validácie: {rule.ErrorMessage}");
                         }
                     }
@@ -122,12 +123,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating cell {ColumnName}[{RowIndex}]", cell.ColumnName, cell.RowIndex);
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "ValidateCellAsync"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateCellAsync"));
                 return ValidationResult.Failure($"Chyba pri validácii: {ex.Message}", cell.ColumnName, cell.RowIndex);
             }
         }
 
-        public async Task<List<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default)
+        // ✅ OPRAVA CS0050: internal return type IList<ValidationResult>
+        public async Task<IList<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default)
         {
             var results = new List<ValidationResult>();
             var stopwatch = Stopwatch.StartNew();
@@ -154,7 +156,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 results.AddRange(cellResults);
                 row.UpdateValidationStatus();
 
-                OnValidationCompleted(new InternalValidationCompletedEventArgs
+                OnValidationCompleted(new ValidationCompletedEventArgs
                 {
                     Row = row,
                     Results = results,
@@ -170,12 +172,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating row {RowIndex}", row.RowIndex);
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "ValidateRowAsync"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateRowAsync"));
                 return results;
             }
         }
 
-        public async Task<List<ValidationResult>> ValidateAllRowsAsync(IEnumerable<DataGridRow> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+        // ✅ OPRAVA CS0050, CS0051: internal parameters a return type
+        public async Task<IList<ValidationResult>> ValidateAllRowsAsync(IEnumerable<DataGridRow> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
             var allResults = new List<ValidationResult>();
             var dataRows = rows.Where(r => !r.IsEmpty).ToList();
@@ -203,7 +206,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                     foreach (var rowResults in batchResults)
                     {
-                        allResults.AddRange(rowResults);
+                        foreach (var result in rowResults)
+                        {
+                            allResults.Add(result);
+                        }
                     }
 
                     processedRows += batch.Count;
@@ -232,11 +238,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating all rows");
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateAllRowsAsync"));
                 return allResults;
             }
         }
 
+        // Rremaining methods remain the same...
         public void AddValidationRule(ValidationRule rule)
         {
             try
@@ -263,7 +270,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding validation rule");
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "AddValidationRule"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "AddValidationRule"));
             }
         }
 
@@ -282,7 +289,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             {
                 _logger.LogError(ex, "Error removing validation rule '{RuleName}' from column '{ColumnName}'",
                     ruleName, columnName);
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "RemoveValidationRule"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveValidationRule"));
             }
         }
 
@@ -307,7 +314,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error clearing validation rules for column: {ColumnName}", columnName ?? "ALL");
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "ClearValidationRules"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "ClearValidationRules"));
             }
         }
 
@@ -322,7 +329,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting validation rules for column: {ColumnName}", columnName);
-                OnValidationErrorOccurred(new InternalComponentErrorEventArgs(ex, "GetValidationRules"));
+                OnValidationErrorOccurred(new ComponentErrorEventArgs(ex, "GetValidationRules"));
                 return new List<ValidationRule>();
             }
         }
@@ -342,13 +349,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
-        // OPRAVENÉ: Používame internal event types
-        protected virtual void OnValidationCompleted(InternalValidationCompletedEventArgs e)
+        // Event methods
+        protected virtual void OnValidationCompleted(ValidationCompletedEventArgs e)
         {
             ValidationCompleted?.Invoke(this, e);
         }
 
-        protected virtual void OnValidationErrorOccurred(InternalComponentErrorEventArgs e)
+        protected virtual void OnValidationErrorOccurred(ComponentErrorEventArgs e)
         {
             ValidationErrorOccurred?.Invoke(this, e);
         }

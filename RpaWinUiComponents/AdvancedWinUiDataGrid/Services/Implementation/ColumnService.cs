@@ -1,19 +1,21 @@
-﻿//Services/Implementation/ColumnService.cs - OPRAVENÝ na internal typy s MISSING METHODS
+﻿// SÚBOR: Services/Implementation/ColumnService.cs - OPRAVENÉ
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
-// KĽÚČOVÁ OPRAVA: Explicitný typ pre ColumnDefinition
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
-    public class ColumnService : IColumnService
+    /// <summary>
+    /// ✅ OPRAVA CS0738: INTERNAL implementation s správnym event type
+    /// </summary>
+    internal class ColumnService : IColumnService
     {
         private readonly ILogger<ColumnService> _logger;
 
+        // ✅ OPRAVA CS0738: ComponentErrorEventArgs namiesto InternalComponentErrorEventArgs
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
 
         public ColumnService(ILogger<ColumnService> logger)
@@ -32,7 +34,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 foreach (var column in columns ?? new List<ColumnDefinition>())
                 {
-                    // OPRAVA CS1061: Používame vlastnú validáciu namiesto .IsValid()
                     if (!IsColumnValid(column, out var errorMessage))
                     {
                         _logger.LogWarning("Invalid column definition: {ErrorMessage}", errorMessage);
@@ -40,8 +41,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     }
 
                     var uniqueName = GenerateUniqueColumnName(column.Name, existingNames);
-
-                    // OPRAVA CS1061: Používame vlastný Clone namiesto .Clone()
                     var processedColumn = CloneColumn(column);
                     processedColumn.Name = uniqueName;
 
@@ -58,58 +57,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "ProcessColumnDefinitions"));
                 return columns ?? new List<ColumnDefinition>();
             }
-        }
-
-        /// <summary>
-        /// OPRAVA CS1061: Vlastná validácia ColumnDefinition
-        /// </summary>
-        private bool IsColumnValid(ColumnDefinition column, out string? errorMessage)
-        {
-            errorMessage = null;
-
-            if (string.IsNullOrWhiteSpace(column.Name))
-            {
-                errorMessage = "Názov stĺpca je povinný";
-                return false;
-            }
-
-            if (column.MinWidth <= 0 || column.MaxWidth <= 0)
-            {
-                errorMessage = "Šírka stĺpcov musí byť kladná";
-                return false;
-            }
-
-            if (column.MinWidth > column.MaxWidth)
-            {
-                errorMessage = "Minimálna šírka nemôže byť väčšia ako maximálna";
-                return false;
-            }
-
-            if (column.Width < column.MinWidth || column.Width > column.MaxWidth)
-            {
-                errorMessage = "Šírka musí byť medzi minimálnou a maximálnou hodnotou";
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// OPRAVA CS1061: Vlastný Clone pre ColumnDefinition
-        /// </summary>
-        private ColumnDefinition CloneColumn(ColumnDefinition original)
-        {
-            return new ColumnDefinition(original.Name, original.DataType)
-            {
-                MinWidth = original.MinWidth,
-                MaxWidth = original.MaxWidth,
-                Width = original.Width,
-                AllowResize = original.AllowResize,
-                AllowSort = original.AllowSort,
-                IsReadOnly = original.IsReadOnly,
-                Header = original.Header,
-                ToolTip = original.ToolTip
-            };
         }
 
         public string GenerateUniqueColumnName(string baseName, List<string> existingNames)
@@ -234,7 +181,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                     foreach (var column in columns)
                     {
-                        // OPRAVA CS1061: Používame našu vlastnú validáciu
                         if (!IsColumnValid(column, out var columnError))
                         {
                             errors.Add($"Stĺpec '{column.Name}': {columnError}");
@@ -266,6 +212,53 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 OnErrorOccurred(new ComponentErrorEventArgs(ex, "ValidateColumnDefinitions"));
                 throw;
             }
+        }
+
+        // ✅ Private helper methods
+        private bool IsColumnValid(ColumnDefinition column, out string? errorMessage)
+        {
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(column.Name))
+            {
+                errorMessage = "Názov stĺpca je povinný";
+                return false;
+            }
+
+            if (column.MinWidth <= 0 || column.MaxWidth <= 0)
+            {
+                errorMessage = "Šírka stĺpcov musí byť kladná";
+                return false;
+            }
+
+            if (column.MinWidth > column.MaxWidth)
+            {
+                errorMessage = "Minimálna šírka nemôže byť väčšia ako maximálna";
+                return false;
+            }
+
+            if (column.Width < column.MinWidth || column.Width > column.MaxWidth)
+            {
+                errorMessage = "Šírka musí byť medzi minimálnou a maximálnou hodnotou";
+                return false;
+            }
+
+            return true;
+        }
+
+        private ColumnDefinition CloneColumn(ColumnDefinition original)
+        {
+            return new ColumnDefinition(original.Name, original.DataType)
+            {
+                MinWidth = original.MinWidth,
+                MaxWidth = original.MaxWidth,
+                Width = original.Width,
+                AllowResize = original.AllowResize,
+                AllowSort = original.AllowSort,
+                IsReadOnly = original.IsReadOnly,
+                Header = original.Header,
+                ToolTip = original.ToolTip
+            };
         }
 
         protected virtual void OnErrorOccurred(ComponentErrorEventArgs e)

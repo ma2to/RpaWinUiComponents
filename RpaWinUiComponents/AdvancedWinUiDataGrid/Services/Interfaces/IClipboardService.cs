@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IClipboardService.cs - OPRAVENÉ event types
+﻿// SÚBOR: Services/Interfaces/IClipboardService.cs - OPRAVENÉ event types
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
@@ -8,6 +8,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
     /// INTERNAL interface - nie je súčasťou public API
+    /// ✅ OPRAVA CS0738: Správny event type
     /// </summary>
     internal interface IClipboardService
     {
@@ -18,10 +19,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         string ConvertToExcelFormat(string[,] data);
         string[,] ParseFromExcelFormat(string clipboardData);
 
+        // ✅ OPRAVA CS0051: internal parameters
         Task CopySelectedCellsAsync(IEnumerable<DataGridCell> selectedCells);
-        Task<bool> PasteToPositionAsync(int startRowIndex, int startColumnIndex, List<DataGridRow> rows, List<ColumnDefinition> columns);
+        Task<bool> PasteToPositionAsync(int startRowIndex, int startColumnIndex, IList<DataGridRow> rows, IList<ColumnDefinition> columns);
 
-        // OPRAVENÉ: Správne internal event type
-        event System.EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
+        // ✅ OPRAVA CS0738: Správny event type
+        event EventHandler<ComponentErrorEventArgs> ErrorOccurred;
     }
 }

@@ -1,4 +1,4 @@
-﻿//Services/Implementation/DataService.cs - OPRAVENÉ event types
+﻿// SÚBOR: Services/Implementation/DataService.cs - OPRAVENÉ  
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -8,13 +8,11 @@ using Microsoft.Extensions.Logging;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
-using ColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
-using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// INTERNAL class - nie je súčasťou public API
+    /// ✅ OPRAVA CS0738: INTERNAL class s správnymi event types
     /// </summary>
     internal class DataService : IDataService
     {
@@ -23,22 +21,21 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private List<ColumnDefinition> _columns = new();
         private bool _isInitialized = false;
 
-        /// <summary>
-        /// OPRAVENÉ: Správne internal event signatures
-        /// </summary>
-        public event EventHandler<InternalDataChangeEventArgs>? DataChanged;
-        public event EventHandler<InternalComponentErrorEventArgs>? ErrorOccurred;
+        // ✅ OPRAVA CS0738: Správne event types
+        public event EventHandler<DataChangeEventArgs>? DataChanged;
+        public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
 
         public DataService(ILogger<DataService> logger)
         {
             _logger = logger;
         }
 
-        public async Task InitializeAsync(List<ColumnDefinition> columns, int initialRowCount = 100)
+        // ✅ OPRAVA CS0051: internal parameters
+        public async Task InitializeAsync(IList<ColumnDefinition> columns, int initialRowCount = 100)
         {
             try
             {
-                _columns = columns ?? throw new ArgumentNullException(nameof(columns));
+                _columns = columns?.ToList() ?? throw new ArgumentNullException(nameof(columns));
                 _rows.Clear();
 
                 initialRowCount = Math.Max(1, Math.Min(initialRowCount, 10000));
@@ -57,9 +54,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 _isInitialized = true;
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "Initialize",
+                    ChangeType = DataChangeType.Initialize,
                     AffectedRowCount = initialRowCount
                 });
 
@@ -68,7 +65,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error initializing DataService");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "InitializeAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "InitializeAsync"));
                 throw;
             }
         }
@@ -119,9 +116,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "LoadData",
+                    ChangeType = DataChangeType.LoadData,
                     AffectedRowCount = newRows.Count
                 });
 
@@ -130,7 +127,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading data from DataTable");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "LoadDataAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
                 throw;
             }
         }
@@ -180,9 +177,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "LoadData",
+                    ChangeType = DataChangeType.LoadData,
                     AffectedRowCount = newRows.Count
                 });
 
@@ -191,7 +188,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading data from dictionary list");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "LoadDataAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "LoadDataAsync"));
                 throw;
             }
         }
@@ -230,7 +227,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error exporting data to DataTable");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "ExportToDataTableAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ExportToDataTableAsync"));
                 return new DataTable();
             }
         }
@@ -255,9 +252,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     }
                 });
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "ClearData",
+                    ChangeType = DataChangeType.ClearData,
                     AffectedRowCount = _rows.Count
                 });
 
@@ -266,7 +263,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error clearing all data");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "ClearAllDataAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ClearAllDataAsync"));
                 throw;
             }
         }
@@ -305,9 +302,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(result.DataRows);
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "RemoveEmptyRows",
+                    ChangeType = DataChangeType.RemoveEmptyRows,
                     AffectedRowCount = result.RemovedCount
                 });
 
@@ -316,7 +313,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error removing empty rows");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveEmptyRowsAsync"));
                 throw;
             }
         }
@@ -354,9 +351,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     _rows.Remove(row);
                 }
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "RemoveRows",
+                    ChangeType = DataChangeType.RemoveRows,
                     AffectedRowCount = result.Count
                 });
 
@@ -365,12 +362,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error removing rows by condition");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByConditionAsync"));
                 throw;
             }
         }
 
-        public async Task<int> RemoveRowsByValidationAsync(List<ValidationRule> customRules)
+        // ✅ OPRAVA CS0051: internal parameters  
+        public async Task<int> RemoveRowsByValidationAsync(IList<ValidationRule> customRules)
         {
             try
             {
@@ -404,9 +402,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     _rows.Remove(row);
                 }
 
-                OnDataChanged(new InternalDataChangeEventArgs
+                OnDataChanged(new DataChangeEventArgs
                 {
-                    ChangeType = "RemoveRows",
+                    ChangeType = DataChangeType.RemoveRows,
                     AffectedRowCount = result.Count
                 });
 
@@ -416,7 +414,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error removing rows by custom validation");
-                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
+                OnErrorOccurred(new ComponentErrorEventArgs(ex, "RemoveRowsByValidationAsync"));
                 return 0;
             }
         }
@@ -427,7 +425,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return CreateEmptyRow(rowIndex);
         }
 
-        public List<DataGridRow> GetRows()
+        public IList<DataGridRow> GetRows()
         {
             return new List<DataGridRow>(_rows);
         }
@@ -461,12 +459,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
-        protected virtual void OnDataChanged(InternalDataChangeEventArgs e)
+        protected virtual void OnDataChanged(DataChangeEventArgs e)
         {
             DataChanged?.Invoke(this, e);
         }
 
-        protected virtual void OnErrorOccurred(InternalComponentErrorEventArgs e)
+        protected virtual void OnErrorOccurred(ComponentErrorEventArgs e)
         {
             ErrorOccurred?.Invoke(this, e);
         }
