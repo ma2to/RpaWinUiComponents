@@ -1,4 +1,4 @@
-﻿//Services/Implementation/DataService.cs - OPRAVENÝ: INTERNAL s correct event args
+﻿//Services/Implementation/DataService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,7 +14,7 @@ using ValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// OPRAVENÉ: INTERNAL class s correct event signatures
+    /// INTERNAL class - nie je súčasťou public API
     /// </summary>
     internal class DataService : IDataService
     {
@@ -59,7 +59,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.Initialize,
+                    ChangeType = "Initialize",
                     AffectedRowCount = initialRowCount
                 });
 
@@ -121,7 +121,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.LoadData,
+                    ChangeType = "LoadData",
                     AffectedRowCount = newRows.Count
                 });
 
@@ -182,7 +182,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.LoadData,
+                    ChangeType = "LoadData",
                     AffectedRowCount = newRows.Count
                 });
 
@@ -257,7 +257,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.ClearData,
+                    ChangeType = "ClearData",
                     AffectedRowCount = _rows.Count
                 });
 
@@ -307,7 +307,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.RemoveEmptyRows,
+                    ChangeType = "RemoveEmptyRows",
                     AffectedRowCount = result.RemovedCount
                 });
 
@@ -356,7 +356,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.RemoveRows,
+                    ChangeType = "RemoveRows",
                     AffectedRowCount = result.Count
                 });
 
@@ -406,7 +406,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 OnDataChanged(new InternalDataChangeEventArgs
                 {
-                    ChangeType = DataChangeType.RemoveRows,
+                    ChangeType = "RemoveRows",
                     AffectedRowCount = result.Count
                 });
 

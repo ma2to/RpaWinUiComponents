@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IValidationService.cs - FINÁLNA OPRAVA: INTERNAL
+﻿//Services/Interfaces/IValidationService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -9,7 +9,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
-    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// INTERNAL interface - nie je súčasťou public API
     /// </summary>
     internal interface IValidationService
     {
@@ -25,6 +25,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         bool HasValidationRules(string columnName);
         int GetTotalRuleCount();
 
+        // OPRAVENÉ: Správne internal event types
         event EventHandler<InternalValidationCompletedEventArgs> ValidationCompleted;
         event EventHandler<InternalComponentErrorEventArgs> ValidationErrorOccurred;
     }

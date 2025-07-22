@@ -1,4 +1,4 @@
-﻿//Services/Implementation/ClipboardService.cs - OPRAVENÉ: INTERNAL class
+﻿//Services/Implementation/ClipboardService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,14 +13,14 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// ✅ OPRAVA CS0051: INTERNAL class implementuje INTERNAL interface
-    /// Nie je vystavené v PUBLIC API
+    /// INTERNAL class - nie je súčasťou public API
     /// </summary>
     internal class ClipboardService : IClipboardService
     {
         private readonly ILogger<ClipboardService> _logger;
 
-        public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
+        // OPRAVENÉ: Správny internal event type
+        public event EventHandler<InternalComponentErrorEventArgs>? ErrorOccurred;
 
         public ClipboardService(ILogger<ClipboardService> logger)
         {
@@ -43,7 +43,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting clipboard text");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "GetClipboardTextAsync"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "GetClipboardTextAsync"));
                 return null;
             }
         }
@@ -62,7 +62,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error setting clipboard text");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "SetClipboardTextAsync"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "SetClipboardTextAsync"));
             }
         }
 
@@ -78,7 +78,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking clipboard text");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "HasClipboardTextAsync"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "HasClipboardTextAsync"));
                 return false;
             }
         }
@@ -120,7 +120,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error converting data to Excel format");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ConvertToExcelFormat"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "ConvertToExcelFormat"));
                 return string.Empty;
             }
         }
@@ -181,14 +181,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error parsing clipboard data from Excel format");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "ParseFromExcelFormat"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "ParseFromExcelFormat"));
                 var fallbackResult = new string[1, 1];
                 fallbackResult[0, 0] = clipboardData ?? "";
                 return fallbackResult;
             }
         }
 
-        // ✅ OPRAVA CS0051: Všetky typy sú internal
         public async Task CopySelectedCellsAsync(IEnumerable<DataGridCell> selectedCells)
         {
             try
@@ -241,11 +240,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error copying selected cells");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "CopySelectedCellsAsync"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "CopySelectedCellsAsync"));
             }
         }
 
-        // ✅ OPRAVA CS0051: Všetky typy sú internal
         public async Task<bool> PasteToPositionAsync(int startRowIndex, int startColumnIndex, List<DataGridRow> rows, List<ColumnDefinition> columns)
         {
             try
@@ -307,7 +305,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error pasting to position");
-                OnErrorOccurred(new ComponentErrorEventArgs(ex, "PasteToPositionAsync"));
+                OnErrorOccurred(new InternalComponentErrorEventArgs(ex, "PasteToPositionAsync"));
                 return false;
             }
         }
@@ -333,7 +331,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             return columnName == "DeleteAction" || columnName == "ValidAlerts";
         }
 
-        protected virtual void OnErrorOccurred(ComponentErrorEventArgs e)
+        protected virtual void OnErrorOccurred(InternalComponentErrorEventArgs e)
         {
             ErrorOccurred?.Invoke(this, e);
         }

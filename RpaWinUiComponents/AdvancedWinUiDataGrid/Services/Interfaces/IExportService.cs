@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IExportService.cs - FINÁLNA OPRAVA: INTERNAL
+﻿//Services/Interfaces/IExportService.cs - OPRAVENÉ
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,7 +9,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
-    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// INTERNAL interface - nie je súčasťou public API
     /// </summary>
     internal interface IExportService
     {
@@ -19,6 +19,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 
         Task<List<Dictionary<string, object?>>> ExportToDictionariesAsync(List<DataGridRow> rows, List<ColumnDefinition> columns);
 
+        // OPRAVENÉ: Správne internal event type
         event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
     }
 }

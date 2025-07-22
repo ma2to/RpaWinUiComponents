@@ -1,4 +1,4 @@
-﻿//Events/InternalEventArgs.cs - CHÝBAJÚCE INTERNAL EVENT ARGS
+﻿//Events/InternalEventArgs.cs - OPRAVENÉ: ODSTRÁNENÉ DUPLIKÁTY
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
     /// </summary>
     internal class InternalDataChangeEventArgs : EventArgs
     {
-        public DataChangeType ChangeType { get; init; }
+        public string ChangeType { get; init; } = string.Empty;
         public object? ChangedData { get; init; }
         public string? ColumnName { get; init; }
         public int RowIndex { get; init; } = -1;
@@ -56,32 +56,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Events
         public int AsyncValidationCount { get; init; }
     }
 
-    /// <summary>
-    /// INTERNAL - Data change type enum
-    /// </summary>
-    internal enum DataChangeType
-    {
-        Initialize,
-        LoadData,
-        ClearData,
-        CellValueChanged,
-        RemoveRows,
-        RemoveEmptyRows,
-        AddRows,
-        RowValidationChanged
-    }
-
-    /// <summary>
-    /// INTERNAL - Navigation direction enum
-    /// </summary>
-    internal enum NavigationDirection
-    {
-        None,
-        Next,
-        Previous,
-        Up,
-        Down,
-        Home,
-        End
-    }
+    // OPRAVENÉ: ODSTRÁNENÉ DUPLIKÁTY - enum-y sú definované v špecializovaných súboroch
+    // DataChangeType je v DataChangeEventArgs.cs
+    // NavigationDirection je v CellNavigationEventArgs.cs
 }

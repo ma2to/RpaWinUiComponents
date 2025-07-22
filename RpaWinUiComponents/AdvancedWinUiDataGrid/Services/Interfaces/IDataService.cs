@@ -1,4 +1,4 @@
-﻿//Services/Interfaces/IDataService.cs - FINÁLNA OPRAVA: INTERNAL
+﻿//Services/Interfaces/IDataService.cs - OPRAVENÉ event types
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -9,7 +9,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Events;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
 {
     /// <summary>
-    /// OPRAVENÉ: INTERNAL interface - nie je súčasťou public API
+    /// INTERNAL interface - nie je súčasťou public API
     /// </summary>
     internal interface IDataService
     {
@@ -28,6 +28,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces
         List<DataGridRow> GetRows();
         int GetRowCount();
 
+        // OPRAVENÉ: Správne internal event types
         event EventHandler<InternalDataChangeEventArgs> DataChanged;
         event EventHandler<InternalComponentErrorEventArgs> ErrorOccurred;
     }
