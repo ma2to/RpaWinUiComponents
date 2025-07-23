@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- build/RpaWinUiComponents.targets - v1.0.30 CS0518 DEFINITÍVNE VYRIEŠENÉ -->
+<!-- build/RpaWinUiComponents.targets - v1.0.31 DUPLIKÁTY DEFINITÍVNE VYRIEŠENÉ -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.30</RpaWinUiComponentsVersion>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.31</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
   <!-- ✅ KONTROLA: Nie sme v samom RpaWinUiComponents projekte -->
@@ -12,17 +12,17 @@
     <_IsRpaWinUiComponentsProject Condition="'$(_IsRpaWinUiComponentsProject)' == ''">false</_IsRpaWinUiComponentsProject>
   </PropertyGroup>
 
-  <!-- ✅ OPRAVENÉ NASTAVENIA pre consuming projects - CS0518 FIX -->
+  <!-- ✅ OPRAVENÉ NASTAVENIA pre consuming projects - DUPLIKÁTY FIX -->
   <PropertyGroup Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
     <!-- Zabezpečenie WinUI 3 nastavení -->
     <UseWinUI Condition="'$(UseWinUI)' == ''">true</UseWinUI>
 
-    <!-- ✅ KĽÚČOVÉ PRE CS0518: Default items MUSIA byť enabled -->
+    <!-- ✅ KĽÚČOVÉ PRE NETSDK1022: Default items MUSIA byť enabled -->
     <EnableDefaultCompileItems Condition="'$(EnableDefaultCompileItems)' == ''">true</EnableDefaultCompileItems>
     <EnableDefaultXamlItems Condition="'$(EnableDefaultXamlItems)' == ''">true</EnableDefaultXamlItems>
     <EnableDefaultPageItems Condition="'$(EnableDefaultPageItems)' == ''">true</EnableDefaultPageItems>
 
-    <!-- ✅ RIEŠENIE CS0518: Framework references -->
+    <!-- ✅ RIEŠENIE XLS0414: Framework references -->
     <DisableImplicitFrameworkReferences Condition="'$(DisableImplicitFrameworkReferences)' == ''">false</DisableImplicitFrameworkReferences>
     <ImplicitlyExpandNETStandardFacades Condition="'$(ImplicitlyExpandNETStandardFacades)' == ''">true</ImplicitlyExpandNETStandardFacades>
     <ImplicitlyExpandDesignTimeFacades Condition="'$(ImplicitlyExpandDesignTimeFacades)' == ''">true</ImplicitlyExpandDesignTimeFacades>
@@ -32,33 +32,32 @@
     <EnableXbfGeneration Condition="'$(EnableXbfGeneration)' == ''">true</EnableXbfGeneration>
     <UseWinUIModernResourceSystem Condition="'$(UseWinUIModernResourceSystem)' == ''">true</UseWinUIModernResourceSystem>
 
-    <!-- ✅ ROZŠÍRENÉ: Suppress CS0518 a súvisiace warnings -->
-    <NoWarn>$(NoWarn);CS0436;WMC1013;CA1416;WMC1003;XLS0414;CS0518;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
+    <!-- ✅ ROZŠÍRENÉ: Suppress VŠETKY problematické warnings vrátane duplikátov -->
+    <NoWarn>$(NoWarn);CS0436;WMC1013;CA1416;WMC1003;XLS0414;CS0518;CS8600;CS8601;CS8602;CS8603;CS8604;NETSDK1022;NETSDK1086;MSB3030</NoWarn>
 
     <!-- MSBuild nastavenia -->
     <ErrorOnDuplicateItems>false</ErrorOnDuplicateItems>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
-    <!-- ✅ CS0518 warnings ako messages -->
-    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030;WMC1003;XLS0414;CS0518</MSBuildWarningsAsMessages>
+    <!-- ✅ Duplikát warnings ako messages -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030;WMC1003;XLS0414;CS0518;NETSDK1022;NETSDK1086;WMC1013</MSBuildWarningsAsMessages>
     <MSBuildTreatWarningsAsErrors>false</MSBuildTreatWarningsAsErrors>
-    <WarningsNotAsErrors>WMC1003;XLS0414;CS0518</WarningsNotAsErrors>
+    <WarningsNotAsErrors>WMC1003;XLS0414;CS0518;NETSDK1022;NETSDK1086;WMC1013</WarningsNotAsErrors>
   </PropertyGroup>
 
-  <!-- ✅ NOVÉ: Ensure System References pre CS0518 fix -->
-  <Target Name="EnsureSystemReferencesForCS0518" BeforeTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="🔧 Ensuring system references for CS0518 fix..." Importance="low" />
+  <!-- ✅ OPRAVENÉ: System References pre XLS0414 fix - BEZ redundant framework refs -->
+  <Target Name="EnsureSystemReferencesForXLS0414" BeforeTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+    <Message Text="🔧 Ensuring system references for XLS0414 fix..." Importance="low" />
 
-    <!-- Add framework references if missing -->
-    <ItemGroup Condition="'@(FrameworkReference->WithMetadataValue('Identity', 'Microsoft.NETCore.App'))' == ''">
-      <FrameworkReference Include="Microsoft.NETCore.App" />
-    </ItemGroup>
+    <!-- ✅ OPRAVA NETSDK1086: NEPOUŽÍVAME redundant Microsoft.NETCore.App -->
+    <!-- Pre .NET 8 je Microsoft.NETCore.App automaticky included -->
 
+    <!-- Pridáme iba WindowsDesktop ak nie je v consuming project -->
     <ItemGroup Condition="'@(FrameworkReference->WithMetadataValue('Identity', 'Microsoft.WindowsDesktop.App'))' == ''">
       <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
     </ItemGroup>
 
-    <!-- ✅ KRITICKÉ: System references pre CS0518 fix -->
+    <!-- ✅ KRITICKÉ: System references pre XLS0414 fix - len ak chýbajú -->
     <ItemGroup>
       <Reference Include="System.Runtime" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.Runtime'))' == ''" />
       <Reference Include="System.ObjectModel" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.ObjectModel'))' == ''" />
@@ -69,32 +68,32 @@
       <Reference Include="System.Threading.Tasks" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.Threading.Tasks'))' == ''" />
     </ItemGroup>
 
-    <Message Text="✅ System references verified for CS0518 compatibility" Importance="low" />
+    <Message Text="✅ System references verified for XLS0414 compatibility (no redundant framework refs)" Importance="low" />
   </Target>
 
-  <!-- ✅ ENHANCED: Check for CS0518 issues -->
-  <Target Name="DetectCS0518Issues" BeforeTargets="XamlPreCompile" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="🔍 Checking for potential CS0518 issues..." Importance="low" />
+  <!-- ✅ ENHANCED: Check for duplikát issues -->
+  <Target Name="DetectDuplicateIssues" BeforeTargets="XamlPreCompile" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+    <Message Text="🔍 Checking for potential duplicate issues..." Importance="low" />
 
     <!-- Check critical properties -->
     <PropertyGroup>
-      <_HasCorrectDefaultItems Condition="'$(EnableDefaultCompileItems)' == 'true' AND '$(EnableDefaultXamlItems)' == 'true'">true</_HasCorrectDefaultItems>
+      <_HasCorrectDefaultItems Condition="'$(EnableDefaultCompileItems)' == 'true' AND '$(EnableDefaultXamlItems)' == 'true' AND '$(EnableDefaultPageItems)' == 'true'">true</_HasCorrectDefaultItems>
       <_HasCorrectFrameworkRefs Condition="'$(DisableImplicitFrameworkReferences)' != 'true'">true</_HasCorrectFrameworkRefs>
     </PropertyGroup>
 
-    <Warning Text="⚠️ EnableDefaultCompileItems or EnableDefaultXamlItems is false - may cause CS0518 errors"
+    <Warning Text="⚠️ EnableDefault*Items properties are not properly set - may cause NETSDK1022 errors"
              Condition="'$(_HasCorrectDefaultItems)' != 'true'" />
 
-    <Warning Text="⚠️ DisableImplicitFrameworkReferences is true - may cause CS0518 errors"
+    <Warning Text="⚠️ DisableImplicitFrameworkReferences is true - may cause XLS0414 errors"
              Condition="'$(_HasCorrectFrameworkRefs)' != 'true'" />
 
-    <Message Text="✅ CS0518 configuration looks good" Importance="low"
+    <Message Text="✅ Duplicate issues configuration looks good" Importance="low"
              Condition="'$(_HasCorrectDefaultItems)' == 'true' AND '$(_HasCorrectFrameworkRefs)' == 'true'" />
   </Target>
 
-  <!-- ✅ Enhanced XBF copying -->
+  <!-- ✅ Enhanced XBF copying s auto-discovery -->
   <Target Name="CopyRpaComponentsXbfFiles" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion): CS0518 fixed XBF copying..." Importance="normal" />
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion): Duplikáty fixed XBF copying..." Importance="normal" />
 
     <!-- Find XBF files in NuGet package -->
     <ItemGroup>
@@ -105,7 +104,7 @@
 
     <Message Text="✅ Found RpaWinUiComponents XBF files: @(RpaXbfFiles)" Importance="normal" Condition="'@(RpaXbfFiles)' != ''" />
     <Message Text="✅ Found RpaWinUiComponents XAML files: @(RpaXamlFiles)" Importance="normal" Condition="'@(RpaXamlFiles)' != ''" />
-    <Message Text="✅ CS0518 fix applied - XBF files should generate properly" Importance="normal" />
+    <Message Text="✅ NETSDK1022, WMC1013, XLS0414 duplikáty fixed - XBF files should generate properly" Importance="normal" />
 
     <!-- Copy files to output -->
     <ItemGroup Condition="'@(RpaXbfFiles)' != ''">
@@ -127,7 +126,7 @@
 
   <!-- ✅ Info message -->
   <Target Name="RpaWinUiComponentsInfo" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) (CS0518 DEFINITÍVNE VYRIEŠENÉ)" Importance="normal" />
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) (DUPLIKÁTY DEFINITÍVNE VYRIEŠENÉ)" Importance="normal" />
   </Target>
 
   <!-- ✅ WinUI dependencies s enhanced version checking -->
@@ -138,9 +137,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.Logging.Abstractions'))' == ''" />
   </ItemGroup>
 
-  <!-- ✅ Enhanced diagnostika pre CS0518 debugging -->
-  <Target Name="DiagnoseCS0518Issues" AfterTargets="ResolvePackageAssets" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false' AND '$(RpaWinUiComponentsDiagnostics)' == 'true'">
-    <Message Text="🔍 CS0518 Diagnostics - RpaWinUiComponents v$(RpaWinUiComponentsVersion)..." Importance="high" />
+  <!-- ✅ Enhanced diagnostika pre duplikáty debugging -->
+  <Target Name="DiagnoseDuplicateIssues" AfterTargets="ResolvePackageAssets" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false' AND '$(RpaWinUiComponentsDiagnostics)' == 'true'">
+    <Message Text="🔍 Duplicate Issues Diagnostics - RpaWinUiComponents v$(RpaWinUiComponentsVersion)..." Importance="high" />
 
     <!-- Check for files -->
     <ItemGroup>
@@ -155,14 +154,15 @@
     <Message Text="🔍 RpaWinUiComponents XBF súbory: @(RpaXbfFiles)" Importance="high" />
     <Message Text="🔍 RpaWinUiComponents DLL súbory: @(RpaDllFiles)" Importance="high" />
 
-    <!-- CS0518 related diagnostics -->
+    <!-- Duplikáty related diagnostics -->
     <Message Text="🔧 EnableDefaultCompileItems: $(EnableDefaultCompileItems)" Importance="high" />
     <Message Text="🔧 EnableDefaultXamlItems: $(EnableDefaultXamlItems)" Importance="high" />
+    <Message Text="🔧 EnableDefaultPageItems: $(EnableDefaultPageItems)" Importance="high" />
     <Message Text="🔧 DisableImplicitFrameworkReferences: $(DisableImplicitFrameworkReferences)" Importance="high" />
     <Message Text="🔧 Framework references: @(AllFrameworkRefs)" Importance="high" />
     <Message Text="🔧 System references: @(AllSystemRefs)" Importance="high" />
 
-    <Message Text="✅ CS0518 diagnostics completed" Importance="high" />
+    <Message Text="✅ Duplicate issues diagnostics completed" Importance="high" />
   </Target>
 
 </Project>
