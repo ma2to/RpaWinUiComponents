@@ -245,7 +245,6 @@
                             BorderBrush="#DEE2E6" 
                             BorderThickness="1"
                             CornerRadius="4,4,0,0">
-                        <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                         <ItemsRepeater x:Name="HeaderItemsRepeater">
                             <ItemsRepeater.Layout>
                                 <StackLayout Orientation="Horizontal"/>
@@ -272,7 +271,6 @@
                     </Border>
 
                     <!-- DATA ROWS s ItemsRepeater -->
-                    <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                     <ItemsRepeater x:Name="DataRowsItemsRepeater"
                                   ItemTemplate="{StaticResource RowTemplate}">
                         <ItemsRepeater.Layout>
@@ -283,7 +281,6 @@
             </ScrollViewer>
 
             <!-- EMPTY STATE -->
-            <!-- ✅ OPRAVENÉ: Správny názov elementu -->
             <StackPanel x:Name="EmptyStatePanel"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"
@@ -318,14 +315,12 @@
                 <StackPanel Grid.Column="0" 
                            Orientation="Horizontal" 
                            Spacing="24">
-                    <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                     <TextBlock x:Name="ValidationStatusText" 
                               Text="Ready" 
                               Foreground="White" 
                               FontWeight="SemiBold"
                               VerticalAlignment="Center"/>
 
-                    <!-- ✅ OPRAVENÉ: Správny názov elementu -->
                     <TextBlock x:Name="RowCountText"
                               Foreground="#BDC3C7" 
                               FontSize="12"

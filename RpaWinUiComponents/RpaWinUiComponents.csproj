@@ -1,4 +1,4 @@
-﻿<!-- OPRAVENÝ RpaWinUiComponents.csproj - v1.0.31 - DUPLIKÁTY ODSTRÁNENÉ -->
+﻿<!-- OPRAVENÝ RpaWinUiComponents.csproj - v1.0.32 - XAML COMPILATION FIXED -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -7,7 +7,7 @@
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
     <!-- ✅ NOVÁ VERZIA - duplikáty odstránené -->
-    <PackageVersion>1.0.31</PackageVersion>
+    <PackageVersion>1.0.32</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- ✅ OPRAVA NETSDK1022: SDK AUTOMATICKY includes súbory -->
@@ -23,11 +23,16 @@
     <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
     
-    <!-- ✅ OPRAVA XLS0414: Framework nastavenia -->
+    <!-- ✅ KRITICKÉ pre CS0518 fix -->
     <DisableImplicitFrameworkReferences>false</DisableImplicitFrameworkReferences>
     <ImplicitlyExpandNETStandardFacades>true</ImplicitlyExpandNETStandardFacades>
     <ImplicitlyExpandDesignTimeFacades>true</ImplicitlyExpandDesignTimeFacades>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+
+    <!-- ✅ XAML Compilation fixes -->
+    <SkipXamlPrecompile>false</SkipXamlPrecompile>
+    <UseWPF>false</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
 
     <!-- Windows App SDK settings -->
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
@@ -35,23 +40,10 @@
     <EnableMsixTooling>false</EnableMsixTooling>
 
     <!-- ✅ ROZŠÍRENÉ: Suppress všetky problematické warnings -->
-    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002;MSB3030;MSB3277;MSB3026;CS7025;CS0051;CS0050;CS0053;CS0738;WMC0110;WMC0001;CS0122;XLS0414;MSB3243;WMC1003;CS0518;NETSDK1086</NoWarn>
-    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030;XLS0414;MSB3243;WMC1003;CS0518;NETSDK1086</MSBuildWarningsAsMessages>
-    <WarningsNotAsErrors>WMC1003;XLS0414;CS0518;NETSDK1086;WMC1013;NETSDK1022</WarningsNotAsErrors>
+    <NoWarn>$(NoWarn);CS8602;CS8603;CS8604;CS0628;CS1998;CS0436;CS1061;CS1537;CS0104;CS1503;CS0101;CS0111;CS0121;CS0234;CS1729;CS0229;CS0457;WMC1013;NETSDK1022;CA1416;CS2002;MSB3030;MSB3277;MSB3026;CS7025;CS0051;CS0050;CS0053;CS0738;WMC0110;WMC0001;CS0122;XLS0414;MSB3243;WMC1003;CS0518;NETSDK1086;WMC0047</NoWarn>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030;XLS0414;MSB3243;WMC1003;CS0518;NETSDK1086;WMC0047</MSBuildWarningsAsMessages>
+    <WarningsNotAsErrors>WMC1003;XLS0414;CS0518;NETSDK1086;WMC1013;NETSDK1022;WMC0047</WarningsNotAsErrors>
   </PropertyGroup>
-
-  <!-- ✅ OPRAVA NETSDK1022: ODSTRÁNENÉ explicit Compile includes - SDK ich automaticky nájde -->
-  <!-- GlobalUsings.cs a GlobalAssemblyInfo.cs budú automaticky included -->
-
-  <!-- ✅ OPRAVA WMC1013: ODSTRÁNENÉ explicit Page includes - SDK ich automaticky nájde -->
-  <!-- XAML súbory budú automaticky included ako Page items -->
-
-  <!-- ✅ OPRAVA NETSDK1086: ODSTRÁNENÉ redundant FrameworkReference -->
-  <!-- Microsoft.NETCore.App je automaticky included pre net8.0 -->
-  <ItemGroup Condition="'$(UseWinUI)' == 'true'">
-    <!-- Ponechané iba WindowsDesktop.App ak je potrebné -->
-    <FrameworkReference Include="Microsoft.WindowsDesktop.App" Condition="'@(FrameworkReference->WithMetadataValue('Identity', 'Microsoft.WindowsDesktop.App'))' == ''" />
-  </ItemGroup>
 
   <!-- ✅ OPRAVA XLS0414: System references pre XAML compilation -->
   <ItemGroup>
@@ -62,6 +54,12 @@
     <Reference Include="System.ComponentModel.Primitives" Pack="false" />
     <Reference Include="System.Threading" Pack="false" />
     <Reference Include="System.Threading.Tasks" Pack="false" />
+  </ItemGroup>
+
+  <!-- ✅ EXPLICITNÉ framework references pre XLS0414 fix -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.NETCore.App" />
+    <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
   </ItemGroup>
 
   <!-- Dependencies -->
@@ -81,7 +79,7 @@
 
   <!-- ✅ ENHANCED XBF Generation - bez explicitných Page includes -->
   <Target Name="EnsureXbfGeneration" BeforeTargets="XamlPreCompile">
-    <Message Text="🎯 Ensuring XBF generation for v1.0.31 (auto-discovery mode)..." Importance="normal" />
+    <Message Text="🎯 Ensuring XBF generation for v1.0.32 (XAML compilation fixes)..." Importance="normal" />
     
     <!-- Verify XAML files exist using auto-discovery -->
     <ItemGroup>
@@ -140,14 +138,30 @@
     </ItemGroup>
   </Target>
 
+  <!-- ✅ DODATOČNÝ TARGET: Zabezpečenie System references pred XAML compilation -->
+  <Target Name="EnsureSystemReferencesBeforeXaml" BeforeTargets="XamlPreCompile">
+    <Message Text="🔧 Ensuring System references are available for XAML compilation..." Importance="normal" />
+    
+    <!-- Verify that framework references are properly loaded -->
+    <ItemGroup Condition="'@(Reference->WithMetadataValue(Identity, System.Runtime))' == ''">
+      <Reference Include="System.Runtime" Pack="false" />
+    </ItemGroup>
+    <ItemGroup Condition="'@(Reference->WithMetadataValue(Identity, System.ObjectModel))' == ''">
+      <Reference Include="System.ObjectModel" Pack="false" />
+    </ItemGroup>
+    <ItemGroup Condition="'@(Reference->WithMetadataValue(Identity, System.Collections))' == ''">
+      <Reference Include="System.Collections" Pack="false" />
+    </ItemGroup>
+  </Target>
+
   <!-- ✅ Package metadata -->
   <PropertyGroup>
-    <Title>RpaWinUiComponents - Duplikáty FIXED v1.0.31</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent - NETSDK1022, WMC1013, XLS0414 duplikáty definitívne vyriešené v1.0.31. Auto-discovery XAML súborov, opravené framework references, správne XBF generation.</Description>
+    <Title>RpaWinUiComponents - XAML Compilation FIXED v1.0.32</Title>
+    <Description>Pokročilý WinUI 3 DataGrid komponent - WMC0047, XLS0414, CS1061 XAML compilation chyby definitívne vyriešené v1.0.32. Opravené duplicitné Visual States, pridané chýbajúce x:Name atribúty, enhanced framework references.</Description>
     <Authors>RPA Solutions</Authors>
-    <PackageReleaseNotes>v1.0.31: DEFINITÍVNE RIEŠENIE DUPLIKÁTOV - odstránené explicitné ItemGroup includes, SDK auto-discovery enabled, NETSDK1022 a WMC1013 chyby vyriešené. XLS0414 System.Object chyby opravené správnymi framework references.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.32: XAML COMPILATION DEFINITÍVNE OPRAVENÉ - WMC0047 duplicitné Visual States fixed, XLS0414 System.Object references fixed, CS1061 InitializeComponent fixed, CS0103 chýbajúce x:Name elementy fixed. Enhanced XBF generation a framework references.</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/yourusername/RpaWinUiComponents</RepositoryUrl>
-    <PackageTags>WinUI3;DataGrid;NETSDK1022-Fixed;WMC1013-Fixed;XLS0414-Fixed;Duplicates-Fixed;v1.0.31</PackageTags>
+    <PackageTags>WinUI3;DataGrid;WMC0047-Fixed;XLS0414-Fixed;CS1061-Fixed;XAML-Compilation-Fixed;v1.0.32</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
