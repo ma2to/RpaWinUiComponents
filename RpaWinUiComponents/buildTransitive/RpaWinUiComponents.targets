@@ -11,7 +11,7 @@
 
   <!-- ✅ Ensure proper framework references for consuming projects -->
   <Target Name="EnsureRpaWinUiComponentsFramework" BeforeTargets="ResolveAssemblyReferences">
-    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.26)" Importance="normal" />
+    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.28)" Importance="normal" />
 
     <!-- Force WinUI 3 usage if not already set -->
     <PropertyGroup Condition="'$(UseWinUI)' == ''">
