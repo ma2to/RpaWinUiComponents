@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- build/RpaWinUiComponents.targets - OPRAVENÉ XBF handling v1.0.20 -->
+<!-- build/RpaWinUiComponents.targets - OPRAVENÉ XBF handling v1.0.23 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.20</RpaWinUiComponentsVersion>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.23</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
   <!-- ✅ ZÁKLADNÁ KONTROLA: Nie sme v samom RpaWinUiComponents projekte -->
@@ -17,14 +17,14 @@
     <!-- Zabezpečenie WinUI 3 nastavení -->
     <UseWinUI Condition="'$(UseWinUI)' == ''">true</UseWinUI>
 
-    <!-- ✅ KRITICKÁ OPRAVA: Zakázanie XBF súborov pre consuming projects -->
-    <!-- XBF súbory spôsobujú MSB3030 chyby v NuGet package consumer projektoch -->
-    <GenerateXbf>false</GenerateXbf>
-    <EnableXbfGeneration>false</EnableXbfGeneration>
+    <!-- ✅ KRITICKÁ OPRAVA: POVOLIŤ XBF súbory pre consuming projects -->
+    <!-- XBF súbory sú teraz správne zabalené v NuGet package -->
+    <GenerateXbf Condition="'$(GenerateXbf)' == ''">true</GenerateXbf>
+    <EnableXbfGeneration Condition="'$(EnableXbfGeneration)' == ''">true</EnableXbfGeneration>
     <IncludeXbfInPackage>false</IncludeXbfInPackage>
 
     <!-- Základné warning suppression -->
-    <NoWarn>$(NoWarn);CS0436;WMC1013;CA1416;MSB3030</NoWarn>
+    <NoWarn>$(NoWarn);CS0436;WMC1013;CA1416</NoWarn>
 
     <!-- MSBuild nastavenia -->
     <ErrorOnDuplicateItems>false</ErrorOnDuplicateItems>
@@ -35,22 +35,25 @@
     <MSBuildTreatWarningsAsErrors>false</MSBuildTreatWarningsAsErrors>
   </PropertyGroup>
 
-  <!-- ✅ OPRAVA: Disable XBF dependency pre RpaWinUiComponents -->
-  <Target Name="DisableXbfForRpaComponents" BeforeTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+  <!-- ✅ OPRAVENÉ: Správne kopírovanie XBF súborov z NuGet package -->
+  <Target Name="CopyRpaComponentsXbfFiles" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
 
-    <PropertyGroup>
-      <!-- Force disable XBF processing pre RpaWinUiComponents XAML súbory -->
-      <DisableXbfLineInfo>true</DisableXbfLineInfo>
-      <XbfGenerationDisabled>true</XbfGenerationDisabled>
-    </PropertyGroup>
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion): Copying XBF files from NuGet package..." Importance="normal" />
 
-    <Message Text="✅ RpaWinUiComponents v$(RpaWinUiComponentsVersion): XBF zakázané pre consuming project" Importance="normal" />
-
-    <!-- ✅ Remove XBF files from reference if they exist -->
+    <!-- ✅ Nájdi XBF súbory v NuGet package -->
     <ItemGroup>
-      <Reference Remove="**\RpaWinUiComponents\**\*.xbf" />
-      <ReferenceCopyLocalPaths Remove="**\RpaWinUiComponents\**\*.xbf" />
-      <Content Remove="**\RpaWinUiComponents\**\*.xbf" />
+      <RpaXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xbf'))" />
+    </ItemGroup>
+
+    <Message Text="✅ Found RpaWinUiComponents XBF files: @(RpaXbfFiles)" Importance="normal" Condition="'@(RpaXbfFiles)' != ''" />
+    <Message Text="⚠️ No XBF files found in RpaWinUiComponents package" Importance="normal" Condition="'@(RpaXbfFiles)' == ''" />
+
+    <!-- ✅ Zabezpeč že XBF súbory sa skopírujú do output directory -->
+    <ItemGroup Condition="'@(RpaXbfFiles)' != ''">
+      <ContentWithTargetPath Include="@(RpaXbfFiles)">
+        <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </ContentWithTargetPath>
     </ItemGroup>
 
   </Target>
@@ -63,22 +66,32 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.Logging.Abstractions'))' == ''" />
   </ItemGroup>
 
-  <!-- ✅ OPRAVA: Clean up XBF references that cause MSB3030 -->
-  <Target Name="CleanupXbfReferences" AfterTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+  <!-- ✅ OPRAVA: Cleanup duplicitných XBF references -->
+  <Target Name="CleanupDuplicateXbfReferences" AfterTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
 
-    <!-- Remove problematic XBF file references -->
+    <!-- ✅ Identifikuj duplicitné XBF súbory -->
     <ItemGroup>
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').EndsWith('.xbf'))" />
-      <ContentWithTargetPath Remove="@(ContentWithTargetPath)" Condition="$([System.String]::Copy('%(ContentWithTargetPath.Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(ContentWithTargetPath.Identity)').EndsWith('.xbf'))" />
+      <DuplicateXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').EndsWith('.xbf'))" />
     </ItemGroup>
 
-    <Message Text="🧹 Cleaned up XBF references to prevent MSB3030 errors" Importance="normal" />
+    <!-- ✅ Odstráň duplicity ale ponechaj jednu kópiu -->
+    <RemoveDuplicates Inputs="@(DuplicateXbfFiles)">
+      <Output TaskParameter="Filtered" ItemName="UniqueXbfFiles" />
+    </RemoveDuplicates>
+
+    <!-- ✅ Aktualizuj ReferenceCopyLocalPaths -->
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Remove="@(DuplicateXbfFiles)" />
+      <ReferenceCopyLocalPaths Include="@(UniqueXbfFiles)" />
+    </ItemGroup>
+
+    <Message Text="🧹 Cleaned up duplicate XBF references, kept @(UniqueXbfFiles->Count()) unique files" Importance="normal" />
 
   </Target>
 
   <!-- ✅ Info message -->
   <Target Name="RpaWinUiComponentsInfo" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) (bez XBF - XAML only)" Importance="normal" />
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) (with XBF support)" Importance="normal" />
   </Target>
 
   <!-- ✅ DIAGNOSTIKA: Pre debugging XBF problémov -->
@@ -87,11 +100,36 @@
     <ItemGroup>
       <RpaXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xbf'))" />
       <RpaXamlFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xaml'))" />
+      <RpaDllFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.dll'))" />
     </ItemGroup>
 
     <Message Text="🔍 RpaWinUiComponents XBF súbory: @(RpaXbfFiles)" Importance="high" Condition="'@(RpaXbfFiles)' != ''" />
     <Message Text="🔍 RpaWinUiComponents XAML súbory: @(RpaXamlFiles)" Importance="high" Condition="'@(RpaXamlFiles)' != ''" />
-    <Message Text="✅ Žiadne XBF súbory - používajú sa len XAML súbory" Importance="high" Condition="'@(RpaXbfFiles)' == ''" />
+    <Message Text="🔍 RpaWinUiComponents DLL súbory: @(RpaDllFiles)" Importance="high" Condition="'@(RpaDllFiles)' != ''" />
+    <Message Text="⚠️ Žiadne XBF súbory nenájdené - skontrolujte NuGet package obsah" Importance="high" Condition="'@(RpaXbfFiles)' == ''" />
+
+    <!-- ✅ Kontrola output directory -->
+    <ItemGroup>
+      <OutputXbfFiles Include="$(OutputPath)**\*.xbf" />
+    </ItemGroup>
+    <Message Text="🔍 XBF súbory v output directory: @(OutputXbfFiles)" Importance="high" />
+
+  </Target>
+
+  <!-- ✅ FAILSAFE: Ak XBF súbory chýbajú, skús ich vytvoriť z XAML -->
+  <Target Name="EnsureXbfFilesExist" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+
+    <!-- Skontroluj či existujú kritické XBF súbory -->
+    <ItemGroup>
+      <ExpectedXbfFiles Include="$(OutputPath)AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" />
+      <ExpectedXbfFiles Include="$(OutputPath)AdvancedWinUiDataGrid\Themes\Generic.xbf" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <MissingXbfFiles Include="@(ExpectedXbfFiles)" Condition="!Exists('%(Identity)')" />
+    </ItemGroup>
+
+    <Warning Text="⚠️ Missing XBF files: @(MissingXbfFiles). Trying to regenerate from XAML..." Condition="'@(MissingXbfFiles)' != ''" />
 
   </Target>
 

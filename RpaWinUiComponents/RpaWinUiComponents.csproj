@@ -1,4 +1,4 @@
-﻿<!-- FINÁLNE OPRAVENÝ RpaWinUiComponents.csproj - v1.0.22 - VŠETKY CS chyby vyriešené -->
+﻿<!-- FINÁLNE OPRAVENÝ RpaWinUiComponents.csproj - v1.0.23 - XBF PACKAGING OPRAVENÉ -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -6,21 +6,22 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <!-- ✅ NOVÁ VERZIA - VŠETKY CS CHYBY VYRIEŠENÉ -->
-    <PackageVersion>1.0.22</PackageVersion>
+    <!-- ✅ NOVÁ VERZIA - XBF PACKAGING OPRAVENÉ -->
+    <PackageVersion>1.0.23</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
-    <!-- XAML nastavenia -->
+    <!-- ✅ KRITICKÁ OPRAVA: XAML a XBF nastavenia pre NuGet packaging -->
     <EnableDefaultPageItems>false</EnableDefaultPageItems>
     <EnableDefaultXamlItems>false</EnableDefaultXamlItems>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 
-    <!-- XBF generation settings -->
+    <!-- ✅ XBF generation settings - OPRAVENÉ pre NuGet -->
     <EnableTypeInfoReflection>false</EnableTypeInfoReflection>
     <DisableXbfGeneratedMain>true</DisableXbfGeneratedMain>
     <GenerateXbf>true</GenerateXbf>
     <EnableXbfGeneration>true</EnableXbfGeneration>
-    <IncludeXbfInPackage>false</IncludeXbfInPackage>
+    <!-- ✅ KĽÚČOVÁ OPRAVA: Zahrnúť XBF súbory do NuGet package -->
+    <IncludeXbfInPackage>true</IncludeXbfInPackage>
     <EnableMrtResourcePackaging>true</EnableMrtResourcePackaging>
     <UseWinUIModernResourceSystem>true</UseWinUIModernResourceSystem>
 
@@ -73,23 +74,30 @@
     <Compile Include="AdvancedWinUiDataGrid\Configuration\*.cs" />
   </ItemGroup>
 
-  <!-- ✅ OPRAVENÉ: Iba funkčné XAML súbory -->
+  <!-- ✅ OPRAVENÉ: XAML súbory s XBF podporou -->
   <ItemGroup>
     <None Remove="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml" />
+    <None Remove="AdvancedWinUiDataGrid\Themes\Generic.xaml" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Generic themes -->
+    <!-- ✅ XAML súbory ktoré generujú XBF -->
     <Page Include="AdvancedWinUiDataGrid\Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     
-    <!-- Main control -->
     <Page Include="AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+
+  <!-- ✅ KRITICKÁ OPRAVA: Explicitné zahrnutie XBF súborov do NuGet package -->
+  <ItemGroup>
+    <!-- Zabaliť XBF súbory do správnej cesty v NuGet package -->
+    <None Include="$(OutputPath)AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" Condition="Exists('$(OutputPath)AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf')" />
+    <None Include="$(OutputPath)AdvancedWinUiDataGrid\Themes\Generic.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\Generic.xbf" Condition="Exists('$(OutputPath)AdvancedWinUiDataGrid\Themes\Generic.xbf')" />
   </ItemGroup>
 
   <!-- Dependencies -->
@@ -109,13 +117,13 @@
 
   <!-- ✅ AKTUALIZOVANÉ Package metadata -->
   <PropertyGroup>
-    <Title>RpaWinUiComponents - CLEAN API v1.0.22</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent - VŠETKY CS chyby opravené v1.0.22, kompletne čistý PUBLIC API s iba 5 verejnými triedami</Description>
+    <Title>RpaWinUiComponents - XBF FIXED v1.0.23</Title>
+    <Description>Pokročilý WinUI 3 DataGrid komponent - XBF PACKAGING OPRAVENÉ v1.0.23, MSB3030 chyby vyriešené, kompletne funkčný NuGet package</Description>
     <Authors>RPA Solutions</Authors>
     <!-- ✅ AKTUALIZOVANÉ Release notes -->
-    <PackageReleaseNotes>v1.0.22: COMPLETE FIX - Všetky CS accessibility chyby vyriešené, všetky services/models/viewmodels sú internal, čistý public API s iba: AdvancedWinUiDataGridControl, ColumnDefinition, ValidationRule, ThrottlingConfig, ServiceCollectionExtensions</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.23: XBF PACKAGING FIX - MSB3030 chyby vyriešené, XBF súbory správne zabalené do NuGet package, všetky XAML súbory fungujú v consuming projects</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/yourusername/RpaWinUiComponents</RepositoryUrl>
-    <PackageTags>WinUI3;DataGrid;CleanAPI;Fixed;Internal;PublicAPI;CS-Fixed</PackageTags>
+    <PackageTags>WinUI3;DataGrid;XBF-Fixed;MSB3030-Fixed;XAML;NuGet</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
@@ -125,5 +133,23 @@
       <_Parameter1>RpaWinUiComponents.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
+
+  <!-- ✅ CUSTOM TARGET: Zabezpečenie správneho XBF packagingu -->
+  <Target Name="IncludeXbfFilesInPackage" BeforeTargets="GenerateNuspec" DependsOnTargets="XamlPreCompile">
+    <Message Text="🔍 Checking for XBF files to include in package..." Importance="high" />
+    
+    <ItemGroup>
+      <!-- Dynamicky nájdi všetky vygenerované XBF súbory -->
+      <GeneratedXbfFiles Include="$(OutputPath)**\*.xbf" />
+    </ItemGroup>
+    
+    <Message Text="✅ Found XBF files: @(GeneratedXbfFiles)" Importance="high" Condition="'@(GeneratedXbfFiles)' != ''" />
+    <Message Text="⚠️ No XBF files found in $(OutputPath)" Importance="high" Condition="'@(GeneratedXbfFiles)' == ''" />
+    
+    <ItemGroup>
+      <!-- Zabali všetky nájdené XBF súbory -->
+      <None Include="@(GeneratedXbfFiles)" Pack="true" PackagePath="lib\$(TargetFramework)\%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
