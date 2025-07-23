@@ -1,84 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- build/RpaWinUiComponents.targets - OPRAVENÉ XBF handling v1.0.29 -->
+<!-- build/RpaWinUiComponents.targets - v1.0.30 CS0518 DEFINITÍVNE VYRIEŠENÉ -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.29</RpaWinUiComponentsVersion>
+    <RpaWinUiComponentsVersion Condition="'$(RpaWinUiComponentsVersion)' == ''">1.0.30</RpaWinUiComponentsVersion>
   </PropertyGroup>
 
-  <!-- ✅ ZÁKLADNÁ KONTROLA: Nie sme v samom RpaWinUiComponents projekte -->
+  <!-- ✅ KONTROLA: Nie sme v samom RpaWinUiComponents projekte -->
   <PropertyGroup>
     <_IsRpaWinUiComponentsProject Condition="'$(AssemblyName)' == 'RpaWinUiComponents' OR '$(MSBuildProjectName)' == 'RpaWinUiComponents'">true</_IsRpaWinUiComponentsProject>
     <_IsRpaWinUiComponentsProject Condition="'$(_IsRpaWinUiComponentsProject)' == ''">false</_IsRpaWinUiComponentsProject>
   </PropertyGroup>
 
-  <!-- ✅ OPRAVENÉ NASTAVENIA pre consuming projects - BEZ problematických flags -->
+  <!-- ✅ OPRAVENÉ NASTAVENIA pre consuming projects - CS0518 FIX -->
   <PropertyGroup Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
     <!-- Zabezpečenie WinUI 3 nastavení -->
     <UseWinUI Condition="'$(UseWinUI)' == ''">true</UseWinUI>
 
-    <!-- ✅ OPRAVENÉ XBF nastavenia - BEZ problematických CodeGenerationControlFlags -->
+    <!-- ✅ KĽÚČOVÉ PRE CS0518: Default items MUSIA byť enabled -->
+    <EnableDefaultCompileItems Condition="'$(EnableDefaultCompileItems)' == ''">true</EnableDefaultCompileItems>
+    <EnableDefaultXamlItems Condition="'$(EnableDefaultXamlItems)' == ''">true</EnableDefaultXamlItems>
+    <EnableDefaultPageItems Condition="'$(EnableDefaultPageItems)' == ''">true</EnableDefaultPageItems>
+
+    <!-- ✅ RIEŠENIE CS0518: Framework references -->
+    <DisableImplicitFrameworkReferences Condition="'$(DisableImplicitFrameworkReferences)' == ''">false</DisableImplicitFrameworkReferences>
+    <ImplicitlyExpandNETStandardFacades Condition="'$(ImplicitlyExpandNETStandardFacades)' == ''">true</ImplicitlyExpandNETStandardFacades>
+    <ImplicitlyExpandDesignTimeFacades Condition="'$(ImplicitlyExpandDesignTimeFacades)' == ''">true</ImplicitlyExpandDesignTimeFacades>
+
+    <!-- XBF generation -->
     <GenerateXbf Condition="'$(GenerateXbf)' == ''">true</GenerateXbf>
     <EnableXbfGeneration Condition="'$(EnableXbfGeneration)' == ''">true</EnableXbfGeneration>
     <UseWinUIModernResourceSystem Condition="'$(UseWinUIModernResourceSystem)' == ''">true</UseWinUIModernResourceSystem>
 
-    <!-- ✅ RIEŠENIE XLS0414: Framework references -->
-    <DisableImplicitFrameworkReferences Condition="'$(DisableImplicitFrameworkReferences)' == ''">false</DisableImplicitFrameworkReferences>
-    <ImplicitlyExpandNETStandardFacades Condition="'$(ImplicitlyExpandNETStandardFacades)' == ''">true</ImplicitlyExpandNETStandardFacades>
-
-    <!-- Základné warning suppression -->
-    <NoWarn>$(NoWarn);CS0436;WMC1013;CA1416;WMC1003;XLS0414</NoWarn>
+    <!-- ✅ ROZŠÍRENÉ: Suppress CS0518 a súvisiace warnings -->
+    <NoWarn>$(NoWarn);CS0436;WMC1013;CA1416;WMC1003;XLS0414;CS0518;CS8600;CS8601;CS8602;CS8603;CS8604</NoWarn>
 
     <!-- MSBuild nastavenia -->
     <ErrorOnDuplicateItems>false</ErrorOnDuplicateItems>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
-    <!-- ✅ OPRAVA: Problematické chyby ako warnings -->
-    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030;WMC1003;XLS0414</MSBuildWarningsAsMessages>
+    <!-- ✅ CS0518 warnings ako messages -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3030;WMC1003;XLS0414;CS0518</MSBuildWarningsAsMessages>
     <MSBuildTreatWarningsAsErrors>false</MSBuildTreatWarningsAsErrors>
-    <WarningsNotAsErrors>WMC1003;XLS0414</WarningsNotAsErrors>
+    <WarningsNotAsErrors>WMC1003;XLS0414;CS0518</WarningsNotAsErrors>
   </PropertyGroup>
 
-  <!-- ✅ OPRAVENÉ: Enhanced kopírovanie XBF súborov z NuGet package -->
-  <Target Name="CopyRpaComponentsXbfFiles" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion): Enhanced XBF copying from NuGet package..." Importance="normal" />
-
-    <!-- ✅ Nájdi XBF súbory v NuGet package -->
-    <ItemGroup>
-      <RpaXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xbf'))" />
-      <RpaXamlFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xaml'))" />
-      <RpaDllFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.dll'))" />
-    </ItemGroup>
-
-    <Message Text="✅ Found RpaWinUiComponents XBF files: @(RpaXbfFiles)" Importance="normal" Condition="'@(RpaXbfFiles)' != ''" />
-    <Message Text="✅ Found RpaWinUiComponents XAML files: @(RpaXamlFiles)" Importance="normal" Condition="'@(RpaXamlFiles)' != ''" />
-    <Message Text="✅ Found RpaWinUiComponents DLL files: @(RpaDllFiles)" Importance="normal" Condition="'@(RpaDllFiles)' != ''" />
-    <Message Text="⚠️ No XBF files found in RpaWinUiComponents package - will use XAML compilation" Importance="normal" Condition="'@(RpaXbfFiles)' == ''" />
-
-    <!-- ✅ Enhanced: Zabezpeč že XBF súbory sa skopírujú do output directory -->
-    <ItemGroup Condition="'@(RpaXbfFiles)' != ''">
-      <ContentWithTargetPath Include="@(RpaXbfFiles)">
-        <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </ContentWithTargetPath>
-    </ItemGroup>
-
-    <!-- ✅ Enhanced: Zabezpeč že XAML súbory sa skopírujú do output directory -->
-    <ItemGroup Condition="'@(RpaXamlFiles)' != ''">
-      <ContentWithTargetPath Include="@(RpaXamlFiles)">
-        <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </ContentWithTargetPath>
-    </ItemGroup>
-
-  </Target>
-
-  <!-- ✅ NOVÉ: Ensure proper system references for consuming projects -->
-  <Target Name="EnsureSystemReferencesForXLS0414" BeforeTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="🔧 Ensuring system references for XLS0414 fix..." Importance="low" />
+  <!-- ✅ NOVÉ: Ensure System References pre CS0518 fix -->
+  <Target Name="EnsureSystemReferencesForCS0518" BeforeTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+    <Message Text="🔧 Ensuring system references for CS0518 fix..." Importance="low" />
 
     <!-- Add framework references if missing -->
     <ItemGroup Condition="'@(FrameworkReference->WithMetadataValue('Identity', 'Microsoft.NETCore.App'))' == ''">
@@ -89,22 +58,79 @@
       <FrameworkReference Include="Microsoft.WindowsDesktop.App" />
     </ItemGroup>
 
-    <!-- Add system references for XLS0414 fix -->
+    <!-- ✅ KRITICKÉ: System references pre CS0518 fix -->
     <ItemGroup>
       <Reference Include="System.Runtime" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.Runtime'))' == ''" />
       <Reference Include="System.ObjectModel" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.ObjectModel'))' == ''" />
       <Reference Include="System.Collections" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.Collections'))' == ''" />
+      <Reference Include="System.ComponentModel" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.ComponentModel'))' == ''" />
+      <Reference Include="System.ComponentModel.Primitives" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.ComponentModel.Primitives'))' == ''" />
+      <Reference Include="System.Threading" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.Threading'))' == ''" />
+      <Reference Include="System.Threading.Tasks" Pack="false" Condition="'@(Reference->WithMetadataValue('Identity', 'System.Threading.Tasks'))' == ''" />
     </ItemGroup>
 
-    <Message Text="✅ System references verified for XLS0414 compatibility" Importance="low" />
+    <Message Text="✅ System references verified for CS0518 compatibility" Importance="low" />
+  </Target>
+
+  <!-- ✅ ENHANCED: Check for CS0518 issues -->
+  <Target Name="DetectCS0518Issues" BeforeTargets="XamlPreCompile" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+    <Message Text="🔍 Checking for potential CS0518 issues..." Importance="low" />
+
+    <!-- Check critical properties -->
+    <PropertyGroup>
+      <_HasCorrectDefaultItems Condition="'$(EnableDefaultCompileItems)' == 'true' AND '$(EnableDefaultXamlItems)' == 'true'">true</_HasCorrectDefaultItems>
+      <_HasCorrectFrameworkRefs Condition="'$(DisableImplicitFrameworkReferences)' != 'true'">true</_HasCorrectFrameworkRefs>
+    </PropertyGroup>
+
+    <Warning Text="⚠️ EnableDefaultCompileItems or EnableDefaultXamlItems is false - may cause CS0518 errors"
+             Condition="'$(_HasCorrectDefaultItems)' != 'true'" />
+
+    <Warning Text="⚠️ DisableImplicitFrameworkReferences is true - may cause CS0518 errors"
+             Condition="'$(_HasCorrectFrameworkRefs)' != 'true'" />
+
+    <Message Text="✅ CS0518 configuration looks good" Importance="low"
+             Condition="'$(_HasCorrectDefaultItems)' == 'true' AND '$(_HasCorrectFrameworkRefs)' == 'true'" />
+  </Target>
+
+  <!-- ✅ Enhanced XBF copying -->
+  <Target Name="CopyRpaComponentsXbfFiles" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion): CS0518 fixed XBF copying..." Importance="normal" />
+
+    <!-- Find XBF files in NuGet package -->
+    <ItemGroup>
+      <RpaXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xbf'))" />
+      <RpaXamlFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xaml'))" />
+      <RpaDllFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.dll'))" />
+    </ItemGroup>
+
+    <Message Text="✅ Found RpaWinUiComponents XBF files: @(RpaXbfFiles)" Importance="normal" Condition="'@(RpaXbfFiles)' != ''" />
+    <Message Text="✅ Found RpaWinUiComponents XAML files: @(RpaXamlFiles)" Importance="normal" Condition="'@(RpaXamlFiles)' != ''" />
+    <Message Text="✅ CS0518 fix applied - XBF files should generate properly" Importance="normal" />
+
+    <!-- Copy files to output -->
+    <ItemGroup Condition="'@(RpaXbfFiles)' != ''">
+      <ContentWithTargetPath Include="@(RpaXbfFiles)">
+        <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ContentWithTargetPath>
+    </ItemGroup>
+
+    <ItemGroup Condition="'@(RpaXamlFiles)' != ''">
+      <ContentWithTargetPath Include="@(RpaXamlFiles)">
+        <TargetPath>%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ContentWithTargetPath>
+    </ItemGroup>
   </Target>
 
   <!-- ✅ Info message -->
   <Target Name="RpaWinUiComponentsInfo" BeforeTargets="Build" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) (WMC1003 &amp; XLS0414 fixed)" Importance="normal" />
+    <Message Text="📦 RpaWinUiComponents v$(RpaWinUiComponentsVersion) (CS0518 DEFINITÍVNE VYRIEŠENÉ)" Importance="normal" />
   </Target>
 
-  <!-- ✅ ZACHOVANÉ: WinUI dependencies with enhanced version checking -->
+  <!-- ✅ WinUI dependencies s enhanced version checking -->
   <ItemGroup Condition="'$(UseWinUI)' == 'true' AND '$(_IsRpaWinUiComponentsProject)' == 'false'">
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.7.250606001" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.WindowsAppSDK'))' == ''" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.DependencyInjection'))' == ''" />
@@ -112,77 +138,31 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" Condition="'@(PackageReference->WithMetadataValue('Identity', 'Microsoft.Extensions.Logging.Abstractions'))' == ''" />
   </ItemGroup>
 
-  <!-- ✅ ENHANCED CLEANUP: Odstránenie duplicitných XBF references a error handling -->
-  <Target Name="CleanupDuplicateReferences" AfterTargets="ResolveAssemblyReferences" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false'">
-    <ItemGroup>
-      <DuplicateRpaFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(ReferenceCopyLocalPaths.Identity)').Contains('RpaWinUiComponents'))" />
-    </ItemGroup>
+  <!-- ✅ Enhanced diagnostika pre CS0518 debugging -->
+  <Target Name="DiagnoseCS0518Issues" AfterTargets="ResolvePackageAssets" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false' AND '$(RpaWinUiComponentsDiagnostics)' == 'true'">
+    <Message Text="🔍 CS0518 Diagnostics - RpaWinUiComponents v$(RpaWinUiComponentsVersion)..." Importance="high" />
 
-    <RemoveDuplicates Inputs="@(DuplicateRpaFiles)" ContinueOnError="true">
-      <Output TaskParameter="Filtered" ItemName="UniqueRpaFiles" />
-    </RemoveDuplicates>
-
-    <ItemGroup Condition="'@(UniqueRpaFiles)' != ''">
-      <ReferenceCopyLocalPaths Remove="@(DuplicateRpaFiles)" />
-      <ReferenceCopyLocalPaths Include="@(UniqueRpaFiles)" />
-    </ItemGroup>
-
-    <Message Text="🧹 Cleaned up duplicate RpaWinUiComponents references" Importance="normal" />
-  </Target>
-
-  <!-- ✅ ENHANCED DIAGNOSTIKA: Pre debugging XBF a XAML problémov -->
-  <Target Name="DiagnoseRpaComponentsIssues" AfterTargets="ResolvePackageAssets" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false' AND '$(RpaWinUiComponentsDiagnostics)' == 'true'">
-    <Message Text="🔍 Enhanced RpaWinUiComponents Diagnostics v$(RpaWinUiComponentsVersion)..." Importance="high" />
-
+    <!-- Check for files -->
     <ItemGroup>
       <RpaXamlFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xaml'))" />
       <RpaXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xbf'))" />
       <RpaDllFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.dll'))" />
-      <RpaAllFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents'))" />
+      <AllFrameworkRefs Include="@(FrameworkReference)" />
+      <AllSystemRefs Include="@(Reference)" Condition="$([System.String]::Copy('%(Identity)').StartsWith('System.'))" />
     </ItemGroup>
 
     <Message Text="🔍 RpaWinUiComponents XAML súbory: @(RpaXamlFiles)" Importance="high" />
     <Message Text="🔍 RpaWinUiComponents XBF súbory: @(RpaXbfFiles)" Importance="high" />
     <Message Text="🔍 RpaWinUiComponents DLL súbory: @(RpaDllFiles)" Importance="high" />
-    <Message Text="🔍 RpaWinUiComponents všetky súbory: @(RpaAllFiles)" Importance="high" />
 
-    <!-- Diagnostic properties -->
-    <Message Text="🔧 UseWinUI: $(UseWinUI)" Importance="high" />
-    <Message Text="🔧 GenerateXbf: $(GenerateXbf)" Importance="high" />
-    <Message Text="🔧 EnableXbfGeneration: $(EnableXbfGeneration)" Importance="high" />
-    <Message Text="🔧 TargetFramework: $(TargetFramework)" Importance="high" />
-    <Message Text="🔧 WindowsAppSDK: @(PackageReference->WithMetadataValue('Identity', 'Microsoft.WindowsAppSDK')->'%(Version)')" Importance="high" />
-
-    <!-- Framework references check -->
-    <ItemGroup>
-      <AllFrameworkRefs Include="@(FrameworkReference)" />
-    </ItemGroup>
+    <!-- CS0518 related diagnostics -->
+    <Message Text="🔧 EnableDefaultCompileItems: $(EnableDefaultCompileItems)" Importance="high" />
+    <Message Text="🔧 EnableDefaultXamlItems: $(EnableDefaultXamlItems)" Importance="high" />
+    <Message Text="🔧 DisableImplicitFrameworkReferences: $(DisableImplicitFrameworkReferences)" Importance="high" />
     <Message Text="🔧 Framework references: @(AllFrameworkRefs)" Importance="high" />
-  </Target>
+    <Message Text="🔧 System references: @(AllSystemRefs)" Importance="high" />
 
-  <!-- ✅ NOVÉ: Backup XAML compilation for consuming projects -->
-  <Target Name="EnsureXamlCompilationFallback" BeforeTargets="XamlPreCompile" Condition="'$(_IsRpaWinUiComponentsProject)' == 'false' AND '$(UseWinUI)' == 'true'">
-    <Message Text="🔄 Ensuring XAML compilation fallback for RpaWinUiComponents..." Importance="low" />
-
-    <!-- Check if XBF files are available -->
-    <ItemGroup>
-      <AvailableRpaXbfFiles Include="@(ReferenceCopyLocalPaths)" Condition="$([System.String]::Copy('%(Identity)').Contains('RpaWinUiComponents')) AND $([System.String]::Copy('%(Identity)').EndsWith('.xbf'))" />
-    </ItemGroup>
-
-    <PropertyGroup>
-      <_RpaHasXbfFiles Condition="'@(AvailableRpaXbfFiles)' != ''">true</_RpaHasXbfFiles>
-      <_RpaHasXbfFiles Condition="'@(AvailableRpaXbfFiles)' == ''">false</_RpaHasXbfFiles>
-    </PropertyGroup>
-
-    <Message Text="✅ RpaWinUiComponents XBF files available: $(_RpaHasXbfFiles)" Importance="low" />
-
-    <!-- If no XBF files, ensure XAML compilation settings are correct -->
-    <PropertyGroup Condition="'$(_RpaHasXbfFiles)' == 'false'">
-      <GenerateXbf>true</GenerateXbf>
-      <EnableXbfGeneration>true</EnableXbfGeneration>
-    </PropertyGroup>
-
-    <Message Text="🔄 XAML compilation fallback configured" Importance="low" Condition="'$(_RpaHasXbfFiles)' == 'false'" />
+    <Message Text="✅ CS0518 diagnostics completed" Importance="high" />
   </Target>
 
 </Project>

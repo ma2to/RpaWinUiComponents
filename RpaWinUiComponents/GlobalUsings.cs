@@ -1,30 +1,31 @@
-﻿// GlobalUsings.cs - OPRAVENÝ bez konfliktov
+﻿// GlobalUsings.cs - OPRAVENÝ pre CS0518 fix - v1.0.30
+// ZJEDNODUŠENÉ global usings bez konfliktov
+
+// ✅ ZÁKLADNÉ .NET typy - BEZ EXPLICIT ALIASOV
 global using System;
 global using System.Collections.Generic;
 global using System.Linq;
 global using System.Threading.Tasks;
 global using System.ComponentModel;
 global using System.Runtime.CompilerServices;
-global using System.Text;
 
 // .NET Extensions
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Logging;
 
-// WinUI 3 - ZÁKLADNÉ TYPY BEZ KONFLIKTOV
+// ✅ OPRAVENÉ: WinUI 3 - LEN ZÁKLADNÉ TYPY BEZ ALIASOV
 global using Microsoft.UI.Xaml;
+global using Microsoft.UI.Xaml.Controls;
 global using Microsoft.UI.Xaml.Data;
 global using Microsoft.UI.Xaml.Media;
-global using Microsoft.UI.Xaml.Input;
 
-// KRITICKÁ OPRAVA: Explicitné aliasy pre WinUI komponenty aby sa predišlo konfliktom
-global using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;
-global using WinUIRowDefinition = Microsoft.UI.Xaml.Controls.RowDefinition;
-global using WinUIColumnDefinition = Microsoft.UI.Xaml.Controls.ColumnDefinition;
-global using WinUIBorder = Microsoft.UI.Xaml.Controls.Border;
-global using WinUIStackPanel = Microsoft.UI.Xaml.Controls.StackPanel;
-global using WinUIScrollViewer = Microsoft.UI.Xaml.Controls.ScrollViewer;
-global using WinUITextBlock = Microsoft.UI.Xaml.Controls.TextBlock;
-global using WinUIButton = Microsoft.UI.Xaml.Controls.Button;
-global using WinUITextBox = Microsoft.UI.Xaml.Controls.TextBox;
-global using WinUIUserControl = Microsoft.UI.Xaml.Controls.UserControl;
+// ✅ ODSTRÁNENÉ: Problematické aliasy ktoré spôsobovali CS0518
+// Tieto riadky ODSTRÁNENÉ pretože spôsobovali konflikty:
+// global using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;
+// global using WinUIColumnDefinition = Microsoft.UI.Xaml.Controls.ColumnDefinition;
+// atď.
+
+// ✅ SYSTÉMOVÉ TYPY - explicitne zahrnuté pre CS0518 fix
+global using System.Text;
+global using System.Collections;
+global using System.Runtime.Serialization;
