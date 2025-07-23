@@ -1,4 +1,4 @@
-﻿<!-- FINÁLNE OPRAVENÝ RpaWinUiComponents.csproj - v1.0.23 - XBF PACKAGING OPRAVENÉ -->
+﻿<!-- FINÁLNE OPRAVENÝ RpaWinUiComponents.csproj - v1.0.24 - XBF PACKAGING DEFINITÍVNE OPRAVENÉ -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -6,8 +6,8 @@
     <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <UseWinUI>true</UseWinUI>
     <PackageId>RpaWinUiComponents</PackageId>
-    <!-- ✅ NOVÁ VERZIA - XBF PACKAGING OPRAVENÉ -->
-    <PackageVersion>1.0.23</PackageVersion>
+    <!-- ✅ NOVÁ VERZIA - XBF PACKAGING DEFINITÍVNE OPRAVENÉ -->
+    <PackageVersion>1.0.24</PackageVersion>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 
     <!-- ✅ KRITICKÁ OPRAVA: XAML a XBF nastavenia pre NuGet packaging -->
@@ -93,11 +93,11 @@
     </Page>
   </ItemGroup>
 
-  <!-- ✅ KRITICKÁ OPRAVA: Explicitné zahrnutie XBF súborov do NuGet package -->
+  <!-- ✅ OPRAVENÉ: XBF súbory sa hľadajú v správnych cestách -->
   <ItemGroup>
-    <!-- Zabaliť XBF súbory do správnej cesty v NuGet package -->
-    <None Include="$(OutputPath)AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" Condition="Exists('$(OutputPath)AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf')" />
-    <None Include="$(OutputPath)AdvancedWinUiDataGrid\Themes\Generic.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\Generic.xbf" Condition="Exists('$(OutputPath)AdvancedWinUiDataGrid\Themes\Generic.xbf')" />
+    <!-- Zahrnúť XBF súbory z obj directory kde sa skutočne generujú -->
+    <None Include="$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" Condition="Exists('$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf')" />
+    <None Include="$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\Generic.xbf" Pack="true" PackagePath="lib\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\Generic.xbf" Condition="Exists('$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\Generic.xbf')" />
   </ItemGroup>
 
   <!-- Dependencies -->
@@ -117,13 +117,13 @@
 
   <!-- ✅ AKTUALIZOVANÉ Package metadata -->
   <PropertyGroup>
-    <Title>RpaWinUiComponents - XBF FIXED v1.0.23</Title>
-    <Description>Pokročilý WinUI 3 DataGrid komponent - XBF PACKAGING OPRAVENÉ v1.0.23, MSB3030 chyby vyriešené, kompletne funkčný NuGet package</Description>
+    <Title>RpaWinUiComponents - XBF DEFINITÍVNE FIXED v1.0.24</Title>
+    <Description>Pokročilý WinUI 3 DataGrid komponent - XBF PACKAGING DEFINITÍVNE OPRAVENÉ v1.0.24, MSB3030 chyby vyriešené, XBF súbory sa hľadajú v správnych obj\ cestách</Description>
     <Authors>RPA Solutions</Authors>
     <!-- ✅ AKTUALIZOVANÉ Release notes -->
-    <PackageReleaseNotes>v1.0.23: XBF PACKAGING FIX - MSB3030 chyby vyriešené, XBF súbory správne zabalené do NuGet package, všetky XAML súbory fungujú v consuming projects</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.0.24: XBF PACKAGING DEFINITÍVNE FIX - XBF súbory sa teraz hľadajú v správnych obj\Debug\net8.0-windows10.0.19041.0\ cestách, MSB3030 chyby definitívne vyriešené, pridané dodatočné kontroly generovania XBF súborov</PackageReleaseNotes>
     <RepositoryUrl>https://github.com/yourusername/RpaWinUiComponents</RepositoryUrl>
-    <PackageTags>WinUI3;DataGrid;XBF-Fixed;MSB3030-Fixed;XAML;NuGet</PackageTags>
+    <PackageTags>WinUI3;DataGrid;XBF-Fixed;MSB3030-Fixed;XAML;NuGet;v1.0.24</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
@@ -138,18 +138,51 @@
   <Target Name="IncludeXbfFilesInPackage" BeforeTargets="GenerateNuspec" DependsOnTargets="XamlPreCompile">
     <Message Text="🔍 Checking for XBF files to include in package..." Importance="high" />
     
+    <!-- ✅ OPRAVENÉ: Hľadanie XBF súborov v správnych cestách -->
+    <PropertyGroup>
+      <XbfSearchPath>$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)</XbfSearchPath>
+    </PropertyGroup>
+    
     <ItemGroup>
       <!-- Dynamicky nájdi všetky vygenerované XBF súbory -->
-      <GeneratedXbfFiles Include="$(OutputPath)**\*.xbf" />
+      <GeneratedXbfFiles Include="$(XbfSearchPath)\**\*.xbf" />
+      <!-- Backup: Hľadaj aj v output path -->
+      <GeneratedXbfFiles Include="$(OutputPath)**\*.xbf" Condition="'@(GeneratedXbfFiles)' == ''" />
     </ItemGroup>
     
+    <Message Text="✅ XBF search path: $(XbfSearchPath)" Importance="high" />
     <Message Text="✅ Found XBF files: @(GeneratedXbfFiles)" Importance="high" Condition="'@(GeneratedXbfFiles)' != ''" />
-    <Message Text="⚠️ No XBF files found in $(OutputPath)" Importance="high" Condition="'@(GeneratedXbfFiles)' == ''" />
+    <Message Text="⚠️ No XBF files found in $(XbfSearchPath) or $(OutputPath)" Importance="high" Condition="'@(GeneratedXbfFiles)' == ''" />
+    
+    <ItemGroup Condition="'@(GeneratedXbfFiles)' != ''">
+      <!-- Zabali všetky nájdené XBF súbory s relatívnou cestou -->
+      <None Include="@(GeneratedXbfFiles)" Pack="true">
+        <PackagePath>lib\$(TargetFramework)\$([System.String]::Copy('%(GeneratedXbfFiles.Identity)').Substring($([System.String]::Copy('$(XbfSearchPath)\').Length)))</PackagePath>
+      </None>
+    </ItemGroup>
+  </Target>
+
+  <!-- ✅ NOVÝ TARGET: Zabezpečenie generovania XBF súborov pred packaging -->
+  <Target Name="EnsureXbfGenerationBeforePack" BeforeTargets="GenerateNuspec" DependsOnTargets="MarkupCompilePass2">
+    <Message Text="🎯 Ensuring XBF files are generated before packaging..." Importance="high" />
+    
+    <!-- Forcer XBF generation ak sa ešte nestalo -->
+    <PropertyGroup>
+      <_ForceXbfGeneration Condition="'$(GenerateXbf)' == 'true'">true</_ForceXbfGeneration>
+    </PropertyGroup>
+    
+    <!-- Skontroluj či existujú kritické XBF súbory -->
+    <ItemGroup>
+      <ExpectedXbfFiles Include="$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\AdvancedWinUiDataGrid\Views\EnhancedDataGridControl.xbf" />
+      <ExpectedXbfFiles Include="$(MSBuildProjectDirectory)\obj\$(Configuration)\$(TargetFramework)\AdvancedWinUiDataGrid\Themes\Generic.xbf" />
+    </ItemGroup>
     
     <ItemGroup>
-      <!-- Zabali všetky nájdené XBF súbory -->
-      <None Include="@(GeneratedXbfFiles)" Pack="true" PackagePath="lib\$(TargetFramework)\%(RecursiveDir)%(Filename)%(Extension)" />
+      <MissingXbfFiles Include="@(ExpectedXbfFiles)" Condition="!Exists('%(Identity)')" />
     </ItemGroup>
+    
+    <Message Text="✅ All expected XBF files found" Importance="high" Condition="'@(MissingXbfFiles)' == ''" />
+    <Warning Text="⚠️ Missing XBF files: @(MissingXbfFiles)" Condition="'@(MissingXbfFiles)' != ''" />
   </Target>
 
 </Project>

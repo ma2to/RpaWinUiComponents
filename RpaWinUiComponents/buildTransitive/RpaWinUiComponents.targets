@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- buildTransitive/RpaWinUiComponents.targets - Finálna verzia -->
+<!-- buildTransitive/RpaWinUiComponents.targets - v1.0.24 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <!-- ✅ Import main build targets -->
@@ -11,7 +11,7 @@
 
   <!-- ✅ Ensure proper framework references for consuming projects -->
   <Target Name="EnsureRpaWinUiComponentsFramework" BeforeTargets="ResolveAssemblyReferences">
-    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.18)" Importance="normal" />
+    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.24)" Importance="normal" />
 
     <!-- Force WinUI 3 usage if not already set -->
     <PropertyGroup Condition="'$(UseWinUI)' == ''">
