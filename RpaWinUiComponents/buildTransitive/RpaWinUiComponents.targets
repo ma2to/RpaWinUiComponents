@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- buildTransitive/RpaWinUiComponents.targets - v1.0.24 -->
+<!-- buildTransitive/RpaWinUiComponents.targets - v1.0.25 -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <!-- ✅ Import main build targets -->
@@ -11,7 +11,7 @@
 
   <!-- ✅ Ensure proper framework references for consuming projects -->
   <Target Name="EnsureRpaWinUiComponentsFramework" BeforeTargets="ResolveAssemblyReferences">
-    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.24)" Importance="normal" />
+    <Message Text="🔗 RpaWinUiComponents: Ensuring transitive dependencies (v1.0.26)" Importance="normal" />
 
     <!-- Force WinUI 3 usage if not already set -->
     <PropertyGroup Condition="'$(UseWinUI)' == ''">
@@ -23,6 +23,19 @@
       <EnableXbfGeneration Condition="'$(EnableXbfGeneration)' == ''">true</EnableXbfGeneration>
       <GenerateXbf Condition="'$(GenerateXbf)' == ''">true</GenerateXbf>
     </PropertyGroup>
+  </Target>
+
+  <!-- ✅ DODATOČNÉ: Zabezpečenie že transitive dependencies majú správne XAML handling -->
+  <Target Name="EnsureTransitiveXamlHandling" BeforeTargets="XamlPreCompile" Condition="'$(RpaWinUiComponentsTransitive)' == 'true'">
+    <Message Text="🔗 Ensuring transitive XAML handling for RpaWinUiComponents..." Importance="normal" />
+
+    <!-- Verify that WinUI XAML compilation is properly enabled -->
+    <PropertyGroup>
+      <_WinUIXamlEnabled Condition="'$(UseWinUI)' == 'true' AND '$(EnableXbfGeneration)' == 'true'">true</_WinUIXamlEnabled>
+    </PropertyGroup>
+
+    <Message Text="✅ WinUI XAML compilation enabled: $(_WinUIXamlEnabled)" Importance="normal" />
+    <Warning Text="⚠️ WinUI XAML compilation not properly configured - XBF generation may fail" Condition="'$(_WinUIXamlEnabled)' != 'true'" />
   </Target>
 
 </Project>
