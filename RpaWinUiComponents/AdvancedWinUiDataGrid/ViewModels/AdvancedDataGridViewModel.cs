@@ -1,4 +1,4 @@
-﻿//ViewModels/AdvancedDataGridViewModel.cs - KOMPLETNÁ OPRAVA s implementovanými zlepšeniami
+﻿//ViewModels/AdvancedDataGridViewModel.cs - ✅ OPRAVENÝ: internal class
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -17,23 +17,12 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Models;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 using RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels;
 
-// KĽÚČOVÁ OPRAVA CS1503: Explicitné aliasy pre zamedzenie konfliktov
-using InternalColumnDefinition = RpaWinUiComponents.AdvancedWinUiDataGrid.ColumnDefinition;
-using InternalValidationRule = RpaWinUiComponents.AdvancedWinUiDataGrid.ValidationRule;
-using InternalThrottlingConfig = RpaWinUiComponents.AdvancedWinUiDataGrid.ThrottlingConfig;
-
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 {
     /// <summary>
-    /// KOMPLETNE OPRAVENÝ ViewModel s implementovanými všetkými zlepšeniami
-    /// ✅ Memory Management - WeakReference, proper cleanup
-    /// ✅ Data Architecture - ObservableCollection namiesto Dictionary
-    /// ✅ MVVM Architecture - Proper binding support
-    /// ✅ Performance - UI virtualizácia, lazy validation
-    /// ✅ Code Quality - rozdelenie na menšie časti
-    /// ✅ Error Handling - global exception handling
+    /// ✅ OPRAVA CS0051: INTERNAL ViewModel - nie je súčasťou public API
     /// </summary>
-    public class AdvancedDataGridViewModel : INotifyPropertyChanged, IDisposable
+    internal class AdvancedDataGridViewModel : INotifyPropertyChanged, IDisposable
     {
         #region Fields & Dependencies
 
@@ -47,21 +36,17 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region ZLEPŠENIE 2: Data Architecture - ObservableCollection namiesto Dictionary
+        #region State Management
 
         private ObservableRangeCollection<RowViewModel> _rows = new();
-        private ObservableCollection<InternalColumnDefinition> _columns = new();
-        private readonly ObservableCollection<CellViewModel> _visibleCells = new(); // Pre UI virtualizáciu
-
-        #endregion
-
-        #region State Management
+        private ObservableCollection<ColumnDefinition> _columns = new();
+        private readonly ObservableCollection<CellViewModel> _visibleCells = new();
 
         private bool _isValidating = false;
         private double _validationProgress = 0;
         private string _validationStatus = "Pripravené";
         private bool _isInitialized = false;
-        private InternalThrottlingConfig _throttlingConfig = InternalThrottlingConfig.Default;
+        private ThrottlingConfig _throttlingConfig = ThrottlingConfig.Default;
         private bool _isKeyboardShortcutsVisible = false;
         private int _initialRowCount = 100;
         private bool _disposed = false;
@@ -69,51 +54,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region ZLEPŠENIE 1: Memory Management - WeakReference tracking
-
-        private readonly object _eventSubscriptionLock = new();
-        private readonly Dictionary<string, WeakReference> _cellReferences = new();
-        private readonly List<WeakReference<CellViewModel>> _cellEventHandlers = new(); // OPRAVA CS1061
-
-        #endregion
-
-        #region ZLEPŠENIE 6: Error Handling - Global exception handling
-
-        private readonly object _errorHandlingLock = new();
-        private int _consecutiveErrors = 0;
-        private DateTime _lastErrorTime = DateTime.MinValue;
-
-        #endregion
-
-        #region ZLEPŠENIE 4: Performance - Lazy validation a throttling
-
-        private readonly Dictionary<string, CancellationTokenSource> _pendingValidations = new();
-        private readonly HashSet<string> _currentlyValidating = new();
-        private readonly object _validationStateLock = new();
-        private SemaphoreSlim? _validationSemaphore;
-
-        #endregion
-
-        #region ZLEPŠENIE 5: UI/UX - Loading states a progress indicators
-
-        private readonly object _loadingStateLock = new();
-
-        #endregion
-
-        #region ZLEPŠENIE 7: PropertyChanged protection
-
-        private readonly HashSet<string> _propertyChangeInProgress = new();
-        private readonly object _propertyChangeLock = new();
-
-        #endregion
-
-        #region ZLEPŠENIE 4: Performance - UI Virtualizácia
-
-        private readonly Dictionary<string, DateTime> _lastValidationTime = new();
-        private readonly TimeSpan _minValidationInterval = TimeSpan.FromMilliseconds(100);
-
-        #endregion
-
+        // ✅ OPRAVA CS0051: INTERNAL constructor s internal parameters
         public AdvancedDataGridViewModel(
             IDataService dataService,
             IValidationService validationService,
@@ -134,10 +75,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             InitializeCommands();
             SubscribeToEvents();
 
-            _logger.LogDebug("AdvancedDataGridViewModel created with enhanced architecture");
+            _logger.LogDebug("AdvancedDataGridViewModel created successfully");
         }
 
-        #region Properties - ZLEPŠENIE 2: MVVM Architecture
+        #region Properties - ✅ OPRAVA CS0053: INTERNAL properties
 
         public ObservableRangeCollection<RowViewModel> Rows
         {
@@ -149,7 +90,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             set => SetProperty(ref _rows, value);
         }
 
-        public ObservableCollection<InternalColumnDefinition> Columns
+        public ObservableCollection<ColumnDefinition> Columns
         {
             get
             {
@@ -159,7 +100,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             set => SetProperty(ref _columns, value);
         }
 
-        // ZLEPŠENIE 2: MVVM - Observable collection pre visible cells
         public ObservableCollection<CellViewModel> VisibleCells
         {
             get
@@ -197,7 +137,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             private set => SetProperty(ref _isInitialized, value);
         }
 
-        public InternalThrottlingConfig ThrottlingConfig
+        public ThrottlingConfig ThrottlingConfig
         {
             get
             {
@@ -231,27 +171,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        // ZLEPŠENIE 5: Loading state property
         public bool IsLoadingData
         {
-            get
-            {
-                lock (_loadingStateLock)
-                {
-                    return _isLoadingData;
-                }
-            }
-            private set
-            {
-                lock (_loadingStateLock)
-                {
-                    if (_isLoadingData != value)
-                    {
-                        _isLoadingData = value;
-                        OnPropertyChanged(nameof(IsLoadingData));
-                    }
-                }
-            }
+            get => _isLoadingData;
+            private set => SetProperty(ref _isLoadingData, value);
         }
 
         #endregion
@@ -269,15 +192,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Public Methods - ZLEPŠENIE 7: Lepšie rozdelenie
+        #region Public Methods
 
-        /// <summary>
-        /// ZLEPŠENIE: Enhanced initialization s proper error handling
-        /// </summary>
         public async Task InitializeAsync(
-            List<InternalColumnDefinition> columnDefinitions,
-            List<InternalValidationRule>? validationRules = null,
-            InternalThrottlingConfig? throttling = null,
+            List<ColumnDefinition> columnDefinitions,
+            List<ValidationRule>? validationRules = null,
+            ThrottlingConfig? throttling = null,
             int initialRowCount = 100)
         {
             ThrowIfDisposed();
@@ -290,29 +210,21 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     return;
                 }
 
-                // ZLEPŠENIE 5: Loading state management
                 IsLoadingData = true;
 
                 _initialRowCount = Math.Max(1, Math.Min(initialRowCount, 10000));
-                ThrottlingConfig = throttling ?? InternalThrottlingConfig.Default;
+                ThrottlingConfig = throttling ?? ThrottlingConfig.Default;
 
                 if (!ThrottlingConfig.IsValidConfig(out var configError))
                 {
                     throw new ArgumentException($"Invalid throttling config: {configError}");
                 }
 
-                // ZLEPŠENIE 4: Update semaphore with new max concurrent validations
-                _validationSemaphore?.Dispose();
-                _validationSemaphore = new SemaphoreSlim(ThrottlingConfig.MaxConcurrentValidations, ThrottlingConfig.MaxConcurrentValidations);
-
                 _logger.LogInformation("Initializing AdvancedDataGrid with {ColumnCount} columns, {RuleCount} validation rules, {InitialRowCount} rows",
                     columnDefinitions?.Count ?? 0, validationRules?.Count ?? 0, _initialRowCount);
 
-                // ZLEPŠENIE 1: Clear všetky tracking dáta pred inicializáciou
-                await ClearAllTrackingDataAsync();
-
                 // Process and validate columns
-                var processedColumns = _columnService.ProcessColumnDefinitions(columnDefinitions ?? new List<InternalColumnDefinition>());
+                var processedColumns = _columnService.ProcessColumnDefinitions(columnDefinitions ?? new List<ColumnDefinition>());
                 _columnService.ValidateColumnDefinitions(processedColumns);
 
                 // Reorder special columns to the end
@@ -338,7 +250,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     _logger.LogDebug("Added {RuleCount} validation rules", validationRules.Count);
                 }
 
-                // ZLEPŠENIE 2: Create initial rows s MVVM pattern
+                // Create initial rows
                 await CreateInitialRowViewModelsAsync();
 
                 // Initialize navigation service
@@ -362,9 +274,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        /// <summary>
-        /// ZLEPŠENIE 2: Enhanced LoadDataAsync s MVVM pattern
-        /// </summary>
         public async Task LoadDataAsync(List<Dictionary<string, object?>> data)
         {
             ThrowIfDisposed();
@@ -382,21 +291,12 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
                 _logger.LogInformation("📊 Načítavam {RowCount} riadkov dát", data?.Count ?? 0);
 
-                // ZLEPŠENIE 1: Memory management - vyčistiť pamäť
-                await ClearAllTrackingDataAsync();
-
-                // Force garbage collection
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-
                 var newRowViewModels = new List<RowViewModel>();
                 var rowIndex = 0;
                 var totalRows = data?.Count ?? 0;
 
                 if (data != null)
                 {
-                    // ZLEPŠENIE 4: Batch processing pre performance
                     foreach (var dataRow in data)
                     {
                         var rowViewModel = CreateRowViewModelForLoading(rowIndex);
@@ -411,13 +311,11 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                             }
                         }
 
-                        // ZLEPŠENIE 3: Validation po kompletnom nastavení riadku
                         await ValidateRowViewModelAfterLoadingAsync(rowViewModel);
 
                         newRowViewModels.Add(rowViewModel);
                         rowIndex++;
 
-                        // ZLEPŠENIE 5: Progress reporting
                         var progress = (double)rowIndex / totalRows * 90;
                         UpdateValidationProgress(progress);
                     }
@@ -432,7 +330,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
                     newRowViewModels.Add(CreateEmptyRowViewModel(newRowViewModels.Count));
                 }
 
-                // ZLEPŠENIE 2: Reset rows collection safely
                 Rows.Clear();
                 Rows.AddRange(newRowViewModels);
 
@@ -481,9 +378,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        /// <summary>
-        /// ZLEPŠENIE 4: Enhanced validation s progress reporting
-        /// </summary>
         public async Task<bool> ValidateAllRowsAsync()
         {
             ThrowIfDisposed();
@@ -520,658 +414,122 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        #endregion
-
-        #region ZLEPŠENIE 1: Enhanced Memory Management
-
-        /// <summary>
-        /// ZLEPŠENIE 1: Bezpečné vytvorenie initial row ViewModels
-        /// </summary>
-        private async Task CreateInitialRowViewModelsAsync()
+        public async Task<DataTable> ExportDataAsync(bool includeValidAlerts = false)
         {
-            var rowCount = _initialRowCount;
-
-            var rowViewModels = await Task.Run(() =>
-            {
-                var rowList = new List<RowViewModel>();
-
-                for (int i = 0; i < rowCount; i++)
-                {
-                    var rowViewModel = CreateEmptyRowViewModel(i);
-                    rowList.Add(rowViewModel);
-                }
-
-                return rowList;
-            });
-
-            // Clear tracking pred pridaním nových riadkov
-            await ClearAllTrackingDataAsync();
-            Rows.AddRange(rowViewModels);
-
-            _logger.LogDebug("Created {RowCount} initial empty row ViewModels safely", rowCount);
-        }
-
-        /// <summary>
-        /// ZLEPŠENIE 2: Vytvorenie empty RowViewModel s proper MVVM pattern
-        /// </summary>
-        private RowViewModel CreateEmptyRowViewModel(int rowIndex)
-        {
-            var rowViewModel = new RowViewModel(rowIndex);
-
-            foreach (var column in Columns)
-            {
-                var cellViewModel = new CellViewModel(column.Name, column.DataType, rowIndex, Columns.IndexOf(column))
-                {
-                    IsReadOnly = column.IsReadOnly
-                };
-
-                rowViewModel.AddCell(cellViewModel);
-
-                // ZLEPŠENIE 1: Enhanced cell event subscription s WeakReference
-                if (!IsSpecialColumn(column.Name) && !IsLoadingData)
-                {
-                    SubscribeToCellValidationEnhanced(rowViewModel, cellViewModel);
-                }
-            }
-
-            return rowViewModel;
-        }
-
-        /// <summary>
-        /// ZLEPŠENIE 1: Enhanced cell validation subscription s WeakReference
-        /// </summary>
-        private void SubscribeToCellValidationEnhanced(RowViewModel rowViewModel, CellViewModel cellViewModel)
-        {
-            var cellKey = GenerateCellKey(rowViewModel.RowIndex, cellViewModel.ColumnName);
-
-            lock (_eventSubscriptionLock)
-            {
-                try
-                {
-                    // OPRAVA CS1061: Použiť List<WeakReference<CellViewModel>> namiesto ConditionalWeakTable
-                    var weakRef = new WeakReference<CellViewModel>(cellViewModel);
-                    _cellEventHandlers.Add(weakRef);
-
-                    // Subscribe to property changed with weak event pattern
-                    cellViewModel.PropertyChanged += async (s, e) =>
-                    {
-                        if (e.PropertyName == nameof(CellViewModel.Value) && !_disposed && !IsLoadingData)
-                        {
-                            await OnCellValueChangedEnhanced(rowViewModel, cellViewModel);
-                        }
-                    };
-
-                    cellViewModel.ValueChanged += async (s, newValue) =>
-                    {
-                        if (!_disposed && !IsLoadingData)
-                        {
-                            await OnCellValueChangedEnhanced(rowViewModel, cellViewModel);
-                        }
-                    };
-
-                    _cellReferences[cellKey] = new WeakReference(cellViewModel);
-
-                    _logger.LogTrace("Successfully subscribed to cell validation with enhanced management: {CellKey}", cellKey);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error subscribing to cell validation: {CellKey}", cellKey);
-                }
-            }
-        }
-
-        /// <summary>
-        /// ZLEPŠENIE 1,4,6: Enhanced safe cell value changed handling
-        /// </summary>
-        private async Task OnCellValueChangedEnhanced(RowViewModel rowViewModel, CellViewModel cellViewModel)
-        {
-            if (_disposed || IsLoadingData) return;
-
-            var cellKey = GenerateCellKey(rowViewModel.RowIndex, cellViewModel.ColumnName);
+            ThrowIfDisposed();
 
             try
             {
-                // ZLEPŠENIE 4: Performance - throttling check
-                lock (_validationStateLock)
-                {
-                    if (_currentlyValidating.Contains(cellKey))
-                    {
-                        _logger.LogTrace("Validation already in progress for cell: {CellKey}", cellKey);
-                        return;
-                    }
-
-                    // ZLEPŠENIE 4: Throttling check - minimálny interval medzi validáciami
-                    if (_lastValidationTime.TryGetValue(cellKey, out var lastTime))
-                    {
-                        var elapsed = DateTime.UtcNow - lastTime;
-                        if (elapsed < _minValidationInterval)
-                        {
-                            _logger.LogTrace("Throttling validation for cell: {CellKey}, elapsed: {Elapsed}ms", cellKey, elapsed.TotalMilliseconds);
-                            return;
-                        }
-                    }
-
-                    _currentlyValidating.Add(cellKey);
-                    _lastValidationTime[cellKey] = DateTime.UtcNow;
-                }
-
-                try
-                {
-                    // If throttling is disabled, validate immediately
-                    if (!ThrottlingConfig.IsEnabled)
-                    {
-                        await ValidateCellViewModelImmediately(rowViewModel, cellViewModel);
-                        return;
-                    }
-
-                    // Cancel previous validation for this cell
-                    lock (_validationStateLock)
-                    {
-                        if (_pendingValidations.TryGetValue(cellKey, out var existingCts))
-                        {
-                            existingCts.Cancel();
-                            existingCts.Dispose();
-                            _pendingValidations.Remove(cellKey);
-                        }
-                    }
-
-                    // If row is empty, clear validation immediately
-                    if (rowViewModel.IsEmpty)
-                    {
-                        cellViewModel.ClearValidationErrors();
-                        rowViewModel.UpdateValidationStatus();
-                        return;
-                    }
-
-                    // Create new cancellation token for this validation
-                    var cts = new CancellationTokenSource();
-                    lock (_validationStateLock)
-                    {
-                        _pendingValidations[cellKey] = cts;
-                    }
-
-                    try
-                    {
-                        // Apply throttling delay
-                        await Task.Delay(ThrottlingConfig.TypingDelayMs, cts.Token);
-
-                        // Check if still valid (not cancelled and not disposed)
-                        if (cts.Token.IsCancellationRequested || _disposed || IsLoadingData)
-                            return;
-
-                        // Perform throttled validation
-                        await ValidateCellViewModelThrottled(rowViewModel, cellViewModel, cellKey, cts.Token);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        // Validation was cancelled - this is normal
-                        _logger.LogTrace("Validation cancelled for cell: {CellKey}", cellKey);
-                    }
-                    finally
-                    {
-                        // Clean up
-                        lock (_validationStateLock)
-                        {
-                            _pendingValidations.Remove(cellKey);
-                        }
-                        cts.Dispose();
-                    }
-                }
-                finally
-                {
-                    // KĽÚČOVÉ: Vždy odstrániť zo zoznamu validujúcich sa buniek
-                    lock (_validationStateLock)
-                    {
-                        _currentlyValidating.Remove(cellKey);
-                    }
-                }
+                _logger.LogDebug("Exporting data to DataTable, includeValidAlerts: {IncludeValidAlerts}", includeValidAlerts);
+                var dataRows = Rows.Select(r => ConvertToDataGridRow(r)).ToList();
+                var result = await _exportService.ExportToDataTableAsync(dataRows, Columns.ToList(), includeValidAlerts);
+                _logger.LogInformation("Exported {RowCount} rows to DataTable", result.Rows.Count);
+                return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in enhanced safe cell validation for {CellKey}", cellKey);
-                HandleGlobalError(ex, "OnCellValueChangedEnhanced");
+                _logger.LogError(ex, "Error exporting data");
+                HandleGlobalError(ex, "ExportDataAsync");
+                return new DataTable();
             }
         }
 
-        /// <summary>
-        /// ZLEPŠENIE 1: Enhanced memory cleanup - OPRAVA CS1061
-        /// </summary>
-        private async Task ClearAllTrackingDataAsync()
+        public async Task ClearAllDataAsync()
         {
-            await Task.Run(() =>
-            {
-                lock (_eventSubscriptionLock)
-                {
-                    // OPRAVA CS1061: Správne unsubscribe using List<WeakReference<CellViewModel>>
-                    var aliveCells = new List<CellViewModel>();
+            ThrowIfDisposed();
 
-                    foreach (var weakRef in _cellEventHandlers.ToList())
-                    {
-                        if (weakRef.TryGetTarget(out var cellViewModel))
-                        {
-                            aliveCells.Add(cellViewModel);
-                        }
-                    }
-
-                    // Unsubscribe from alive cells
-                    foreach (var cellViewModel in aliveCells)
-                    {
-                        try
-                        {
-                            // Note: PropertyChanged a ValueChanged events sa automaticky cleanup-nú
-                            // keď sa CellViewModel dispose-ne
-                            cellViewModel.Dispose();
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Error disposing cell view model");
-                        }
-                    }
-
-                    // Clear the weak references
-                    _cellEventHandlers.Clear();
-                    _cellReferences.Clear();
-                }
-
-                lock (_validationStateLock)
-                {
-                    // Cancel all pending validations
-                    foreach (var cts in _pendingValidations.Values)
-                    {
-                        try
-                        {
-                            cts.Cancel();
-                            cts.Dispose();
-                        }
-                        catch { }
-                    }
-                    _pendingValidations.Clear();
-                    _currentlyValidating.Clear();
-                    _lastValidationTime.Clear();
-                }
-
-                lock (_propertyChangeLock)
-                {
-                    _propertyChangeInProgress.Clear();
-                }
-
-                // ZLEPŠENIE 2: Clear visible cells collection
-                _visibleCells.Clear();
-
-                _logger.LogDebug("All tracking data cleared safely with enhanced cleanup");
-            });
-        }
-
-        #endregion
-
-        #region ZLEPŠENIE 4: Performance Optimizations
-
-        private async Task ValidateCellViewModelImmediately(RowViewModel rowViewModel, CellViewModel cellViewModel)
-        {
             try
             {
-                if (rowViewModel.IsEmpty)
+                if (!IsInitialized) return;
+
+                _logger.LogDebug("Clearing all data");
+
+                await Task.Run(() =>
                 {
-                    cellViewModel.ClearValidationErrors();
-                    rowViewModel.UpdateValidationStatus();
-                    return;
-                }
+                    foreach (var rowViewModel in Rows)
+                    {
+                        foreach (var cellViewModel in rowViewModel.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
+                        {
+                            cellViewModel.Value = null;
+                            cellViewModel.ClearValidationErrors();
+                        }
+                    }
+                });
 
-                var dataGridRow = ConvertToDataGridRow(rowViewModel);
-                var dataGridCell = ConvertToDataGridCell(cellViewModel, dataGridRow);
-
-                await _validationService.ValidateCellAsync(dataGridCell, dataGridRow);
-
-                // Update ViewModel with validation results
-                UpdateCellViewModelFromDataGridCell(cellViewModel, dataGridCell);
-                rowViewModel.UpdateValidationStatus();
+                _logger.LogInformation("All data cleared");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in immediate cell validation");
-                HandleGlobalError(ex, "ValidateCellViewModelImmediately");
+                _logger.LogError(ex, "Error clearing all data");
+                HandleGlobalError(ex, "ClearAllDataAsync");
             }
         }
 
-        private async Task ValidateCellViewModelThrottled(RowViewModel rowViewModel, CellViewModel cellViewModel, string cellKey, CancellationToken cancellationToken)
+        public async Task RemoveEmptyRowsAsync()
         {
+            ThrowIfDisposed();
+
             try
             {
-                // ZLEPŠENIE 4: Use semaphore to limit concurrent validations
-                await _validationSemaphore!.WaitAsync(cancellationToken);
+                _logger.LogDebug("Removing empty rows");
 
-                try
+                var result = await Task.Run(() =>
                 {
-                    // Double-check if still valid
-                    if (cancellationToken.IsCancellationRequested || _disposed || IsLoadingData)
-                        return;
+                    var dataRowViewModels = Rows.Where(r => !r.IsEmpty).ToList();
 
-                    _logger.LogTrace("Executing throttled validation for cell: {CellKey}", cellKey);
+                    var minEmptyRows = Math.Min(10, _initialRowCount / 5);
+                    var emptyRowsNeeded = Math.Max(minEmptyRows, _initialRowCount - dataRowViewModels.Count);
 
-                    // Perform actual validation
-                    var dataGridRow = ConvertToDataGridRow(rowViewModel);
-                    var dataGridCell = ConvertToDataGridCell(cellViewModel, dataGridRow);
+                    var newEmptyRowViewModels = new List<RowViewModel>();
+                    for (int i = 0; i < emptyRowsNeeded; i++)
+                    {
+                        newEmptyRowViewModels.Add(CreateEmptyRowViewModel(dataRowViewModels.Count + i));
+                    }
 
-                    await _validationService.ValidateCellAsync(dataGridCell, dataGridRow, cancellationToken);
+                    return new { DataRows = dataRowViewModels, EmptyRows = newEmptyRowViewModels };
+                });
 
-                    // Update ViewModel with validation results
-                    UpdateCellViewModelFromDataGridCell(cellViewModel, dataGridCell);
-                    rowViewModel.UpdateValidationStatus();
+                Rows.Clear();
+                Rows.AddRange(result.DataRows);
+                Rows.AddRange(result.EmptyRows);
 
-                    _logger.LogTrace("Throttled validation completed for cell: {CellKey}", cellKey);
-                }
-                finally
-                {
-                    _validationSemaphore.Release();
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when validation is cancelled
-                _logger.LogTrace("Throttled validation cancelled for cell: {CellKey}", cellKey);
+                _logger.LogInformation("Empty rows removed, {DataRowCount} data rows kept, {EmptyRowCount} empty rows added",
+                    result.DataRows.Count, result.EmptyRows.Count);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in throttled validation for cell: {CellKey}", cellKey);
-                HandleGlobalError(ex, "ValidateCellViewModelThrottled");
+                _logger.LogError(ex, "Error removing empty rows");
+                HandleGlobalError(ex, "RemoveEmptyRowsAsync");
             }
         }
 
-        #endregion
-
-        #region ZLEPŠENIE 6: Global Error Handling
-
-        /// <summary>
-        /// ZLEPŠENIE 6: Global error handling s circuit breaker pattern
-        /// </summary>
-        private void HandleGlobalError(Exception ex, string operation)
+        public void Reset()
         {
-            lock (_errorHandlingLock)
-            {
-                _consecutiveErrors++;
-                _lastErrorTime = DateTime.UtcNow;
+            if (_disposed) return;
 
-                _logger.LogError(ex, "Global error in operation: {Operation}, consecutive errors: {ConsecutiveErrors}", operation, _consecutiveErrors);
-
-                // Circuit breaker pattern - ak je príliš veľa chýb, prepneme do safe mode
-                if (_consecutiveErrors >= 5)
-                {
-                    var timeSinceLastError = DateTime.UtcNow - _lastErrorTime;
-                    if (timeSinceLastError < TimeSpan.FromMinutes(1))
-                    {
-                        _logger.LogWarning("Too many consecutive errors, entering safe mode for operation: {Operation}", operation);
-                        // V safe mode môžeme zakázať niektoré funkcie
-                        IsValidating = false;
-                        UpdateValidationStatus("Error recovery mode");
-                    }
-                }
-
-                // Reset error counter po určitom čase
-                if (_consecutiveErrors > 0 && DateTime.UtcNow - _lastErrorTime > TimeSpan.FromMinutes(5))
-                {
-                    _consecutiveErrors = 0;
-                    _logger.LogInformation("Error recovery: Reset consecutive error counter");
-                }
-            }
-
-            // Fire error event
-            OnErrorOccurred(new ComponentErrorEventArgs(ex, operation));
-        }
-
-        #endregion
-
-        #region ZLEPŠENIE 2: ViewModel Conversion Methods
-
-        /// <summary>
-        /// ZLEPŠENIE 2: Konverzia RowViewModel na DataGridRow pre services
-        /// </summary>
-        private DataGridRow ConvertToDataGridRow(RowViewModel rowViewModel)
-        {
-            var dataGridRow = new DataGridRow(rowViewModel.RowIndex);
-
-            foreach (var cellViewModel in rowViewModel.Cells)
-            {
-                var dataGridCell = new DataGridCell(cellViewModel.ColumnName, cellViewModel.DataType,
-                    cellViewModel.RowIndex, cellViewModel.ColumnIndex)
-                {
-                    Value = cellViewModel.Value,
-                    OriginalValue = cellViewModel.OriginalValue,
-                    IsReadOnly = cellViewModel.IsReadOnly,
-                    IsEditing = cellViewModel.IsEditing,
-                    HasFocus = cellViewModel.HasFocus,
-                    IsSelected = cellViewModel.IsSelected
-                };
-
-                // Copy validation errors
-                if (cellViewModel.HasValidationErrors)
-                {
-                    var errors = new List<string>();
-                    foreach (var error in cellViewModel.GetErrors(nameof(CellViewModel.Value)))
-                    {
-                        if (error is string errorString)
-                            errors.Add(errorString);
-                    }
-                    dataGridCell.SetValidationErrors(errors);
-                }
-
-                dataGridRow.AddCell(cellViewModel.ColumnName, dataGridCell);
-            }
-
-            return dataGridRow;
-        }
-
-        /// <summary>
-        /// ZLEPŠENIE 2: Konverzia CellViewModel na DataGridCell
-        /// </summary>
-        private DataGridCell ConvertToDataGridCell(CellViewModel cellViewModel, DataGridRow parentRow)
-        {
-            var dataGridCell = new DataGridCell(cellViewModel.ColumnName, cellViewModel.DataType,
-                cellViewModel.RowIndex, cellViewModel.ColumnIndex)
-            {
-                Value = cellViewModel.Value,
-                OriginalValue = cellViewModel.OriginalValue,
-                IsReadOnly = cellViewModel.IsReadOnly,
-                IsEditing = cellViewModel.IsEditing,
-                HasFocus = cellViewModel.HasFocus,
-                IsSelected = cellViewModel.IsSelected
-            };
-
-            // Copy validation errors
-            if (cellViewModel.HasValidationErrors)
-            {
-                var errors = new List<string>();
-                foreach (var error in cellViewModel.GetErrors(nameof(CellViewModel.Value)))
-                {
-                    if (error is string errorString)
-                        errors.Add(errorString);
-                }
-                dataGridCell.SetValidationErrors(errors);
-            }
-
-            return dataGridCell;
-        }
-
-        /// <summary>
-        /// ZLEPŠENIE 2: Update CellViewModel from DataGridCell validation results
-        /// </summary>
-        private void UpdateCellViewModelFromDataGridCell(CellViewModel cellViewModel, DataGridCell dataGridCell)
-        {
-            // Update validation errors
-            if (dataGridCell.HasValidationErrors)
-            {
-                cellViewModel.SetValidationErrors(nameof(CellViewModel.Value), dataGridCell.ValidationErrors);
-            }
-            else
-            {
-                cellViewModel.ClearValidationErrors();
-            }
-
-            // Update other properties if needed
-            cellViewModel.HasFocus = dataGridCell.HasFocus;
-            cellViewModel.IsSelected = dataGridCell.IsSelected;
-        }
-
-        #endregion
-
-        #region ZLEPŠENIE 5: Helper Methods
-
-        private void UpdateValidationStatus(string status)
-        {
-            ValidationStatus = status;
-            _logger.LogTrace("Validation status updated: {Status}", status);
-        }
-
-        private void UpdateValidationProgress(double progress)
-        {
-            ValidationProgress = Math.Max(0, Math.Min(100, progress));
-        }
-
-        private RowViewModel CreateRowViewModelForLoading(int rowIndex)
-        {
-            var rowViewModel = new RowViewModel(rowIndex);
-
-            foreach (var column in Columns)
-            {
-                var cellViewModel = new CellViewModel(column.Name, column.DataType, rowIndex, Columns.IndexOf(column))
-                {
-                    IsReadOnly = column.IsReadOnly
-                };
-
-                rowViewModel.AddCell(cellViewModel);
-                // Event handlers sa pridajú až po načítaní všetkých dát
-            }
-
-            return rowViewModel;
-        }
-
-        private async Task ValidateRowViewModelAfterLoadingAsync(RowViewModel rowViewModel)
-        {
             try
             {
-                rowViewModel.UpdateRowStatus();
+                _logger.LogInformation("Resetting ViewModel");
 
-                if (!rowViewModel.IsEmpty)
-                {
-                    var dataGridRow = ConvertToDataGridRow(rowViewModel);
+                ClearCollections();
 
-                    foreach (var cellViewModel in rowViewModel.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
-                    {
-                        var dataGridCell = ConvertToDataGridCell(cellViewModel, dataGridRow);
-                        await _validationService.ValidateCellAsync(dataGridCell, dataGridRow);
-                        UpdateCellViewModelFromDataGridCell(cellViewModel, dataGridCell);
-                    }
+                _validationService.ClearValidationRules();
+                IsInitialized = false;
 
-                    rowViewModel.UpdateValidationStatus();
-                }
+                IsValidating = false;
+                UpdateValidationProgress(0);
+                UpdateValidationStatus("Pripravené");
 
-                // Subscribe to validation events AŽ PO NAČÍTANÍ dát
-                foreach (var cellViewModel in rowViewModel.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
-                {
-                    SubscribeToCellValidationEnhanced(rowViewModel, cellViewModel);
-                }
+                _initialRowCount = 100;
+                IsKeyboardShortcutsVisible = false;
+
+                _logger.LogInformation("ViewModel reset completed");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error validating row after loading");
-                HandleGlobalError(ex, "ValidateRowViewModelAfterLoadingAsync");
+                _logger.LogError(ex, "Error during ViewModel reset");
+                HandleGlobalError(ex, "Reset");
             }
-        }
-
-        private async Task AutoInitializeFromDataAsync(List<Dictionary<string, object?>>? data)
-        {
-            var columns = new List<InternalColumnDefinition>();
-
-            if (data?.Count > 0)
-            {
-                foreach (var key in data[0].Keys)
-                {
-                    columns.Add(new InternalColumnDefinition(key, typeof(string))
-                    {
-                        Header = FormatColumnHeader(key),
-                        MinWidth = 80,
-                        Width = 120
-                    });
-                }
-            }
-            else
-            {
-                columns.Add(new InternalColumnDefinition("Stĺpec1", typeof(string)) { Header = "Stĺpec 1", Width = 150 });
-                columns.Add(new InternalColumnDefinition("Stĺpec2", typeof(string)) { Header = "Stĺpec 2", Width = 150 });
-            }
-
-            var rules = new List<InternalValidationRule>();
-            foreach (var col in columns)
-            {
-                if (col.Name.ToLower().Contains("email"))
-                {
-                    rules.Add(InternalValidationRule.Email(col.Name));
-                }
-            }
-
-            await InitializeAsync(columns, rules);
-        }
-
-        private string FormatColumnHeader(string columnName)
-        {
-            var lowerName = columnName.ToLower();
-
-            if (lowerName.Contains("id")) return $"🔢 {columnName}";
-            if (lowerName.Contains("meno") || lowerName.Contains("name")) return $"👤 {columnName}";
-            if (lowerName.Contains("email")) return $"📧 {columnName}";
-            if (lowerName.Contains("vek") || lowerName.Contains("age")) return $"🎂 {columnName}";
-            if (lowerName.Contains("plat") || lowerName.Contains("salary")) return $"💰 {columnName}";
-            if (lowerName.Contains("datum") || lowerName.Contains("date")) return $"📅 {columnName}";
-
-            return columnName;
-        }
-
-        private List<Dictionary<string, object?>> ConvertDataTableToDictionaries(DataTable dataTable)
-        {
-            var result = new List<Dictionary<string, object?>>();
-
-            foreach (DataRow row in dataTable.Rows)
-            {
-                var dict = new Dictionary<string, object?>();
-                foreach (DataColumn column in dataTable.Columns)
-                {
-                    dict[column.ColumnName] = row[column] == DBNull.Value ? null : row[column];
-                }
-                result.Add(dict);
-            }
-
-            return result;
-        }
-
-        private static string GenerateCellKey(int rowIndex, string columnName)
-        {
-            return $"{rowIndex}_{columnName}";
-        }
-
-        private static bool IsSpecialColumn(string columnName)
-        {
-            return columnName == "DeleteAction" || columnName == "ValidAlerts";
-        }
-
-        #endregion
-
-        #region Commands Initialization
-
-        private void InitializeCommands()
-        {
-            ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync, null, HandleCommandError);
-            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync, null, HandleCommandError);
-            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync, null, HandleCommandError);
-            CopyCommand = new AsyncRelayCommand(CopySelectedCellsAsync, null, HandleCommandError);
-            PasteCommand = new AsyncRelayCommand(PasteFromClipboardAsync, null, HandleCommandError);
-            DeleteRowCommand = new RelayCommand<RowViewModel>(DeleteRowViewModel);
-            ExportToDataTableCommand = new AsyncRelayCommand(async () => await ExportDataAsync(), null, HandleCommandError);
-            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcuts);
-        }
-
-        private void HandleCommandError(Exception ex)
-        {
-            _logger.LogError(ex, "Command execution error");
-            HandleGlobalError(ex, "Command");
         }
 
         #endregion
@@ -1301,131 +659,246 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         #endregion
 
-        #region Additional Public Methods
-
-        public async Task<DataTable> ExportDataAsync(bool includeValidAlerts = false)
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                _logger.LogDebug("Exporting data to DataTable, includeValidAlerts: {IncludeValidAlerts}", includeValidAlerts);
-                var dataRows = Rows.Select(r => ConvertToDataGridRow(r)).ToList();
-                var result = await _exportService.ExportToDataTableAsync(dataRows, Columns.ToList(), includeValidAlerts);
-                _logger.LogInformation("Exported {RowCount} rows to DataTable", result.Rows.Count);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error exporting data");
-                HandleGlobalError(ex, "ExportDataAsync");
-                return new DataTable();
-            }
-        }
-
-        public async Task ClearAllDataAsync()
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                if (!IsInitialized) return;
-
-                _logger.LogDebug("Clearing all data");
-
-                await Task.Run(() =>
-                {
-                    foreach (var rowViewModel in Rows)
-                    {
-                        foreach (var cellViewModel in rowViewModel.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
-                        {
-                            cellViewModel.Value = null;
-                            cellViewModel.ClearValidationErrors();
-                        }
-                    }
-                });
-
-                _logger.LogInformation("All data cleared");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error clearing all data");
-                HandleGlobalError(ex, "ClearAllDataAsync");
-            }
-        }
-
-        public async Task RemoveEmptyRowsAsync()
-        {
-            ThrowIfDisposed();
-
-            try
-            {
-                _logger.LogDebug("Removing empty rows");
-
-                var result = await Task.Run(() =>
-                {
-                    var dataRowViewModels = Rows.Where(r => !r.IsEmpty).ToList();
-
-                    var minEmptyRows = Math.Min(10, _initialRowCount / 5);
-                    var emptyRowsNeeded = Math.Max(minEmptyRows, _initialRowCount - dataRowViewModels.Count);
-
-                    var newEmptyRowViewModels = new List<RowViewModel>();
-                    for (int i = 0; i < emptyRowsNeeded; i++)
-                    {
-                        newEmptyRowViewModels.Add(CreateEmptyRowViewModel(dataRowViewModels.Count + i));
-                    }
-
-                    return new { DataRows = dataRowViewModels, EmptyRows = newEmptyRowViewModels };
-                });
-
-                await ClearAllTrackingDataAsync();
-
-                Rows.Clear();
-                Rows.AddRange(result.DataRows);
-                Rows.AddRange(result.EmptyRows);
-
-                _logger.LogInformation("Empty rows removed, {DataRowCount} data rows kept, {EmptyRowCount} empty rows added",
-                    result.DataRows.Count, result.EmptyRows.Count);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error removing empty rows");
-                HandleGlobalError(ex, "RemoveEmptyRowsAsync");
-            }
-        }
-
-        public void Reset()
-        {
-            if (_disposed) return;
-
-            try
-            {
-                _logger.LogInformation("Resetting ViewModel");
-
-                ClearCollections();
-
-                _validationService.ClearValidationRules();
-                IsInitialized = false;
-
-                IsValidating = false;
-                UpdateValidationProgress(0);
-                UpdateValidationStatus("Pripravené");
-
-                _initialRowCount = 100;
-                IsKeyboardShortcutsVisible = false;
-
-                _logger.LogInformation("ViewModel reset completed");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during ViewModel reset");
-                HandleGlobalError(ex, "Reset");
-            }
-        }
-
-        #endregion
-
         #region Helper Methods
+
+        private async Task CreateInitialRowViewModelsAsync()
+        {
+            var rowCount = _initialRowCount;
+
+            var rowViewModels = await Task.Run(() =>
+            {
+                var rowList = new List<RowViewModel>();
+
+                for (int i = 0; i < rowCount; i++)
+                {
+                    var rowViewModel = CreateEmptyRowViewModel(i);
+                    rowList.Add(rowViewModel);
+                }
+
+                return rowList;
+            });
+
+            Rows.AddRange(rowViewModels);
+
+            _logger.LogDebug("Created {RowCount} initial empty row ViewModels safely", rowCount);
+        }
+
+        private RowViewModel CreateEmptyRowViewModel(int rowIndex)
+        {
+            var rowViewModel = new RowViewModel(rowIndex);
+
+            foreach (var column in Columns)
+            {
+                var cellViewModel = new CellViewModel(column.Name, column.DataType, rowIndex, Columns.IndexOf(column))
+                {
+                    IsReadOnly = column.IsReadOnly
+                };
+
+                rowViewModel.AddCell(cellViewModel);
+            }
+
+            return rowViewModel;
+        }
+
+        private RowViewModel CreateRowViewModelForLoading(int rowIndex)
+        {
+            var rowViewModel = new RowViewModel(rowIndex);
+
+            foreach (var column in Columns)
+            {
+                var cellViewModel = new CellViewModel(column.Name, column.DataType, rowIndex, Columns.IndexOf(column))
+                {
+                    IsReadOnly = column.IsReadOnly
+                };
+
+                rowViewModel.AddCell(cellViewModel);
+            }
+
+            return rowViewModel;
+        }
+
+        private async Task ValidateRowViewModelAfterLoadingAsync(RowViewModel rowViewModel)
+        {
+            try
+            {
+                rowViewModel.UpdateRowStatus();
+
+                if (!rowViewModel.IsEmpty)
+                {
+                    var dataGridRow = ConvertToDataGridRow(rowViewModel);
+
+                    foreach (var cellViewModel in rowViewModel.Cells.Where(c => !IsSpecialColumn(c.ColumnName)))
+                    {
+                        var dataGridCell = ConvertToDataGridCell(cellViewModel, dataGridRow);
+                        await _validationService.ValidateCellAsync(dataGridCell, dataGridRow);
+                        UpdateCellViewModelFromDataGridCell(cellViewModel, dataGridCell);
+                    }
+
+                    rowViewModel.UpdateValidationStatus();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating row after loading");
+                HandleGlobalError(ex, "ValidateRowViewModelAfterLoadingAsync");
+            }
+        }
+
+        private async Task AutoInitializeFromDataAsync(List<Dictionary<string, object?>>? data)
+        {
+            var columns = new List<ColumnDefinition>();
+
+            if (data?.Count > 0)
+            {
+                foreach (var key in data[0].Keys)
+                {
+                    columns.Add(new ColumnDefinition(key, typeof(string))
+                    {
+                        Header = FormatColumnHeader(key),
+                        MinWidth = 80,
+                        Width = 120
+                    });
+                }
+            }
+            else
+            {
+                columns.Add(new ColumnDefinition("Stĺpec1", typeof(string)) { Header = "Stĺpec 1", Width = 150 });
+                columns.Add(new ColumnDefinition("Stĺpec2", typeof(string)) { Header = "Stĺpec 2", Width = 150 });
+            }
+
+            var rules = new List<ValidationRule>();
+            foreach (var col in columns)
+            {
+                if (col.Name.ToLower().Contains("email"))
+                {
+                    rules.Add(ValidationRule.Email(col.Name));
+                }
+            }
+
+            await InitializeAsync(columns, rules);
+        }
+
+        private string FormatColumnHeader(string columnName)
+        {
+            var lowerName = columnName.ToLower();
+
+            if (lowerName.Contains("id")) return $"🔢 {columnName}";
+            if (lowerName.Contains("meno") || lowerName.Contains("name")) return $"👤 {columnName}";
+            if (lowerName.Contains("email")) return $"📧 {columnName}";
+            if (lowerName.Contains("vek") || lowerName.Contains("age")) return $"🎂 {columnName}";
+            if (lowerName.Contains("plat") || lowerName.Contains("salary")) return $"💰 {columnName}";
+            if (lowerName.Contains("datum") || lowerName.Contains("date")) return $"📅 {columnName}";
+
+            return columnName;
+        }
+
+        private List<Dictionary<string, object?>> ConvertDataTableToDictionaries(DataTable dataTable)
+        {
+            var result = new List<Dictionary<string, object?>>();
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (DataColumn column in dataTable.Columns)
+                {
+                    dict[column.ColumnName] = row[column] == DBNull.Value ? null : row[column];
+                }
+                result.Add(dict);
+            }
+
+            return result;
+        }
+
+        private DataGridRow ConvertToDataGridRow(RowViewModel rowViewModel)
+        {
+            var dataGridRow = new DataGridRow(rowViewModel.RowIndex);
+
+            foreach (var cellViewModel in rowViewModel.Cells)
+            {
+                var dataGridCell = new DataGridCell(cellViewModel.ColumnName, cellViewModel.DataType,
+                    cellViewModel.RowIndex, cellViewModel.ColumnIndex)
+                {
+                    Value = cellViewModel.Value,
+                    OriginalValue = cellViewModel.OriginalValue,
+                    IsReadOnly = cellViewModel.IsReadOnly,
+                    IsEditing = cellViewModel.IsEditing,
+                    HasFocus = cellViewModel.HasFocus,
+                    IsSelected = cellViewModel.IsSelected
+                };
+
+                // Copy validation errors
+                if (cellViewModel.HasValidationErrors)
+                {
+                    var errors = new List<string>();
+                    foreach (var error in cellViewModel.GetErrors(nameof(CellViewModel.Value)))
+                    {
+                        if (error is string errorString)
+                            errors.Add(errorString);
+                    }
+                    dataGridCell.SetValidationErrors(errors);
+                }
+
+                dataGridRow.AddCell(cellViewModel.ColumnName, dataGridCell);
+            }
+
+            return dataGridRow;
+        }
+
+        private DataGridCell ConvertToDataGridCell(CellViewModel cellViewModel, DataGridRow parentRow)
+        {
+            var dataGridCell = new DataGridCell(cellViewModel.ColumnName, cellViewModel.DataType,
+                cellViewModel.RowIndex, cellViewModel.ColumnIndex)
+            {
+                Value = cellViewModel.Value,
+                OriginalValue = cellViewModel.OriginalValue,
+                IsReadOnly = cellViewModel.IsReadOnly,
+                IsEditing = cellViewModel.IsEditing,
+                HasFocus = cellViewModel.HasFocus,
+                IsSelected = cellViewModel.IsSelected
+            };
+
+            // Copy validation errors
+            if (cellViewModel.HasValidationErrors)
+            {
+                var errors = new List<string>();
+                foreach (var error in cellViewModel.GetErrors(nameof(CellViewModel.Value)))
+                {
+                    if (error is string errorString)
+                        errors.Add(errorString);
+                }
+                dataGridCell.SetValidationErrors(errors);
+            }
+
+            return dataGridCell;
+        }
+
+        private void UpdateCellViewModelFromDataGridCell(CellViewModel cellViewModel, DataGridCell dataGridCell)
+        {
+            // Update validation errors
+            if (dataGridCell.HasValidationErrors)
+            {
+                cellViewModel.SetValidationErrors(nameof(CellViewModel.Value), dataGridCell.ValidationErrors);
+            }
+            else
+            {
+                cellViewModel.ClearValidationErrors();
+            }
+
+            // Update other properties if needed
+            cellViewModel.HasFocus = dataGridCell.HasFocus;
+            cellViewModel.IsSelected = dataGridCell.IsSelected;
+        }
+
+        private void UpdateValidationStatus(string status)
+        {
+            ValidationStatus = status;
+            _logger.LogTrace("Validation status updated: {Status}", status);
+        }
+
+        private void UpdateValidationProgress(double progress)
+        {
+            ValidationProgress = Math.Max(0, Math.Min(100, progress));
+        }
 
         private void DeleteRowViewModel(RowViewModel? rowViewModel)
         {
@@ -1467,6 +940,43 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
+        private static bool IsSpecialColumn(string columnName)
+        {
+            return columnName == "DeleteAction" || columnName == "ValidAlerts";
+        }
+
+        private void HandleGlobalError(Exception ex, string operation)
+        {
+            _logger.LogError(ex, "Global error in operation: {Operation}", operation);
+            OnErrorOccurred(new ComponentErrorEventArgs(ex, operation));
+        }
+
+        #endregion
+
+        #region Commands Initialization
+
+        private void InitializeCommands()
+        {
+            ValidateAllCommand = new AsyncRelayCommand(ValidateAllRowsAsync, null, HandleCommandError);
+            ClearAllDataCommand = new AsyncRelayCommand(ClearAllDataAsync, null, HandleCommandError);
+            RemoveEmptyRowsCommand = new AsyncRelayCommand(RemoveEmptyRowsAsync, null, HandleCommandError);
+            CopyCommand = new AsyncRelayCommand(CopySelectedCellsAsync, null, HandleCommandError);
+            PasteCommand = new AsyncRelayCommand(PasteFromClipboardAsync, null, HandleCommandError);
+            DeleteRowCommand = new RelayCommand<RowViewModel>(DeleteRowViewModel);
+            ExportToDataTableCommand = new AsyncRelayCommand(async () => await ExportDataAsync(), null, HandleCommandError);
+            ToggleKeyboardShortcutsCommand = new RelayCommand(ToggleKeyboardShortcuts);
+        }
+
+        private void HandleCommandError(Exception ex)
+        {
+            _logger.LogError(ex, "Command execution error");
+            HandleGlobalError(ex, "Command");
+        }
+
+        #endregion
+
+        #region Event Handling
+
         private void SubscribeToEvents()
         {
             try
@@ -1484,10 +994,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             }
         }
 
-        #endregion
-
-        #region Event Handlers
-
         private void OnDataChanged(object? sender, DataChangeEventArgs e)
         {
             if (_disposed) return;
@@ -1498,15 +1004,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         {
             if (_disposed) return;
             _logger.LogTrace("Validation completed for row. Is valid: {IsValid}", e.IsValid);
-
-            // Reset error counter on successful validation
-            lock (_errorHandlingLock)
-            {
-                if (e.IsValid && _consecutiveErrors > 0)
-                {
-                    _consecutiveErrors = Math.Max(0, _consecutiveErrors - 1);
-                }
-            }
         }
 
         private void OnDataServiceErrorOccurred(object? sender, ComponentErrorEventArgs e)
@@ -1536,40 +1033,28 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
             if (_disposed) return;
 
-            if (disposing)
+            try
             {
-                try
-                {
-                    _logger?.LogDebug("Disposing AdvancedDataGridViewModel...");
+                _logger?.LogDebug("Disposing AdvancedDataGridViewModel...");
 
-                    // Unsubscribe from all events
-                    UnsubscribeFromEvents();
+                // Unsubscribe from all events
+                UnsubscribeFromEvents();
 
-                    // Clear collections and tracking data
-                    ClearCollections();
+                // Clear collections
+                ClearCollections();
 
-                    // Dispose semaphore
-                    _validationSemaphore?.Dispose();
+                // Clear commands
+                ClearCommands();
 
-                    // Clear commands
-                    ClearCommands();
+                _isInitialized = false;
 
-                    _isInitialized = false;
-
-                    _logger?.LogInformation("AdvancedDataGridViewModel disposed successfully");
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Error during AdvancedDataGridViewModel disposal");
-                }
+                _logger?.LogInformation("AdvancedDataGridViewModel disposed successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error during AdvancedDataGridViewModel disposal");
             }
 
             _disposed = true;
@@ -1608,9 +1093,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
         {
             try
             {
-                // Clear tracking data safely
-                _ = ClearAllTrackingDataAsync();
-
                 // Dispose all row view models
                 foreach (var rowViewModel in Rows)
                 {
@@ -1669,45 +1151,18 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.ViewModels
             ErrorOccurred?.Invoke(this, e);
         }
 
-        /// <summary>
-        /// ZLEPŠENIE 7: Safe SetProperty s protection proti zacykleniu
-        /// </summary>
         protected virtual bool SetProperty<T>(ref T backingStore, T value, [CallerMemberName] string propertyName = "")
         {
             if (_disposed) return false;
 
-            // Prevencia zacyklenia PropertyChanged eventov
-            lock (_propertyChangeLock)
-            {
-                if (_propertyChangeInProgress.Contains(propertyName))
-                {
-                    _logger.LogTrace("Property change already in progress: {PropertyName}", propertyName);
-                    return false;
-                }
-                _propertyChangeInProgress.Add(propertyName);
-            }
+            if (EqualityComparer<T>.Default.Equals(backingStore, value))
+                return false;
 
-            try
-            {
-                if (EqualityComparer<T>.Default.Equals(backingStore, value))
-                    return false;
-
-                backingStore = value;
-                OnPropertyChanged(propertyName);
-                return true;
-            }
-            finally
-            {
-                lock (_propertyChangeLock)
-                {
-                    _propertyChangeInProgress.Remove(propertyName);
-                }
-            }
+            backingStore = value;
+            OnPropertyChanged(propertyName);
+            return true;
         }
 
-        /// <summary>
-        /// ZLEPŠENIE 7: Safe OnPropertyChanged
-        /// </summary>
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             if (_disposed) return;

@@ -1,4 +1,4 @@
-﻿// SÚBOR: Services/Implementation/DataService.cs - OPRAVENÉ CS7036 a CS0029 chyby
+﻿// SÚBOR: Services/Implementation/DataService.cs - ✅ OPRAVENÉ CS7036 a CS0029 chyby
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,7 +12,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// OPRAVENÉ: Všetky CS7036 a CS0029 chyby vyriešené
+    /// ✅ OPRAVENÉ: Všetky CS7036 a CS0029 chyby vyriešené
     /// </summary>
     internal class DataService : IDataService
     {
@@ -21,10 +21,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private List<ColumnDefinition> _columns = new();
         private bool _isInitialized = false;
 
-        // ✅ OPRAVA: Používa PUBLIC ComponentErrorEventArgs pre konzistenciu
+        // ✅ OPRAVA: Používa správne event types
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
-
-        // ✅ OPRAVA: Používa INTERNAL DataChangeEventArgs pre interné operácie
         public event EventHandler<DataChangeEventArgs>? DataChanged;
 
         public DataService(ILogger<DataService> logger)
@@ -55,7 +53,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 _isInitialized = true;
 
-                // ✅ OPRAVA CS7036: Správny konštruktor s všetkými parametrami
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.Initialize,
@@ -119,7 +117,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
-                // ✅ OPRAVA CS7036: Správny konštruktor
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.LoadData,
@@ -182,7 +180,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
-                // ✅ OPRAVA CS7036: Správny konštruktor
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.LoadData,
@@ -259,7 +257,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     }
                 });
 
-                // ✅ OPRAVA CS7036: Správny konštruktor
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.ClearData,
@@ -311,7 +309,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(result.DataRows);
 
-                // ✅ OPRAVA CS7036: Správny konštruktor
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.RemoveEmptyRows,
@@ -362,7 +360,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     _rows.Remove(row);
                 }
 
-                // ✅ OPRAVA CS7036: Správny konštruktor
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.RemoveRows,
@@ -414,7 +412,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     _rows.Remove(row);
                 }
 
-                // ✅ OPRAVA CS7036: Správny konštruktor
+                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
                 OnDataChanged(new DataChangeEventArgs
                 {
                     ChangeType = DataChangeType.RemoveRows,
