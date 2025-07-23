@@ -21,7 +21,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private List<ColumnDefinition> _columns = new();
         private bool _isInitialized = false;
 
-        // ✅ OPRAVA: Používa správne event types
+        // ✅ OPRAVA: Používa správne public event types
         public event EventHandler<ComponentErrorEventArgs>? ErrorOccurred;
         public event EventHandler<DataChangeEventArgs>? DataChanged;
 
@@ -53,13 +53,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 _isInitialized = true;
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.Initialize,
-                    AffectedRowCount = initialRowCount,
-                    OperationDuration = TimeSpan.FromMilliseconds(100)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("Initialize", initialRowCount, TimeSpan.FromMilliseconds(100)));
 
                 _logger.LogInformation("DataService initialized successfully with {RowCount} empty rows", _rows.Count);
             }
@@ -117,13 +112,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.LoadData,
-                    AffectedRowCount = newRows.Count,
-                    OperationDuration = TimeSpan.FromMilliseconds(200)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("LoadData", newRows.Count, TimeSpan.FromMilliseconds(200)));
 
                 _logger.LogInformation("Successfully loaded {RowCount} rows from DataTable", _rows.Count);
             }
@@ -180,13 +170,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(newRows);
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.LoadData,
-                    AffectedRowCount = newRows.Count,
-                    OperationDuration = TimeSpan.FromMilliseconds(150)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("LoadData", newRows.Count, TimeSpan.FromMilliseconds(150)));
 
                 _logger.LogInformation("Successfully loaded {RowCount} rows from dictionary list", _rows.Count);
             }
@@ -257,13 +242,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     }
                 });
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.ClearData,
-                    AffectedRowCount = _rows.Count,
-                    OperationDuration = TimeSpan.FromMilliseconds(100)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("ClearData", _rows.Count, TimeSpan.FromMilliseconds(100)));
 
                 _logger.LogInformation("Successfully cleared all data");
             }
@@ -309,13 +289,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 _rows.Clear();
                 _rows.AddRange(result.DataRows);
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.RemoveEmptyRows,
-                    AffectedRowCount = result.RemovedCount,
-                    OperationDuration = TimeSpan.FromMilliseconds(150)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("RemoveEmptyRows", result.RemovedCount, TimeSpan.FromMilliseconds(150)));
 
                 _logger.LogInformation("Removed {RemovedCount} empty rows", result.RemovedCount);
             }
@@ -360,13 +335,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     _rows.Remove(row);
                 }
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.RemoveRows,
-                    AffectedRowCount = result.Count,
-                    OperationDuration = TimeSpan.FromMilliseconds(120)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("RemoveRows", result.Count, TimeSpan.FromMilliseconds(120)));
 
                 _logger.LogInformation("Removed {RowCount} rows by condition", result.Count);
             }
@@ -412,13 +382,8 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                     _rows.Remove(row);
                 }
 
-                // ✅ OPRAVA CS7036: Správny konštruktor DataChangeEventArgs
-                OnDataChanged(new DataChangeEventArgs
-                {
-                    ChangeType = DataChangeType.RemoveRows,
-                    AffectedRowCount = result.Count,
-                    OperationDuration = TimeSpan.FromMilliseconds(180)
-                });
+                // ✅ OPRAVA CS7036: Používa správny public konštruktor
+                OnDataChanged(new DataChangeEventArgs("RemoveRows", result.Count, TimeSpan.FromMilliseconds(180)));
 
                 _logger.LogInformation("Removed {RowCount} rows by custom validation", result.Count);
                 return result.Count;

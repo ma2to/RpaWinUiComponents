@@ -1,4 +1,4 @@
-﻿// SÚBOR: Services/Implementation/ValidationService.cs - OPRAVENÉ CS7036 chyby
+﻿// SÚBOR: Services/Implementation/ValidationService.cs - OPRAVENÉ CS7036 a CS0117 chyby
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// OPRAVENÉ: CS7036 a CS0117 chyby vyriešené
+    /// OPRAVENÉ: CS7036 a CS0117 chyby vyriešené pre ValidationCompletedEventArgs
     /// </summary>
     internal class ValidationService : IValidationService
     {
@@ -22,7 +22,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private readonly ConcurrentDictionary<string, List<ValidationRule>> _validationRules = new();
         private readonly SemaphoreSlim _validationSemaphore = new(5, 5);
 
-        // ✅ OPRAVA: Používa správne event types
+        // ✅ OPRAVA: Používa správne public event types
         public event EventHandler<ValidationCompletedEventArgs>? ValidationCompleted;
         public event EventHandler<ComponentErrorEventArgs>? ValidationErrorOccurred;
 
@@ -154,14 +154,13 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 results.AddRange(cellResults);
                 row.UpdateValidationStatus();
 
-                // ✅ OPRAVA CS7036: Správny konštruktor pre ValidationCompletedEventArgs
-                OnValidationCompleted(new ValidationCompletedEventArgs
-                {
-                    Row = row,
-                    Results = results,
-                    TotalDuration = stopwatch.Elapsed,
-                    AsyncValidationCount = results.Count(r => r.WasAsync)
-                });
+                // ✅ OPRAVA CS7036: Správny konštruktor pre public ValidationCompletedEventArgs
+                OnValidationCompleted(new ValidationCompletedEventArgs(
+                    isValid: results.All(r => r.IsValid),
+                    totalErrors: results.Count(r => !r.IsValid),
+                    duration: stopwatch.Elapsed,
+                    processedRows: 1
+                ));
 
                 _logger.LogDebug("Row validation completed: {ValidCount} valid, {InvalidCount} invalid",
                     results.Count(r => r.IsValid), results.Count(r => !r.IsValid));
