@@ -1,4 +1,4 @@
-﻿// SÚBOR: Services/Implementation/ValidationService.cs - OPRAVENÉ
+﻿// SÚBOR: Services/Implementation/ValidationService.cs - OPRAVENÉ CS7036 chyby
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// ✅ OPRAVA CS0738, CS0050: INTERNAL class s správnymi event types a return types
+    /// OPRAVENÉ: CS7036 a CS0117 chyby vyriešené
     /// </summary>
     internal class ValidationService : IValidationService
     {
@@ -22,7 +22,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private readonly ConcurrentDictionary<string, List<ValidationRule>> _validationRules = new();
         private readonly SemaphoreSlim _validationSemaphore = new(5, 5);
 
-        // ✅ OPRAVA CS0738: Správne event types
+        // ✅ OPRAVA: Používa správne event types
         public event EventHandler<ValidationCompletedEventArgs>? ValidationCompleted;
         public event EventHandler<ComponentErrorEventArgs>? ValidationErrorOccurred;
 
@@ -31,7 +31,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             _logger = logger;
         }
 
-        // ✅ OPRAVA CS0050: internal return type v internal method
         public async Task<ValidationResult> ValidateCellAsync(DataGridCell cell, DataGridRow row, CancellationToken cancellationToken = default)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -128,7 +127,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
-        // ✅ OPRAVA CS0050: internal return type IList<ValidationResult>
         public async Task<IList<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default)
         {
             var results = new List<ValidationResult>();
@@ -156,6 +154,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
                 results.AddRange(cellResults);
                 row.UpdateValidationStatus();
 
+                // ✅ OPRAVA CS7036: Správny konštruktor pre ValidationCompletedEventArgs
                 OnValidationCompleted(new ValidationCompletedEventArgs
                 {
                     Row = row,
@@ -177,7 +176,6 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
-        // ✅ OPRAVA CS0050, CS0051: internal parameters a return type
         public async Task<IList<ValidationResult>> ValidateAllRowsAsync(IEnumerable<DataGridRow> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
             var allResults = new List<ValidationResult>();
@@ -243,7 +241,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             }
         }
 
-        // Rremaining methods remain the same...
+        // Zostávajúce metódy zostávajú rovnaké...
         public void AddValidationRule(ValidationRule rule)
         {
             try

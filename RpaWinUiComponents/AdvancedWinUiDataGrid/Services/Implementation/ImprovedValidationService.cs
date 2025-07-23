@@ -1,6 +1,4 @@
-﻿// OPRAVA: ImprovedValidationService - Správna implementácia IValidationService interface
-// SÚBOR: RpaWinUiComponents/AdvancedWinUiDataGrid/Services/Implementation/ImprovedValidationService.cs
-
+﻿// SÚBOR: Services/Implementation/ImprovedValidationService.cs - OPRAVENÉ CS0738 chyby
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,9 +14,10 @@ using RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Interfaces;
 namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 {
     /// <summary>
-    /// OPRAVENÁ implementácia ValidationService s správnymi interface signatures
+    /// ✅ OPRAVA CS0738: Teraz INTERNAL class s INTERNAL interface
+    /// Enhanced implementácia ValidationService s memory management a performance optimizations
     /// </summary>
-    public class ImprovedValidationService : IValidationService, IDisposable
+    internal class ImprovedValidationService : IValidationService, IDisposable
     {
         private readonly ILogger<ImprovedValidationService> _logger;
         private readonly ConcurrentDictionary<string, List<ValidationRule>> _validationRules = new();
@@ -39,6 +38,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         private DateTime _lastErrorTime = DateTime.MinValue;
         private readonly TimeSpan _errorCooldownPeriod = TimeSpan.FromSeconds(5);
 
+        // ✅ OPRAVA CS0738: Správne event types
         public event EventHandler<ValidationCompletedEventArgs>? ValidationCompleted;
         public event EventHandler<ComponentErrorEventArgs>? ValidationErrorOccurred;
 
@@ -53,10 +53,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
             _logger.LogDebug("ImprovedValidationService initialized with {MaxConcurrent} concurrent validations", maxConcurrentValidations);
         }
 
-        #region IValidationService Implementation - OPRAVENÉ SIGNATURES
+        #region ✅ OPRAVENÉ IValidationService Implementation
 
         /// <summary>
-        /// OPRAVA CS0535: Správny signature pre ValidateCellAsync
+        /// ✅ OPRAVA CS0050: INTERNAL return type pre INTERNAL interface
         /// </summary>
         public async Task<ValidationResult> ValidateCellAsync(DataGridCell cell, DataGridRow row, CancellationToken cancellationToken = default)
         {
@@ -200,9 +200,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         }
 
         /// <summary>
-        /// OPRAVA CS0535: Správný signature pre ValidateRowAsync
+        /// ✅ OPRAVA CS0050: INTERNAL return type IList<ValidationResult>
         /// </summary>
-        public async Task<List<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default)
+        public async Task<IList<ValidationResult>> ValidateRowAsync(DataGridRow row, CancellationToken cancellationToken = default)
         {
             if (row == null) throw new ArgumentNullException(nameof(row));
 
@@ -235,6 +235,7 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                 row.UpdateValidationStatus();
 
+                // ✅ OPRAVA CS7036: Správny konštruktor
                 OnValidationCompleted(new ValidationCompletedEventArgs
                 {
                     Row = row,
@@ -257,9 +258,9 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
         }
 
         /// <summary>
-        /// OPRAVA CS0535: Správný signature pre ValidateAllRowsAsync
+        /// ✅ OPRAVA CS0050, CS0051: INTERNAL parameters a return type
         /// </summary>
-        public async Task<List<ValidationResult>> ValidateAllRowsAsync(IEnumerable<DataGridRow> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
+        public async Task<IList<ValidationResult>> ValidateAllRowsAsync(IEnumerable<DataGridRow> rows, IProgress<double>? progress = null, CancellationToken cancellationToken = default)
         {
             var allResults = new List<ValidationResult>();
             var dataRows = rows?.Where(r => !r.IsEmpty).ToList() ?? new List<DataGridRow>();
@@ -289,7 +290,10 @@ namespace RpaWinUiComponents.AdvancedWinUiDataGrid.Services.Implementation
 
                     foreach (var rowResults in batchResults)
                     {
-                        allResults.AddRange(rowResults);
+                        foreach (var result in rowResults)
+                        {
+                            allResults.Add(result);
+                        }
                     }
 
                     processedRows += batch.Count;
